@@ -1,34 +1,20 @@
-// app.js
-// Dummy data for demonstration
-const data = [
-  { category: 'Category A', value: 30 },
-  { category: 'Category B', value: 50 },
-  { category: 'Category C', value: 20 },
-];
+ocpu.seturl("//localhost/ocpu/library/sd/R")
 
-// D3.js code for the dashboard
-const svg = d3.select("#dashboard")
-  .append("svg")
-  .attr("width", 400)
-  .attr("height", 200);
+//some example data
+//to run with different data, edit and press Run at the top of the page
+var mydata = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
 
-// Create bars based on data
-svg.selectAll("rect")
-  .data(data)
-  .enter()
-  .append("rect")
-  .attr("x", (d, i) => i * 120)
-  .attr("y", d => 200 - d.value * 2)
-  .attr("width", 100)
-  .attr("height", d => d.value * 2)
-  .attr("fill", "blue");
+//call R function: stats::sd(x=data)
+$("#submitbutton").click(function(){
+    
+    var req = ocpu.rpc("sd",{
+        x : mydata
+    }, function(output){
+        alert("Standard Deviation equals: " + output);
+    }); 
 
-// Add labels
-svg.selectAll("text")
-  .data(data)
-  .enter()
-  .append("text")
-  .attr("x", (d, i) => i * 120 + 50)
-  .attr("y", d => 200 - d.value * 2 - 5)
-  .attr("text-anchor", "middle")
-  .text(d => d.value);
+    //optional
+    req.fail(function(){
+        alert("R returned an error: " + req.responseText); 
+    });
+});
