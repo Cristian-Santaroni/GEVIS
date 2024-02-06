@@ -3,15 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GEVIS Gene Expression VIS Dashboard</title>
+  <title>D3.js Variation Histogram</title>
   <script src="d3.v7.8.5.min.js"></script>
-  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-  <script src="//cdn.opencpu.org/opencpu-0.4.js"></script>
+  <style>
+    #thresholdSlider {
+      width: 80%;
+    }
+  </style>
 </head>
 <body>
-  <h1>GEVIS Gene Expression VIS Dashboard</h1>
-  <button id="submitbutton">Calculate Standard Deviation</button>
-  <script src="app.js"></script>
-  
+  <h1>D3.js Variation Histogram</h1>
+  <div>
+    <label for="thresholdSlider">Threshold:</label>
+    <input type="range" id="thresholdSlider" min="0.1" max="1" step="0.01" value="0.1">
+    <span id="thresholdValue">0.1</span>
+  </div>
+  <div id="histogram"></div>
+
+  <script>
+    let threshold = 0.1;
+
+    document.getElementById("thresholdSlider").addEventListener("input", function() {
+      // Update the threshold value on slider change
+      threshold = parseFloat(this.value);
+      document.getElementById("thresholdValue").innerText = threshold;
+
+      // Call the updateHistogram function directly
+      updateHistogram();
+    });
+
+    function updateHistogram() {
+      // Load variation data using D3.js
+      d3.text("var.txt").then(function(text) {
+        // Parse the data
+        const data = d3.tsvParseRows(text, d => ({ gene: d[0], variation: +d[1] }));
+
+        // Filter data based on the threshold
+        const filteredData = data.filter(d => d.variation >= threshold);
+
+        // Create histogram using D3.js
+        const svgWidth = 800;
+        const svgHeight = 400;
+        const margin = { top: 20, right: 20, bottom: 30, left: 50 };
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        const svg = d3.select("#histogram")
+          .html("")  // Clear previous content
+          .append("svg")
+          .attr("width", svgWidth)
+          .attr("height", svgHeight)
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Create histogram
+        const histogram = d3.histogram()
+          .value(d => d.variation)
+          .domain(d3.extent(filteredData, d => d.variation))
+          .thresholds(100);
+
+        const bins = histogram(filteredData);
+
+        const xScale = d3.scaleLinear()
+          .domain(d3.extent(filteredData, d => d.variation))
+          .range([0, width]);
+
+        const yScale = d3.scaleLinear()
+          .domain([0, d3.max(bins, d => d.length)])
+          .range([height, 0]);
+
+        svg.selectAll("rect")
+          .data(bins)
+          .enter()
+          .append("rect")
+          .attr("x", d => xScale(d.x0))
+          .attr("y", d => yScale(d.length))
+          .attr("width", d => xScale(d.x1) - xScale(d.x0))
+          .attr("height", d => height - yScale(d.length))
+          .attr("fill", "steelblue");
+
+        // Add x-axis
+        svg.append("g")
+          .attr("transform", `translate(0,${height})`)
+          .call(d3.axisBottom(xScale));
+
+        // Add y-axis
+        svg.append("g")
+          .call(d3.axisLeft(yScale));
+
+        // Add a red line indicating the threshold
+        svg.append("line")
+          .attr("x1", xScale(threshold))
+          .attr("y1", 0)
+          .attr("x2", xScale(threshold))
+          .attr("y2", height)
+          .attr("stroke", "red")
+          .attr("stroke-width", 2);
+      });
+    }
+
+    // Initial histogram load
+    updateHistogram();
+  </script>
 </body>
 </html>
