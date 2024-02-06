@@ -5,105 +5,165 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>D3.js Variation Histogram</title>
   <script src="d3.v7.8.5.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+  <script src="//cdn.opencpu.org/opencpu-0.4.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.0.0/simple-statistics.min.js"></script>
   <style>
     #thresholdSlider {
-      width: 80%;
+      width: 10%;
     }
   </style>
 </head>
 <body>
-  <h1>D3.js Variation Histogram</h1>
+  
+  <h2>IQR frequency distribution</h2>
   <div>
-    <label for="thresholdSlider">Threshold:</label>
+    <label for="thresholdSlider">InterQuantile range:</label>
     <input type="range" id="thresholdSlider" min="0.1" max="1" step="0.01" value="0.1">
     <span id="thresholdValue">0.1</span>
   </div>
-  <div id="histogram"></div>
+  <div id="histogram">
 
   <script>
-    let threshold = 0.1;
+    let data
+    let prc_IQR = 0.1;
+    let thr_prc;
+    // Read the contents of the .txt file
+    fetch('variation_lung.txt')
+      .then(response => response.text())
+      .then(text => {
+        // Parse the data
+        const rows = text.split('\n');
+         data = rows.slice(1).map(row => {
+          const [gene, variation] = row.trim().split('\t');
+          return parseFloat(variation);
+        });
+       
+        thr_prc = ss.quantile(data, prc_IQR);
+         
+      })
+      .catch(error => console.error('Error reading file:', error));
+
 
     document.getElementById("thresholdSlider").addEventListener("input", function() {
       // Update the threshold value on slider change
-      threshold = parseFloat(this.value);
-      document.getElementById("thresholdValue").innerText = threshold;
+      prc_IQR = parseFloat(this.value);
+      document.getElementById("thresholdValue").innerText = prc_IQR;
+
+      // Calculate the quantile
+      thr_prc = ss.quantile(data, prc_IQR);
 
       // Call the updateHistogram function directly
       updateHistogram();
     });
 
     function updateHistogram() {
-      // Load variation data using D3.js
-      d3.text("var.txt").then(function(text) {
+    // Load variation data using D3.js
+    d3.text("variation_lung.txt").then(function (text) {
         // Parse the data
         const data = d3.tsvParseRows(text, d => ({ gene: d[0], variation: +d[1] }));
 
         // Filter data based on the threshold
-        const filteredData = data.filter(d => d.variation >= threshold);
+        const filteredData = data.filter(d => d.variation >= thr_prc);
 
         // Create histogram using D3.js
-        const svgWidth = 800;
+        const svgWidth = 900;
         const svgHeight = 400;
         const margin = { top: 20, right: 20, bottom: 30, left: 50 };
         const width = svgWidth - margin.left - margin.right;
         const height = svgHeight - margin.top - margin.bottom;
 
         const svg = d3.select("#histogram")
-          .html("")  // Clear previous content
-          .append("svg")
-          .attr("width", svgWidth)
-          .attr("height", svgHeight)
-          .append("g")
-          .attr("transform", `translate(${margin.left},${margin.top})`);
+            .html("")  // Clear previous content
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
 
         // Create histogram
         const histogram = d3.histogram()
-          .value(d => d.variation)
-          .domain(d3.extent(filteredData, d => d.variation))
-          .thresholds(100);
+            .value(d => d.variation)
+            .domain(d3.extent(data, d => d.variation))
+            .thresholds(100);
 
-        const bins = histogram(filteredData);
+        const bins = histogram(data);
 
         const xScale = d3.scaleLinear()
-          .domain(d3.extent(filteredData, d => d.variation))
-          .range([0, width]);
+            .domain(d3.extent(data, d => d.variation))
+            .range([0, width]);
 
         const yScale = d3.scaleLinear()
-          .domain([0, d3.max(bins, d => d.length)])
-          .range([height, 0]);
+            .domain([0, d3.max(bins, d => d.length)])
+            .range([height, 0]);
 
+        // Add histogram bars
         svg.selectAll("rect")
-          .data(bins)
-          .enter()
-          .append("rect")
-          .attr("x", d => xScale(d.x0))
-          .attr("y", d => yScale(d.length))
-          .attr("width", d => xScale(d.x1) - xScale(d.x0))
-          .attr("height", d => height - yScale(d.length))
-          .attr("fill", "steelblue");
+            .data(bins)
+            .enter()
+            .append("rect")
+            .attr("x", d => xScale(d.x0))
+            .attr("y", d => yScale(d.length))
+            .attr("width", d => xScale(d.x1) - xScale(d.x0))
+            .attr("height", d => height - yScale(d.length))
+            .attr("fill", d => {
+                const thresholdPosition = xScale(thr_prc);
+                if (xScale(d.x1) < thresholdPosition) {
+                    return "grey"; // Set the color to grey if d.x1 is less than the threshold
+                } else {
+                    return "steelblue"; // Set the original bar color
+                }
+            });
+
+        // Add overlay for colored portion
+        svg.selectAll(".overlay")
+            .data(bins)
+            .enter()
+            .append("rect")
+            .attr("class", "overlay")
+            .attr("x", d => {
+                const thresholdPosition = xScale(thr_prc);
+                return xScale(d.x0); // Start the overlay from the beginning of the bar
+            })
+            .attr("y", d => yScale(d.length))
+            .attr("width", d => {
+                const thresholdPosition = xScale(thr_prc);
+                const barWidth = xScale(d.x1) - xScale(d.x0);
+                if (xScale(d.x0) < thresholdPosition && xScale(d.x1) > thresholdPosition) {
+                    // Calculate the width of the portion to color
+                    return thresholdPosition - xScale(d.x0); // Only color the left portion
+                } else {
+                    return 0; // Set width to 0 for bars where threshold is not in range
+                }
+            })
+            .attr("height", d => height - yScale(d.length))
+            .attr("fill", "grey") // Color the left portion of the overlay
+            .attr("opacity", 1); // Set opacity for transparency
 
         // Add x-axis
         svg.append("g")
-          .attr("transform", `translate(0,${height})`)
-          .call(d3.axisBottom(xScale));
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(xScale));
 
         // Add y-axis
         svg.append("g")
-          .call(d3.axisLeft(yScale));
+            .call(d3.axisLeft(yScale));
 
         // Add a red line indicating the threshold
-        svg.append("line")
-          .attr("x1", xScale(threshold))
-          .attr("y1", 0)
-          .attr("x2", xScale(threshold))
-          .attr("y2", height)
-          .attr("stroke", "red")
-          .attr("stroke-width", 2);
-      });
-    }
+        const thresholdLine = svg.append("line")
+            .attr("y1", 0)
+            .attr("y2", height)
+            .attr("stroke", "red")
+            .attr("stroke-width", 2);
 
+        // Update the position of the threshold line
+        thresholdLine.attr("x1", xScale(thr_prc))
+            .attr("x2", xScale(thr_prc));
+        });
+    }  
     // Initial histogram load
     updateHistogram();
   </script>
+  </div>
 </body>
 </html>
