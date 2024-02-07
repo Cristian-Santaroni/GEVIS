@@ -8,6 +8,7 @@
   <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
   <script src="//cdn.opencpu.org/opencpu-0.4.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.0.0/simple-statistics.min.js"></script>
+  <script src='https://cdn.jsdelivr.net/gh/kdpsingh/rjs@master/r.js'></script>
   <style>
     #thresholdSlider {
       width: 10%;
@@ -22,7 +23,7 @@
     <input type="range" id="thresholdSlider" min="0.1" max="1" step="0.01" value="0.1">
     <span id="thresholdValue">0.1</span>
   </div>
-  <div id="histogram">
+  <div id="IQR">
 
   <script>
     let data
@@ -52,7 +53,7 @@
 
       // Calculate the quantile
       thr_prc = ss.quantile(data, prc_IQR);
-
+      
       // Call the updateHistogram function directly
       updateHistogram();
     });
@@ -73,7 +74,7 @@
         const width = svgWidth - margin.left - margin.right;
         const height = svgHeight - margin.top - margin.bottom;
 
-        const svg = d3.select("#histogram")
+        const svg = d3.select("#IQR")
             .html("")  // Clear previous content
             .append("svg")
             .attr("width", svgWidth)
@@ -165,5 +166,8 @@
     updateHistogram();
   </script>
   </div>
+  <button id="submitbutton"> button</button>
+  <script src="app.js"></script>
+
 </body>
 </html>
