@@ -20,15 +20,24 @@
   <h2>IQR frequency distribution</h2>
   <div>
     <label for="thresholdSlider">InterQuantile range:</label>
-    <input type="range" id="thresholdSlider" min="0.1" max="1" step="0.01" value="0.1">
-    <span id="thresholdValue">0.1</span>
+    <input type="range" id="thresholdSlider" min="0.0" max="1" step="0.01" value="0.0">
+    <span id="thresholdValue"> 1</span>
   </div>
   <div id="IQR">
+  </div>
+
+  <div id="scatterPlot">
+  </div>
 
   <script>
+    ocpu.seturl("//localhost/ocpu/lib/LUSC/R")
     let data
-    let prc_IQR = 0.1;
+    let data_upd
+    let prc_IQR = 0.0;
     let thr_prc;
+    let filteredData;
+    let matrix;
+
     // Read the contents of the .txt file
     fetch('variation_lung.txt')
       .then(response => response.text())
@@ -37,14 +46,17 @@
         const rows = text.split('\n');
          data = rows.slice(1).map(row => {
           const [gene, variation] = row.trim().split('\t');
+          
+
           return parseFloat(variation);
         });
-       
-        thr_prc = ss.quantile(data, prc_IQR);
-         
+        const row_length= rows.length-1
+        console.log("numero di geni iniziali prima di qualsiasi filtro "+row_length)
+       thr_prc = ss.quantile(data, prc_IQR);
       })
       .catch(error => console.error('Error reading file:', error));
 
+      
 
     document.getElementById("thresholdSlider").addEventListener("input", function() {
       // Update the threshold value on slider change
@@ -53,10 +65,173 @@
 
       // Calculate the quantile
       thr_prc = ss.quantile(data, prc_IQR);
-      
+
+    fetch('matrix.txt')
+    .then(response => response.text())
+    .then(text => {
+        // Parse the data
+        const rows = text.trim().split('\n');
+        
+        // Extract sample GSM identifiers from the first row (excluding the first element)
+        const sampleGSMs = rows[0].trim().split('\t').slice(1);
+
+        // Map each row to an object representing gene expression for each sample
+        matrix = rows.slice(1).map(row => {
+            const [gene, ...expressions] = row.trim().split('\t');
+            
+            // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
+            return {
+                gene: gene,
+                expressions: expressions.map(parseFloat)
+            };
+        });
+
+        // Create a matrix with GSMs as headers
+        const matrixWithHeaders = matrix.reduce((result, entry) => {
+            const geneObj = {
+                Gene: entry.gene, // Optional: Change the key to "Gene" if needed
+                ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
+            };
+            result.push(geneObj);
+            return result;
+        }, []);
+
+       // console.log("Sample GSMs:", sampleGSMs);
+        console.log("Matrix with Headers:", matrixWithHeaders);
+
+     
+      console.log(thr_prc)
+      var req = ocpu.call("hello", {
+        variation: data,
+        data: matrixWithHeaders,
+        thr_prc: thr_prc
+    }, function(session){
+         var filteredDataURL = session.loc + "/R/.val/csv";
+         console.log(session)
+      // Fetch the filtered data from the URL
+      fetch(filteredDataURL)
+          .then(response => response.text())
+          .then(text => {
+            const rows = d3.tsvParseRows(text);
+            const numRows = rows.length - 1; 
+            console.log("Number of genes after filtering:", numRows);
+
+           // console.log(text)
+              // Extract sample GSM identifiers from the header row
+             /* const sampleGSMs = rows[0].slice(1);
+
+              // Map each row to an object representing gene expression for each sample
+              const data = rows.slice(1).map(row => {
+                  const [gene, ...expressions] = row;
+                  
+                  // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
+                  return {
+                      gene: gene,
+                      expressions: expressions.map(parseFloat)
+                  };
+              });
+
+              // Create a matrix with GSMs as headers
+              const matrixWithHeaders = data.reduce((result, entry) => {
+                  const geneObj = {
+                      Gene: "", // Optional: Change the key to "Gene" if needed
+                      ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
+                  };
+                  result.push(geneObj);
+                  return result;
+              }, []);
+
+            console.log(matrixWithHeaders)
+            // Now, you can use 'matrixWithHeaders' to update or create a scatter plot
+            updateScatterPlot(matrixWithHeaders);*/
+
+          })
+          .catch(error => {
+              console.error("Error fetching filtered data: ", error);
+          });
+         
+    });
+      // Handle failure of the RPC call
+      req.fail(function(){
+                console.error("OpenCPU RPC call returned an error: " + req.responseText); 
+            });
+
+          })
+    .catch(error => {
+        console.error("Error fetching dataC: ", error);
+    });
+
+  
       // Call the updateHistogram function directly
       updateHistogram();
     });
+
+    function updateScatterPlot(fData) {
+  // Clear previous scatter plot content
+  d3.select("#scatterPlot").html("");
+
+  // Set up the SVG container for the scatter plot
+  const svgWidth = 900;
+  const svgHeight = 400;
+  const margin = { top: 20, right: 20, bottom: 30, left: 50 };
+  const width = svgWidth - margin.left - margin.right;
+  const height = svgHeight - margin.top - margin.bottom;
+
+  const svg = d3.select("#scatterPlot")
+    .append("svg")
+    .attr("width", svgWidth)
+    .attr("height", svgHeight)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Debugging: Print fData to console
+  console.log("fData:", fData);
+
+  // Create scales for x and y axes
+  const xScale = d3.scaleBand()
+    .domain(fData.map(d => d.Gene))  // Gene names as x-axis labels
+    .range([0, width])
+    .padding(0.1);
+
+  const yScale = d3.scaleLinear()
+    .domain([0, d3.max(fData, d => d3.max(Object.values(d).slice(1)))])  // Max expression value across all samples
+    .range([height, 0]);
+
+  // Debugging: Print scales to console
+  console.log("xScale:", xScale.domain());
+  console.log("yScale:", yScale.domain());
+
+  // Create circles for each data point
+  svg.selectAll("circle")
+    .data(fData)
+    .enter()
+    .append("circle")
+    .attr("cx", d => {
+      console.log("cx:", xScale(d.Gene) + xScale.bandwidth() / 2);
+      return xScale(d.Gene) + xScale.bandwidth() / 2;  // Center within the band
+    })
+    .attr("cy", d => {
+  console.log("cy:", yScale(d3.max(Object.values(d).slice(1))));
+  return yScale(d3.max(Object.values(d).slice(1)));
+    })
+    .attr("r", 5)  // Set the radius of the circles
+    .attr("fill", "steelblue");  // Set the color of the circles
+
+  // Add x-axis
+  svg.append("g")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(xScale))
+    .selectAll("text")
+    .attr("transform", "rotate(-45)")
+    .style("text-anchor", "end");
+
+  // Add y-axis
+  svg.append("g")
+    .call(d3.axisLeft(yScale));
+}
+
+
+
 
     function updateHistogram() {
     // Load variation data using D3.js
@@ -165,9 +340,13 @@
     // Initial histogram load
     updateHistogram();
   </script>
-  </div>
-  <button id="submitbutton"> button</button>
-  <script src="app.js"></script>
+ 
+
+
+
+
+
+  
 
 </body>
 </html>

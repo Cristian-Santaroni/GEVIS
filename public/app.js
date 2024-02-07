@@ -1,4 +1,4 @@
-ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
+ocpu.seturl("//localhost/ocpu/lib/LUSC/R")
 
 //some example data
 //to run with different data, edit and press Run at the top of the page
