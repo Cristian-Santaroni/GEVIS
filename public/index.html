@@ -20,23 +20,150 @@
   <h2>IQR frequency distribution</h2>
   <div>
     <label for="thresholdSlider">InterQuantile range:</label>
-    <input type="range" id="thresholdSlider" min="0.0" max="1" step="0.01" value="0.0">
-    <span id="thresholdValue"> 1</span>
+    <input type="range" id="thresholdSlider" min="0.1" max="1" step="0.01" value="0.1">
+    <span id="thresholdValue">0.1</span>
   </div>
   <div id="IQR">
   </div>
 
-  <div id="scatterPlot">
+  <h2>LogFC Histogram</h2>
+  <div id="logFCHistogram">
   </div>
 
   <script>
-    ocpu.seturl("//localhost/ocpu/lib/LUSC/R")
+    // Your existing JavaScript code goes here
+    // Make sure to include the necessary libraries and define variables as needed
+
+    function updateLogFCHistogram(logFCData) {
+    // Define histogram parameters
+    const svgWidth = 900;
+    const svgHeight = 400;
+    const margin = { top: 20, right: 20, bottom: 50, left: 50 };
+    const width = svgWidth - margin.left - margin.right;
+    const height = svgHeight - margin.top - margin.bottom;
+
+    // Create SVG container
+    const svg = d3.select("#logFCHistogram")
+        .html("")  // Clear previous content
+        .append("svg")
+        .attr("width", svgWidth)
+        .attr("height", svgHeight)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Create histogram using D3.js
+    const histogram = d3.histogram()
+        .value(d => d)
+        .domain(d3.extent(logFCData))
+        .thresholds(10000); // Number of bins
+
+    const bins = histogram(logFCData);
+
+    // Debugging: Log histogram bins
+    console.log("Histogram bins:", bins);
+
+    const xScale = d3.scaleLinear()
+        .domain(d3.extent(logFCData))
+        .nice()
+        .range([0, width]);
+
+    // Debugging: Log x-axis domain
+    console.log("X-axis domain:", xScale.domain());
+
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(bins, d => d.length)])
+        .nice()
+        .range([height, 0]);
+
+    // Add histogram bars
+    svg.selectAll("rect")
+        .data(bins)
+        .enter()
+        .append("rect")
+        .attr("x", d => xScale(d.x0))
+        .attr("y", d => yScale(d.length))
+        .attr("width", d => xScale(d.x1) - xScale(d.x0))
+        .attr("height", d => height - yScale(d.length))
+        .attr("fill", "orange");
+
+    // Add x-axis
+    svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(xScale))
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", margin.bottom * 0.8)
+        .attr("text-anchor", "middle")
+        .text("logFC");
+
+    // Add y-axis
+    svg.append("g")
+        .call(d3.axisLeft(yScale))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -margin.left * 0.7)
+        .attr("x", -height / 2)
+        .attr("text-anchor", "middle")
+        .text("frequency");
+
+    // Add title
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", -margin.top * 0.7)
+        .attr("text-anchor", "middle")
+        .style("font-size", "18px")
+        .text("FC (logarithmic) frequency distribution");
+}
+
+    </script>
+
+
+  <script>
+    ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
     let data
     let data_upd
-    let prc_IQR = 0.0;
+    let prc_IQR = 0.1;
     let thr_prc;
     let filteredData;
     let matrix;
+    let dataC;
+    let dataN;
+
+    // Define a function to fetch data from a file with no header
+    function fetchData(filename) {
+    return fetch(filename)
+    .then(response => response.text())
+    .then(text => {
+        // Parse the data
+        const rows = text.trim().split('\n');
+        
+        // Extract sample GSM identifiers from the first row (excluding the first element)
+        const sampleGSMs = rows[0].trim().split('\t').slice(1);
+
+        // Map each row to an object representing gene expression for each sample
+        matrix = rows.slice(1).map(row => {
+            const [gene, ...expressions] = row.trim().split('\t');
+            
+            // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
+            return {
+                gene: gene,
+                expressions: expressions.map(parseFloat)
+            };
+        });
+
+        // Create a matrix with GSMs as headers
+        const matrixWithHeaders = matrix.reduce((result, entry) => {
+            const geneObj = {
+                Gene: entry.gene, // Optional: Change the key to "Gene" if needed
+                ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
+            };
+            result.push(geneObj);
+            return result;
+        }, []);
+        return matrixWithHeaders; // Return the matrix with headers
+    });
+  }
+
 
     // Read the contents of the .txt file
     fetch('variation_lung.txt')
@@ -66,100 +193,115 @@
       // Calculate the quantile
       thr_prc = ss.quantile(data, prc_IQR);
 
-    fetch('matrix.txt')
-    .then(response => response.text())
-    .then(text => {
-        // Parse the data
-        const rows = text.trim().split('\n');
-        
-        // Extract sample GSM identifiers from the first row (excluding the first element)
-        const sampleGSMs = rows[0].trim().split('\t').slice(1);
+      Promise.all([fetchData('dataC_log.txt'), fetchData('dataN_log.txt')])
+      .then(([dataC, dataN]) => {
+        console.log(dataC)
 
-        // Map each row to an object representing gene expression for each sample
-        matrix = rows.slice(1).map(row => {
-            const [gene, ...expressions] = row.trim().split('\t');
-            
-            // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
-            return {
-                gene: gene,
-                expressions: expressions.map(parseFloat)
-            };
-        });
+      fetch('matrix.txt')
+      .then(response => response.text())
+      .then(text => {
+          // Parse the data
+          const rows = text.trim().split('\n');
+          
+          // Extract sample GSM identifiers from the first row (excluding the first element)
+          const sampleGSMs = rows[0].trim().split('\t').slice(1);
 
-        // Create a matrix with GSMs as headers
-        const matrixWithHeaders = matrix.reduce((result, entry) => {
-            const geneObj = {
-                Gene: entry.gene, // Optional: Change the key to "Gene" if needed
-                ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
-            };
-            result.push(geneObj);
-            return result;
-        }, []);
-
-       // console.log("Sample GSMs:", sampleGSMs);
-        console.log("Matrix with Headers:", matrixWithHeaders);
-
-     
-      console.log(thr_prc)
-      var req = ocpu.call("hello", {
-        variation: data,
-        data: matrixWithHeaders,
-        thr_prc: thr_prc
-    }, function(session){
-         var filteredDataURL = session.loc + "/R/.val/csv";
-         console.log(session)
-      // Fetch the filtered data from the URL
-      fetch(filteredDataURL)
-          .then(response => response.text())
-          .then(text => {
-            const rows = d3.tsvParseRows(text);
-            const numRows = rows.length - 1; 
-            console.log("Number of genes after filtering:", numRows);
-
-           // console.log(text)
-              // Extract sample GSM identifiers from the header row
-             /* const sampleGSMs = rows[0].slice(1);
-
-              // Map each row to an object representing gene expression for each sample
-              const data = rows.slice(1).map(row => {
-                  const [gene, ...expressions] = row;
-                  
-                  // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
-                  return {
-                      gene: gene,
-                      expressions: expressions.map(parseFloat)
-                  };
-              });
-
-              // Create a matrix with GSMs as headers
-              const matrixWithHeaders = data.reduce((result, entry) => {
-                  const geneObj = {
-                      Gene: "", // Optional: Change the key to "Gene" if needed
-                      ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
-                  };
-                  result.push(geneObj);
-                  return result;
-              }, []);
-
-            console.log(matrixWithHeaders)
-            // Now, you can use 'matrixWithHeaders' to update or create a scatter plot
-            updateScatterPlot(matrixWithHeaders);*/
-
-          })
-          .catch(error => {
-              console.error("Error fetching filtered data: ", error);
+          // Map each row to an object representing gene expression for each sample
+          matrix = rows.slice(1).map(row => {
+              const [gene, ...expressions] = row.trim().split('\t');
+              
+              // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
+              return {
+                  gene: gene,
+                  expressions: expressions.map(parseFloat)
+              };
           });
-         
-    });
-      // Handle failure of the RPC call
-      req.fail(function(){
-                console.error("OpenCPU RPC call returned an error: " + req.responseText); 
+
+          // Create a matrix with GSMs as headers
+          const matrixWithHeaders = matrix.reduce((result, entry) => {
+              const geneObj = {
+                  Gene: entry.gene, // Optional: Change the key to "Gene" if needed
+                  ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
+              };
+              result.push(geneObj);
+              return result;
+          }, []);
+
+        // console.log("Sample GSMs:", sampleGSMs);
+          console.log("Matrix with Headers:", matrixWithHeaders);
+
+      
+        console.log(thr_prc)
+        var req = ocpu.call("hello", {
+          variation: data,
+          data: matrixWithHeaders,
+          dataC: dataC,
+          dataN: dataN,
+          thr_prc: thr_prc
+      }, function(session){
+          var filteredDataURL = session.loc + "/R/.val";
+          console.log(session)
+        // Fetch the filtered data from the URL
+        fetch(filteredDataURL)
+        .then(response => response.text())
+        .then(text => {
+            // Split the text into different sections based on '$'
+            const sections = text.split("$");
+
+            // Parse the newdata section into a JavaScript object
+            const newdataText = sections.find(section => section.startsWith("newdata"));
+            const newDataRows = newdataText.trim().split("\n").slice(1); // Exclude header
+            const newdata = newDataRows.map(row => {
+                const cols = row.trim().split(/\s+/);
+                const gene = cols[0];
+                const values = cols.slice(1).map(parseFloat);
+                return { gene, values };
             });
 
-          })
-    .catch(error => {
-        console.error("Error fetching dataC: ", error);
-    });
+            // Parse the newdataC section into a JavaScript object
+            const newdataCText = sections.find(section => section.startsWith("newdataC"));
+            const newDataCRows = newdataCText.trim().split("\n").slice(1); // Exclude header
+            const newdataC = newDataCRows.map(row => row.trim().split(/\s+/).map(parseFloat));
+
+            // Parse the newdataN section into a JavaScript object
+            const newdataNText = sections.find(section => section.startsWith("newdataN"));
+            const newDataNRows = newdataNText.trim().split("\n").slice(1); // Exclude header
+            const newdataN = newDataNRows.map(row => row.trim().split(/\s+/).map(parseFloat));
+
+            // Parse the logFC section into a JavaScript object
+            const logFCText = sections.find(section => section.startsWith("logFC"));
+            console.log("Raw logFC text: ", logFCText); // Log raw text for debugging
+            const logFCValues = logFCText.trim().split(/\s+/).slice(1); // Exclude header and split values
+            const logFC = logFCValues.map(value => {
+                const floatValue = parseFloat(value);
+                return isNaN(floatValue) ? null : floatValue; // Convert NaN to null
+            }).filter(value => value !== null); // Filter out null values
+
+            // Now you have parsed the data into JavaScript objects
+            console.log("Parsed newdata: ", newdata);
+            console.log("Parsed newdataC: ", newdataC);
+            console.log("Parsed newdataN: ", newdataN);
+            console.log("Parsed logFC: ", logFC);
+
+            updateLogFCHistogram(logFC)
+
+            // Store or manipulate the parsed data as needed
+        })
+        .catch(error => {
+            console.error("Error fetching filtered data: ", error);
+        });
+          
+      });
+        // Handle failure of the RPC call
+        req.fail(function(){
+                  console.error("OpenCPU RPC call returned an error: " + req.responseText); 
+              });
+
+            })
+      .catch(error => {
+          console.error("Error fetching dataC: ", error);
+      });
+    })
 
   
       // Call the updateHistogram function directly
