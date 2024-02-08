@@ -41,6 +41,9 @@
     // Make sure to include the necessary libraries and define variables as needed
 
     function updateLogFCHistogram(logFCData) {
+    // Extract logFC values and convert them to numbers
+    const logFCValues = logFCData.map(entry => entry.logFC);
+
     // Define histogram parameters
     const svgWidth = 900;
     const svgHeight = 400;
@@ -60,16 +63,16 @@
     // Create histogram using D3.js
     const histogram = d3.histogram()
         .value(d => d)
-        .domain(d3.extent(logFCData))
+        .domain(d3.extent(logFCValues))
         .thresholds(100); // Number of bins
 
-    const bins = histogram(logFCData);
+    const bins = histogram(logFCValues);
 
     // Debugging: Log histogram bins
     console.log("Histogram bins:", bins);
 
     const xScale = d3.scaleLinear()
-        .domain(d3.extent(logFCData))
+        .domain(d3.extent(logFCValues))
         .nice()
         .range([0, width]);
 
@@ -118,8 +121,8 @@
         .attr("y", -margin.top * 0.7)
         .attr("text-anchor", "middle")
         .style("font-size", "18px")
-        .text("FC (logarithmic) frequency distribution")
-    
+        .text("FC (logarithmic) frequency distribution");
+
     // Add ablines
     svg.append("line")
         .attr("x1", xScale(-Math.log2(thr_fc)))
@@ -137,29 +140,29 @@
         .style("stroke", "red")
         .style("stroke-width", "2");
 
-// Add overlay for colored portion
-svg.selectAll(".overlay")
-    .data(bins)
-    .enter()
-    .append("rect")
-    .attr("class", "overlay")
-    .attr("x", d => {
-        const thresholdPosition = xScale(-Math.log2(thr_fc)); // Position of the left abline
-        return thresholdPosition < xScale(d.x0) ? xScale(d.x0) : thresholdPosition; // Start the overlay from the greater of the two positions
-    })
-    .attr("y", d => yScale(d.length)) // Start from the bottom of each bin
-    .attr("width", d => {
-        const thresholdPositionLeft = xScale(-Math.log2(thr_fc)); // Position of the left abline
-        const thresholdPositionRight = xScale(Math.log2(thr_fc)); // Position of the right abline
-        const barWidth = xScale(d.x1) - xScale(d.x0);
-        // Calculate the width of the portion to color
-        return Math.max(0, Math.min(thresholdPositionRight, xScale(d.x1)) - Math.max(thresholdPositionLeft, xScale(d.x0)));
-    })
-    .attr("height", d => height - yScale(d.length)) // Set the height based on the height of each bin
-    .attr("fill", "grey") // Color the portion of the overlay
-    .attr("opacity", 1); // Set opacity for transparency
+    // Add overlay for colored portion
+    svg.selectAll(".overlay")
+        .data(bins)
+        .enter()
+        .append("rect")
+        .attr("class", "overlay")
+        .attr("x", d => {
+            const thresholdPosition = xScale(-Math.log2(thr_fc)); // Position of the left abline
+            return thresholdPosition < xScale(d.x0) ? xScale(d.x0) : thresholdPosition; // Start the overlay from the greater of the two positions
+        })
+        .attr("y", d => yScale(d.length)) // Start from the bottom of each bin
+        .attr("width", d => {
+            const thresholdPositionLeft = xScale(-Math.log2(thr_fc)); // Position of the left abline
+            const thresholdPositionRight = xScale(Math.log2(thr_fc)); // Position of the right abline
+            const barWidth = xScale(d.x1) - xScale(d.x0);
+            // Calculate the width of the portion to color
+            return Math.max(0, Math.min(thresholdPositionRight, xScale(d.x1)) - Math.max(thresholdPositionLeft, xScale(d.x0)));
+        })
+        .attr("height", d => height - yScale(d.length)) // Set the height based on the height of each bin
+        .attr("fill", "grey") // Color the portion of the overlay
+        .attr("opacity", 1); // Set opacity for transparency
+}
 
-  }
 
     </script>
 
@@ -177,6 +180,12 @@ svg.selectAll(".overlay")
     let thr_fc = 1.1;
     let logFC_data;
     let log_thr_fc = Math.log2(thr_fc);
+    let parsedLogFC;
+    let parsedLogFC_origin;
+    let newdataJSON
+    let newdataCJSON
+    let newdataNJSON
+
 
     // Define a function to fetch data from a file with no header
     function fetchData(filename) {
@@ -305,13 +314,28 @@ svg.selectAll(".overlay")
                     const { newdata, newdataC, newdataN, logFC } = data;
                     logFC_data = logFC
 
+                    newdataJSON=newdata
+                    newdataCJSON=newdataC
+                    newdataNJSON=newdataN
                     // Now you have parsed the data into JavaScript objects
-                    console.log("Parsed newdata: ", newdata);
-                    console.log("Parsed newdataC: ", newdataC);
-                    console.log("Parsed newdataN: ", newdataN);
+                    console.log("Parsed newdata: ", newdataJSON);
+                    console.log("Parsed newdataC: ", newdataCJSON);
+                    console.log("Parsed newdataN: ", newdataNJSON);
                     console.log("Parsed logFC: ", logFC);
 
-                    updateLogFCHistogram(logFC)
+                    // Assuming logFC_json contains the JSON string
+                     parsedLogFC_origin = JSON.parse(logFC);
+
+                     parsedLogFC = parsedLogFC_origin
+                    // Now, parsedLogFC is an array of objects
+                    // Each object has properties "Gene" and "logFC"
+                    console.log(parsedLogFC);
+
+                    // You can access individual elements like this:
+                    console.log(parsedLogFC[0].Gene); // Access the Gene property of the first object
+                    console.log(parsedLogFC[0].logFC); // Access the logFC property of the first object
+
+                    updateLogFCHistogram(parsedLogFC_origin)
 
                     // Store or manipulate the parsed data as needed
                 })
@@ -338,11 +362,60 @@ svg.selectAll(".overlay")
       document.getElementById("log_thresholdSliderValue").innerText = thr_fc;
 
       // Calculate the quantile
-      log_thr_fc = Math.log2(thr_fc);
-        
+      log_thr_fc = Math.log2(thr_fc);  
       // Call the updateHistogram function directly
-      updateLogFCHistogram(logFC_data);
+      updateLogFCHistogram(parsedLogFC_origin);
+      console.log(logFC_data)
     });
+
+    document.getElementById("log_thresholdSlider").addEventListener("change", function() {
+
+      console.log("sono dentro")
+      console.log("threshold "+thr_fc)
+        // Find indices where abs(logFC) < log2(thr_fc)
+        const ind = parsedLogFC.reduce((result, entry, index) => {
+          
+          if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+            result.push(index);
+            
+          }
+          return result;
+        }, []);
+
+        
+      
+        
+        if (ind.length > 0) {
+
+          console.log(parsedLogFC.length)
+          console.log(newdataCJSON.length)
+          console.log(newdataJSON.length)
+          console.log(newdataNJSON.length)
+
+          // Remove entries corresponding to ind from dataN
+          newdataNJSON = newdataNJSON.filter((entry, index) => !ind.includes(index));
+
+          // Remove entries corresponding to ind from dataC
+          newdataCJSON = newdataCJSON.filter((entry, index) => !ind.includes(index));
+
+          // Remove entries corresponding to ind from data
+          newdataJSON = newdataJSON.filter((entry, index) => !ind.includes(index));
+
+          // Remove entries corresponding to ind from genes
+          //   genes = genes.filter((entry, index) => !ind.includes(index));
+
+          // Remove entries corresponding to ind from logFC
+          parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+          
+          console.log(parsedLogFC.length)
+          console.log(newdataCJSON.length)
+          console.log(newdataJSON.length)
+          console.log(newdataNJSON.length)
+
+        }
+
+        // Now, dataN, dataC, data, genes, and logFC are updated
+    })
 
 
     function updateScatterPlot(fData) {
