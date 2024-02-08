@@ -18,13 +18,16 @@
 <body>
   
   <h2>IQR frequency distribution</h2>
+  
   <div>
     <label for="thresholdSlider">InterQuantile range:</label>
-    <input type="range" id="thresholdSlider" min="0.1" max="1" step="0.01" value="0.1">
+    <input type="range" id="thresholdSlider" min="0.1" max="0.99" step="0.01" value="0.1">
     <span id="thresholdValue">0.1</span>
   </div>
   <div id="IQR">
   </div>
+  <div id="geneCount"></div>
+
 
   <h2>LogFC Histogram</h2>
   <div>
@@ -35,6 +38,8 @@
 
   <div id="logFCHistogram">
   </div>
+  <div id="geneCount2"></div>
+
 
   <script>
     // Your existing JavaScript code goes here
@@ -68,16 +73,10 @@
 
     const bins = histogram(logFCValues);
 
-    // Debugging: Log histogram bins
-    console.log("Histogram bins:", bins);
-
     const xScale = d3.scaleLinear()
         .domain(d3.extent(logFCValues))
         .nice()
         .range([0, width]);
-
-    // Debugging: Log x-axis domain
-    console.log("X-axis domain:", xScale.domain());
 
     const yScale = d3.scaleLinear()
         .domain([0, d3.max(bins, d => d.length)])
@@ -161,6 +160,7 @@
         .attr("height", d => height - yScale(d.length)) // Set the height based on the height of each bin
         .attr("fill", "grey") // Color the portion of the overlay
         .attr("opacity", 1); // Set opacity for transparency
+
 }
 
 
@@ -169,14 +169,20 @@
 
   <script>
     ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
-    let data
+    let variation_data;
+    let variation_data_copy;
+    let initial_num_genes;
     let data_upd
     let prc_IQR = 0.1;
     let thr_prc;
     let filteredData;
     let matrix;
-    let dataC;
-    let dataN;
+    let data_original;
+    let dataC_original;
+    let dataN_original;
+    let data_copy;
+    let dataC_copy;
+    let dataN_copy;
     let thr_fc = 1.1;
     let logFC_data;
     let log_thr_fc = Math.log2(thr_fc);
@@ -184,7 +190,66 @@
     let parsedLogFC_origin;
     let newdataJSON
     let newdataCJSON
-    let newdataNJSON
+    let first_filter_number_genes;
+
+    function calculateLogFC(dataC, dataN) {
+    const logFCData = [];
+
+    // Iterate over each gene
+    Object.keys(dataC).forEach(gene => {
+        // Get the values for the current gene from dataC and dataN
+        let valuesC = Object.values(dataC[gene]);
+        let valuesN = Object.values(dataN[gene]);
+
+        // Pop the last value if it's a gene string
+        let geneValueC;
+        if (isNaN(valuesC[valuesC.length - 1])) {
+            geneValueC = valuesC.pop(); // Remove and store the last value as the gene for dataC
+        }
+        let geneValueN;
+        if (isNaN(valuesN[valuesN.length - 1])) {
+            geneValueN = valuesN.pop(); // Remove and store the last value as the gene for dataN
+        }
+
+        // Calculate the row mean for dataC and dataN
+        const rowMeanC = valuesC.reduce((acc, val) => acc + val, 0) / valuesC.length;
+        const rowMeanN = valuesN.reduce((acc, val) => acc + val, 0) / valuesN.length;
+
+        // Calculate the log fold change
+        const logFC = rowMeanC - rowMeanN;
+
+        // Push the gene and its logFC to logFCData
+        logFCData.push({ "Gene": geneValueC, "logFC": logFC });
+    });
+
+    return logFCData
+
+}
+
+
+
+    function fetchJSON(url) {
+      return fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Rename the key '_row' to 'Gene' in each object of the JSON array
+          return data.map(obj => {
+            const newObj = { ...obj };
+            newObj['gene'] = newObj['_row'];
+            delete newObj['_row']; // Delete the old key
+            return newObj;
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching JSON:', error);
+        });
+    }
+
 
 
     // Define a function to fetch data from a file with no header
@@ -224,23 +289,82 @@
 
 
     // Read the contents of the .txt file
-    fetch('variation_lung.txt')
-      .then(response => response.text())
-      .then(text => {
-        // Parse the data
-        const rows = text.split('\n');
-         data = rows.slice(1).map(row => {
-          const [gene, variation] = row.trim().split('\t');
+    Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json')])
+      .then(([dataC, dataN, data]) => {
+        dataC_original = dataC
+        dataN_original = dataN
+        data_original = data
+        fetch('variation_lung.txt')
+          .then(response => response.text())
+          .then(text => {
+            // Parse the data
+            const rows = text.split('\n');
+            variation_data = rows.slice(1).map(row => {
+              const [gene, variation] = row.trim().split('\t');
+              return parseFloat(variation);
+            });
+            const row_length= rows.length-1
+            initial_num_genes = row_length
+            variation_data_copy = (variation_data);
+            console.log("numero di geni iniziali prima di qualsiasi filtro "+row_length)
+
+
+            thr_prc = ss.quantile(variation_data, prc_IQR);
+            updateHistogram(variation_data);
+
+            const ind = variation_data_copy.reduce((result, entry, index) => {
+              
+              if (entry < thr_prc) {
+                result.push(index);
+              }
+              return result;
+            }, []);
+
+            if (ind.length > 0) {
+
+              // Remove entries corresponding to ind from dataN
+              data_copy = data_original.filter((entry, index) => !ind.includes(index));
+
+              // Remove entries corresponding to ind from dataC
+              dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+
+              // Remove entries corresponding to ind from data
+              dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+
+              // Remove entries corresponding to ind from genes
+              //genes = genes.filter((entry, index) => !ind.includes(index));
+
+              // Remove entries corresponding to ind from logFC
+              //parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+
+            }
+            // Update the gene count display
+            const geneCountDiv = document.getElementById('geneCount');
+            geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
+
+            first_filter_number_genes = data_copy.length
+
+            parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
+            parsedLogFC = parsedLogFC_origin
+
+            updateLogFCHistogram(parsedLogFC_origin)
+                  // Calculate the quantile
+            log_thr_fc = Math.log2(thr_fc);  
+            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
           
+                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+                  result.push(index);
+                }
+                return result;
+            }, []);
 
-          return parseFloat(variation);
+          const geneCountDiv2 = document.getElementById('geneCount2');
+          geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
+
+
+          })
+          .catch(error => console.error('Error reading file:', error));
         });
-        const row_length= rows.length-1
-        console.log("numero di geni iniziali prima di qualsiasi filtro "+row_length)
-       thr_prc = ss.quantile(data, prc_IQR);
-      })
-      .catch(error => console.error('Error reading file:', error));
-
       
 
     document.getElementById("thresholdSlider").addEventListener("input", function() {
@@ -249,111 +373,95 @@
       document.getElementById("thresholdValue").innerText = prc_IQR;
 
       // Calculate the quantile
-      thr_prc = ss.quantile(data, prc_IQR);
+      thr_prc = ss.quantile(variation_data_copy, prc_IQR);
+      updateHistogram(variation_data);
+
+      const ind = variation_data_copy.reduce((result, entry, index) => {
         
-      // Call the updateHistogram function directly
-      updateHistogram();
+        if (entry <= thr_prc) {
+          result.push(index);
+        }
+        return result;
+      }, []);
+
+      if (ind.length > 0) {
+        // Remove entries corresponding to ind from dataC
+        dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+
+        // Remove entries corresponding to ind from data
+        dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+        // Remove entries corresponding to ind from genes
+        //genes = genes.filter((entry, index) => !ind.includes(index));
+
+        // Remove entries corresponding to ind from logFC
+        //parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+
+      }
+      // Update the gene count display
+      const geneCountDiv = document.getElementById('geneCount');
+      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${dataC_copy.length}`;
+
+      first_filter_number_genes = dataC_copy.length
+
+      parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
+      parsedLogFC = parsedLogFC_origin
+
+      updateLogFCHistogram(parsedLogFC_origin)
+
+      log_thr_fc = Math.log2(thr_fc);  
+            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
+          
+                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+                  result.push(index);
+                }
+                return result;
+            }, []);
+
+      const geneCountDiv2 = document.getElementById('geneCount2');
+      geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length - ind2.length}`;
 
     });
 
     document.getElementById("thresholdSlider").addEventListener("change", function() {
 
-      Promise.all([fetchData('dataC_log.txt'), fetchData('dataN_log.txt')])
-      .then(([dataC, dataN]) => {
-        console.log(dataC)
+      const ind = variation_data_copy.reduce((result, entry, index) => {
+        
+        if (entry <= thr_prc) {
+          result.push(index);
+        }
+        return result;
+      }, []);
 
-      fetch('matrix.txt')
-      .then(response => response.text())
-      .then(text => {
-          // Parse the data
-          const rows = text.trim().split('\n');
+      if (ind.length > 0) {
+
+        // Remove entries corresponding to ind from dataN
+        data_copy = data_original.filter((entry, index) => !ind.includes(index));
+
+        // Remove entries corresponding to ind from genes
+        //genes = genes.filter((entry, index) => !ind.includes(index));
+
+
+      }
+      // Update the gene count display
+      const geneCountDiv = document.getElementById('geneCount');
+      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
+
+      first_filter_number_genes = data_copy.length
+
+      log_thr_fc = Math.log2(thr_fc);  
+            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
           
-          // Extract sample GSM identifiers from the first row (excluding the first element)
-          const sampleGSMs = rows[0].trim().split('\t').slice(1);
+                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+                  result.push(index);
+                }
+                return result;
+            }, []);
 
-          // Map each row to an object representing gene expression for each sample
-          matrix = rows.slice(1).map(row => {
-              const [gene, ...expressions] = row.trim().split('\t');
-              
-              // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
-              return {
-                  gene: gene,
-                  expressions: expressions.map(parseFloat)
-              };
-          });
+      const geneCountDiv2 = document.getElementById('geneCount2');
+      geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
 
-          // Create a matrix with GSMs as headers
-          const matrixWithHeaders = matrix.reduce((result, entry) => {
-              const geneObj = {
-                  Gene: entry.gene, // Optional: Change the key to "Gene" if needed
-                  ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
-              };
-              result.push(geneObj);
-              return result;
-          }, []);
 
-        // console.log("Sample GSMs:", sampleGSMs);
-          console.log("Matrix with Headers:", matrixWithHeaders);
 
-      
-        console.log(thr_prc)
-        var req = ocpu.call("hello", {
-            variation: data,
-            data: matrixWithHeaders,
-            dataC: dataC,
-            dataN: dataN,
-            thr_prc: thr_prc
-        }, function(session) {
-            var filteredDataURL = session.loc + "/R/.val/json";
-            console.log(session);
-            // Fetch the filtered data from the URL
-            fetch(filteredDataURL)
-                .then(response => response.json())
-                .then(data => {
-                    // Extract data from the JSON response
-                    const { newdata, newdataC, newdataN, logFC } = data;
-                    logFC_data = logFC
-
-                    newdataJSON=newdata
-                    newdataCJSON=newdataC
-                    newdataNJSON=newdataN
-                    // Now you have parsed the data into JavaScript objects
-                    console.log("Parsed newdata: ", newdataJSON);
-                    console.log("Parsed newdataC: ", newdataCJSON);
-                    console.log("Parsed newdataN: ", newdataNJSON);
-                    console.log("Parsed logFC: ", logFC);
-
-                    // Assuming logFC_json contains the JSON string
-                     parsedLogFC_origin = JSON.parse(logFC);
-
-                     parsedLogFC = parsedLogFC_origin
-                    // Now, parsedLogFC is an array of objects
-                    // Each object has properties "Gene" and "logFC"
-                    console.log(parsedLogFC);
-
-                    // You can access individual elements like this:
-                    console.log(parsedLogFC[0].Gene); // Access the Gene property of the first object
-                    console.log(parsedLogFC[0].logFC); // Access the logFC property of the first object
-
-                    updateLogFCHistogram(parsedLogFC_origin)
-
-                    // Store or manipulate the parsed data as needed
-                })
-                .catch(error => {
-                    console.error("Error fetching filtered data: ", error);
-                });
-                  
-              });
-                // Handle failure of the RPC call
-                req.fail(function(){
-                          console.error("OpenCPU RPC call returned an error: " + req.responseText); 
-                      });
-
-                    })
-              .catch(error => {
-                  console.error("Error fetching dataC: ", error);
-              });
-            })
     });
 
     document.getElementById("log_thresholdSlider").addEventListener("input", function() {
@@ -363,9 +471,24 @@
 
       // Calculate the quantile
       log_thr_fc = Math.log2(thr_fc);  
+      const ind = parsedLogFC_origin.reduce((result, entry, index) => {
+          
+          if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+            result.push(index);
+            
+          }
+          return result;
+        }, []);
+
+        if (ind.length>0){
+          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
+        }
+
+      const geneCountDiv = document.getElementById('geneCount2');
+      geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
+
       // Call the updateHistogram function directly
       updateLogFCHistogram(parsedLogFC_origin);
-      console.log(logFC_data)
     });
 
     document.getElementById("log_thresholdSlider").addEventListener("change", function() {
@@ -373,7 +496,7 @@
       console.log("sono dentro")
       console.log("threshold "+thr_fc)
         // Find indices where abs(logFC) < log2(thr_fc)
-        const ind = parsedLogFC.reduce((result, entry, index) => {
+        const ind = parsedLogFC_origin.reduce((result, entry, index) => {
           
           if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
             result.push(index);
@@ -388,31 +511,29 @@
         if (ind.length > 0) {
 
           console.log(parsedLogFC.length)
-          console.log(newdataCJSON.length)
-          console.log(newdataJSON.length)
-          console.log(newdataNJSON.length)
 
           // Remove entries corresponding to ind from dataN
-          newdataNJSON = newdataNJSON.filter((entry, index) => !ind.includes(index));
 
-          // Remove entries corresponding to ind from dataC
-          newdataCJSON = newdataCJSON.filter((entry, index) => !ind.includes(index));
+          // Remove entries corresponding to ind from dataN
+          dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
 
-          // Remove entries corresponding to ind from data
-          newdataJSON = newdataJSON.filter((entry, index) => !ind.includes(index));
+          // Remove entries corresponding to ind from dataN
+          dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+
+          data_copy = data_copy.filter((entry, index) => !ind.includes(index));
 
           // Remove entries corresponding to ind from genes
           //   genes = genes.filter((entry, index) => !ind.includes(index));
 
           // Remove entries corresponding to ind from logFC
-          parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
           
           console.log(parsedLogFC.length)
-          console.log(newdataCJSON.length)
-          console.log(newdataJSON.length)
-          console.log(newdataNJSON.length)
 
         }
+
+        const geneCountDiv = document.getElementById('geneCount2');
+        geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
 
         // Now, dataN, dataC, data, genes, and logFC are updated
     })
@@ -482,118 +603,137 @@
         .call(d3.axisLeft(yScale));
     }
 
+    function updateHistogram(variation_data) {
+    // Filter data based on the threshold
+    const filteredData = variation_data.filter(variation => variation >= thr_prc);
 
+    // Create histogram using D3.js
+    const svgWidth = 900;
+    const svgHeight = 400;
+    const margin = { top: 20, right: 20, bottom: 30, left: 50 };
+    const width = svgWidth - margin.left - margin.right;
+    const height = svgHeight - margin.top - margin.bottom;
 
+    const svg = d3.select("#IQR")
+        .html("")  // Clear previous content
+        .append("svg")
+        .attr("width", svgWidth)
+        .attr("height", svgHeight)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    function updateHistogram() {
-    // Load variation data using D3.js
-    d3.text("variation_lung.txt").then(function (text) {
-        // Parse the data
-        const data = d3.tsvParseRows(text, d => ({ gene: d[0], variation: +d[1] }));
+    // Create histogram
+    const histogram = d3.histogram()
+        .value(variation => variation)
+        .domain(d3.extent(variation_data))
+        .thresholds(100);
 
-        // Filter data based on the threshold
-        const filteredData = data.filter(d => d.variation >= thr_prc);
+    const bins = histogram(variation_data);
 
-        // Create histogram using D3.js
-        const svgWidth = 900;
-        const svgHeight = 400;
-        const margin = { top: 20, right: 20, bottom: 30, left: 50 };
-        const width = svgWidth - margin.left - margin.right;
-        const height = svgHeight - margin.top - margin.bottom;
+    const xScale = d3.scaleLinear()
+        .domain(d3.extent(variation_data))
+        .range([0, width]);
 
-        const svg = d3.select("#IQR")
-            .html("")  // Clear previous content
-            .append("svg")
-            .attr("width", svgWidth)
-            .attr("height", svgHeight)
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(bins, d => d.length)])
+        .range([height, 0]);
 
-        // Create histogram
-        const histogram = d3.histogram()
-            .value(d => d.variation)
-            .domain(d3.extent(data, d => d.variation))
-            .thresholds(100);
-
-        const bins = histogram(data);
-
-        const xScale = d3.scaleLinear()
-            .domain(d3.extent(data, d => d.variation))
-            .range([0, width]);
-
-        const yScale = d3.scaleLinear()
-            .domain([0, d3.max(bins, d => d.length)])
-            .range([height, 0]);
-
-        // Add histogram bars
-        svg.selectAll("rect")
-            .data(bins)
-            .enter()
-            .append("rect")
-            .attr("x", d => xScale(d.x0))
-            .attr("y", d => yScale(d.length))
-            .attr("width", d => xScale(d.x1) - xScale(d.x0))
-            .attr("height", d => height - yScale(d.length))
-            .attr("fill", d => {
-                const thresholdPosition = xScale(thr_prc);
-                if (xScale(d.x1) < thresholdPosition) {
-                    return "grey"; // Set the color to grey if d.x1 is less than the threshold
-                } else {
-                    return "steelblue"; // Set the original bar color
-                }
-            });
-
-        // Add overlay for colored portion
-        svg.selectAll(".overlay")
-            .data(bins)
-            .enter()
-            .append("rect")
-            .attr("class", "overlay")
-            .attr("x", d => {
-                const thresholdPosition = xScale(thr_prc);
-                return xScale(d.x0); // Start the overlay from the beginning of the bar
-            })
-            .attr("y", d => yScale(d.length))
-            .attr("width", d => {
-                const thresholdPosition = xScale(thr_prc);
-                const barWidth = xScale(d.x1) - xScale(d.x0);
-                if (xScale(d.x0) < thresholdPosition && xScale(d.x1) > thresholdPosition) {
-                    // Calculate the width of the portion to color
-                    return thresholdPosition - xScale(d.x0); // Only color the left portion
-                } else {
-                    return 0; // Set width to 0 for bars where threshold is not in range
-                }
-            })
-            .attr("height", d => height - yScale(d.length))
-            .attr("fill", "grey") // Color the left portion of the overlay
-            .attr("opacity", 1); // Set opacity for transparency
-
-        // Add x-axis
-        svg.append("g")
-            .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(xScale));
-
-        // Add y-axis
-        svg.append("g")
-            .call(d3.axisLeft(yScale));
-
-        // Add a red line indicating the threshold
-        const thresholdLine = svg.append("line")
-            .attr("y1", 0)
-            .attr("y2", height)
-            .attr("stroke", "red")
-            .attr("stroke-width", 2);
-
-        // Update the position of the threshold line
-        thresholdLine.attr("x1", xScale(thr_prc))
-            .attr("x2", xScale(thr_prc));
+    // Add histogram bars
+    svg.selectAll("rect")
+        .data(bins)
+        .enter()
+        .append("rect")
+        .attr("x", d => xScale(d.x0))
+        .attr("y", d => yScale(d.length))
+        .attr("width", d => xScale(d.x1) - xScale(d.x0))
+        .attr("height", d => height - yScale(d.length))
+        .attr("fill", d => {
+            const thresholdPosition = xScale(thr_prc);
+            if (xScale(d.x1) < thresholdPosition) {
+                return "grey"; // Set the color to grey if d.x1 is less than the threshold
+            } else {
+                return "steelblue"; // Set the original bar color
+            }
         });
-    }  
-    // Initial histogram load
-    updateHistogram();
-  </script>
- 
 
+    // Add overlay for colored portion
+    svg.selectAll(".overlay")
+        .data(bins)
+        .enter()
+        .append("rect")
+        .attr("class", "overlay")
+        .attr("x", d => {
+            const thresholdPosition = xScale(thr_prc);
+            return xScale(d.x0); // Start the overlay from the beginning of the bar
+        })
+        .attr("y", d => yScale(d.length))
+        .attr("width", d => {
+            const thresholdPosition = xScale(thr_prc);
+            const barWidth = xScale(d.x1) - xScale(d.x0);
+            if (xScale(d.x0) < thresholdPosition && xScale(d.x1) > thresholdPosition) {
+                // Calculate the width of the portion to color
+                return thresholdPosition - xScale(d.x0); // Only color the left portion
+            } else {
+                return 0; // Set width to 0 for bars where threshold is not in range
+            }
+        })
+        .attr("height", d => height - yScale(d.length))
+        .attr("fill", "grey") // Color the left portion of the overlay
+        .attr("opacity", 1); // Set opacity for transparency
+
+    // Add x-axis
+    svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(xScale));
+
+    // Add y-axis
+    svg.append("g")
+        .call(d3.axisLeft(yScale));
+
+    // Add a red line indicating the threshold
+    const thresholdLine = svg.append("line")
+        .attr("y1", 0)
+        .attr("y2", height)
+        .attr("stroke", "red")
+        .attr("stroke-width", 2);
+
+    // Update the position of the threshold line
+    thresholdLine.attr("x1", xScale(thr_prc))
+        .attr("x2", xScale(thr_prc));
+}
+
+  </script><button id="computePValuesButton">P-VALUE</button>
+    <script src="https://cdn.jsdelivr.net/npm/simple-statistics-extras@1.2.0/dist/simple-statistics-extras.min.js"></script>
+
+ <script>
+  
+  // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
+  document.getElementById("computePValuesButton").addEventListener("click", function() {
+    console.log(dataC_copy)
+    console.log(data_copy)
+    console.log(dataN_copy)
+    let tTestResults = [];
+
+// Assuming data_copy contains the gene expression data
+Object.entries(data_copy).forEach(([gene, sampleData]) => {
+    const dataC = dataC_copy[gene];
+    const dataN = dataN_copy[gene];
+    
+    const cleanDataC = Object.values(dataC).filter(val => !isNaN(val));
+    const cleanDataN = Object.values(dataN).filter(val => !isNaN(val));
+    
+    if (cleanDataC.length > 0 && cleanDataN.length > 0) {
+        const tTestResult = ss.tTestTwoSample(cleanDataC, cleanDataN);
+        console.log(tTestResult)
+        tTestResults.push({ gene, pValue: tTestResult.pValue });
+    } else {
+        console.log(`Invalid data for gene ${gene}`);
+    }
+});
+
+console.log(tTestResults);       
+});
+  </script>
 
 
 
