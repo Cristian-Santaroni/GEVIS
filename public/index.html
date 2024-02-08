@@ -55,7 +55,7 @@
     const histogram = d3.histogram()
         .value(d => d)
         .domain(d3.extent(logFCData))
-        .thresholds(10000); // Number of bins
+        .thresholds(100); // Number of bins
 
     const bins = histogram(logFCData);
 
@@ -192,6 +192,13 @@
 
       // Calculate the quantile
       thr_prc = ss.quantile(data, prc_IQR);
+        
+      // Call the updateHistogram function directly
+      updateHistogram();
+
+    });
+
+    document.getElementById("thresholdSlider").addEventListener("change", function() {
 
       Promise.all([fetchData('dataC_log.txt'), fetchData('dataN_log.txt')])
       .then(([dataC, dataN]) => {
@@ -233,144 +240,111 @@
       
         console.log(thr_prc)
         var req = ocpu.call("hello", {
-          variation: data,
-          data: matrixWithHeaders,
-          dataC: dataC,
-          dataN: dataN,
-          thr_prc: thr_prc
-      }, function(session){
-          var filteredDataURL = session.loc + "/R/.val";
-          console.log(session)
-        // Fetch the filtered data from the URL
-        fetch(filteredDataURL)
-        .then(response => response.text())
-        .then(text => {
-            // Split the text into different sections based on '$'
-            const sections = text.split("$");
+            variation: data,
+            data: matrixWithHeaders,
+            dataC: dataC,
+            dataN: dataN,
+            thr_prc: thr_prc
+        }, function(session) {
+            var filteredDataURL = session.loc + "/R/.val/json";
+            console.log(session);
+            // Fetch the filtered data from the URL
+            fetch(filteredDataURL)
+                .then(response => response.json())
+                .then(data => {
+                    // Extract data from the JSON response
+                    const { newdata, newdataC, newdataN, logFC } = data;
 
-            // Parse the newdata section into a JavaScript object
-            const newdataText = sections.find(section => section.startsWith("newdata"));
-            const newDataRows = newdataText.trim().split("\n").slice(1); // Exclude header
-            const newdata = newDataRows.map(row => {
-                const cols = row.trim().split(/\s+/);
-                const gene = cols[0];
-                const values = cols.slice(1).map(parseFloat);
-                return { gene, values };
-            });
+                    // Now you have parsed the data into JavaScript objects
+                    console.log("Parsed newdata: ", newdata);
+                    console.log("Parsed newdataC: ", newdataC);
+                    console.log("Parsed newdataN: ", newdataN);
+                    console.log("Parsed logFC: ", logFC);
 
-            // Parse the newdataC section into a JavaScript object
-            const newdataCText = sections.find(section => section.startsWith("newdataC"));
-            const newDataCRows = newdataCText.trim().split("\n").slice(1); // Exclude header
-            const newdataC = newDataCRows.map(row => row.trim().split(/\s+/).map(parseFloat));
+                    updateLogFCHistogram(logFC)
 
-            // Parse the newdataN section into a JavaScript object
-            const newdataNText = sections.find(section => section.startsWith("newdataN"));
-            const newDataNRows = newdataNText.trim().split("\n").slice(1); // Exclude header
-            const newdataN = newDataNRows.map(row => row.trim().split(/\s+/).map(parseFloat));
-
-            // Parse the logFC section into a JavaScript object
-            const logFCText = sections.find(section => section.startsWith("logFC"));
-            console.log("Raw logFC text: ", logFCText); // Log raw text for debugging
-            const logFCValues = logFCText.trim().split(/\s+/).slice(1); // Exclude header and split values
-            const logFC = logFCValues.map(value => {
-                const floatValue = parseFloat(value);
-                return isNaN(floatValue) ? null : floatValue; // Convert NaN to null
-            }).filter(value => value !== null); // Filter out null values
-
-            // Now you have parsed the data into JavaScript objects
-            console.log("Parsed newdata: ", newdata);
-            console.log("Parsed newdataC: ", newdataC);
-            console.log("Parsed newdataN: ", newdataN);
-            console.log("Parsed logFC: ", logFC);
-
-            updateLogFCHistogram(logFC)
-
-            // Store or manipulate the parsed data as needed
-        })
-        .catch(error => {
-            console.error("Error fetching filtered data: ", error);
-        });
-          
-      });
-        // Handle failure of the RPC call
-        req.fail(function(){
-                  console.error("OpenCPU RPC call returned an error: " + req.responseText); 
+                    // Store or manipulate the parsed data as needed
+                })
+                .catch(error => {
+                    console.error("Error fetching filtered data: ", error);
+                });
+                  
               });
+                // Handle failure of the RPC call
+                req.fail(function(){
+                          console.error("OpenCPU RPC call returned an error: " + req.responseText); 
+                      });
 
+                    })
+              .catch(error => {
+                  console.error("Error fetching dataC: ", error);
+              });
             })
-      .catch(error => {
-          console.error("Error fetching dataC: ", error);
-      });
-    })
-
-  
-      // Call the updateHistogram function directly
-      updateHistogram();
     });
 
     function updateScatterPlot(fData) {
-  // Clear previous scatter plot content
-  d3.select("#scatterPlot").html("");
+      // Clear previous scatter plot content
+      d3.select("#scatterPlot").html("");
 
-  // Set up the SVG container for the scatter plot
-  const svgWidth = 900;
-  const svgHeight = 400;
-  const margin = { top: 20, right: 20, bottom: 30, left: 50 };
-  const width = svgWidth - margin.left - margin.right;
-  const height = svgHeight - margin.top - margin.bottom;
+      // Set up the SVG container for the scatter plot
+      const svgWidth = 900;
+      const svgHeight = 400;
+      const margin = { top: 20, right: 20, bottom: 30, left: 50 };
+      const width = svgWidth - margin.left - margin.right;
+      const height = svgHeight - margin.top - margin.bottom;
 
-  const svg = d3.select("#scatterPlot")
-    .append("svg")
-    .attr("width", svgWidth)
-    .attr("height", svgHeight)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
+      const svg = d3.select("#scatterPlot")
+        .append("svg")
+        .attr("width", svgWidth)
+        .attr("height", svgHeight)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Debugging: Print fData to console
-  console.log("fData:", fData);
+      // Debugging: Print fData to console
+      console.log("fData:", fData);
 
-  // Create scales for x and y axes
-  const xScale = d3.scaleBand()
-    .domain(fData.map(d => d.Gene))  // Gene names as x-axis labels
-    .range([0, width])
-    .padding(0.1);
+      // Create scales for x and y axes
+      const xScale = d3.scaleBand()
+        .domain(fData.map(d => d.Gene))  // Gene names as x-axis labels
+        .range([0, width])
+        .padding(0.1);
 
-  const yScale = d3.scaleLinear()
-    .domain([0, d3.max(fData, d => d3.max(Object.values(d).slice(1)))])  // Max expression value across all samples
-    .range([height, 0]);
+      const yScale = d3.scaleLinear()
+        .domain([0, d3.max(fData, d => d3.max(Object.values(d).slice(1)))])  // Max expression value across all samples
+        .range([height, 0]);
 
-  // Debugging: Print scales to console
-  console.log("xScale:", xScale.domain());
-  console.log("yScale:", yScale.domain());
+      // Debugging: Print scales to console
+      console.log("xScale:", xScale.domain());
+      console.log("yScale:", yScale.domain());
 
-  // Create circles for each data point
-  svg.selectAll("circle")
-    .data(fData)
-    .enter()
-    .append("circle")
-    .attr("cx", d => {
-      console.log("cx:", xScale(d.Gene) + xScale.bandwidth() / 2);
-      return xScale(d.Gene) + xScale.bandwidth() / 2;  // Center within the band
-    })
-    .attr("cy", d => {
-  console.log("cy:", yScale(d3.max(Object.values(d).slice(1))));
-  return yScale(d3.max(Object.values(d).slice(1)));
-    })
-    .attr("r", 5)  // Set the radius of the circles
-    .attr("fill", "steelblue");  // Set the color of the circles
+      // Create circles for each data point
+      svg.selectAll("circle")
+        .data(fData)
+        .enter()
+        .append("circle")
+        .attr("cx", d => {
+          console.log("cx:", xScale(d.Gene) + xScale.bandwidth() / 2);
+          return xScale(d.Gene) + xScale.bandwidth() / 2;  // Center within the band
+        })
+        .attr("cy", d => {
+      console.log("cy:", yScale(d3.max(Object.values(d).slice(1))));
+      return yScale(d3.max(Object.values(d).slice(1)));
+        })
+        .attr("r", 5)  // Set the radius of the circles
+        .attr("fill", "steelblue");  // Set the color of the circles
 
-  // Add x-axis
-  svg.append("g")
-    .attr("transform", `translate(0,${height})`)
-    .call(d3.axisBottom(xScale))
-    .selectAll("text")
-    .attr("transform", "rotate(-45)")
-    .style("text-anchor", "end");
+      // Add x-axis
+      svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(xScale))
+        .selectAll("text")
+        .attr("transform", "rotate(-45)")
+        .style("text-anchor", "end");
 
-  // Add y-axis
-  svg.append("g")
-    .call(d3.axisLeft(yScale));
-}
+      // Add y-axis
+      svg.append("g")
+        .call(d3.axisLeft(yScale));
+    }
 
 
 
