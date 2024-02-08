@@ -27,6 +27,12 @@
   </div>
 
   <h2>LogFC Histogram</h2>
+  <div>
+    <label for="log_thresholdSlider">LogFC threshold:</label>
+    <input type="range" id="log_thresholdSlider" min="1.1" max="10" step="0.01" value="1.1">
+    <span id="log_thresholdSliderValue">1.1</span>
+  </div>
+
   <div id="logFCHistogram">
   </div>
 
@@ -112,8 +118,48 @@
         .attr("y", -margin.top * 0.7)
         .attr("text-anchor", "middle")
         .style("font-size", "18px")
-        .text("FC (logarithmic) frequency distribution");
-}
+        .text("FC (logarithmic) frequency distribution")
+    
+    // Add ablines
+    svg.append("line")
+        .attr("x1", xScale(-Math.log2(thr_fc)))
+        .attr("y1", 0)
+        .attr("x2", xScale(-Math.log2(thr_fc)))
+        .attr("y2", height)
+        .style("stroke", "red")
+        .style("stroke-width", "2");
+
+    svg.append("line")
+        .attr("x1", xScale(Math.log2(thr_fc)))
+        .attr("y1", 0)
+        .attr("x2", xScale(Math.log2(thr_fc)))
+        .attr("y2", height)
+        .style("stroke", "red")
+        .style("stroke-width", "2");
+
+// Add overlay for colored portion
+svg.selectAll(".overlay")
+    .data(bins)
+    .enter()
+    .append("rect")
+    .attr("class", "overlay")
+    .attr("x", d => {
+        const thresholdPosition = xScale(-Math.log2(thr_fc)); // Position of the left abline
+        return thresholdPosition < xScale(d.x0) ? xScale(d.x0) : thresholdPosition; // Start the overlay from the greater of the two positions
+    })
+    .attr("y", d => yScale(d.length)) // Start from the bottom of each bin
+    .attr("width", d => {
+        const thresholdPositionLeft = xScale(-Math.log2(thr_fc)); // Position of the left abline
+        const thresholdPositionRight = xScale(Math.log2(thr_fc)); // Position of the right abline
+        const barWidth = xScale(d.x1) - xScale(d.x0);
+        // Calculate the width of the portion to color
+        return Math.max(0, Math.min(thresholdPositionRight, xScale(d.x1)) - Math.max(thresholdPositionLeft, xScale(d.x0)));
+    })
+    .attr("height", d => height - yScale(d.length)) // Set the height based on the height of each bin
+    .attr("fill", "grey") // Color the portion of the overlay
+    .attr("opacity", 1); // Set opacity for transparency
+
+  }
 
     </script>
 
@@ -128,6 +174,9 @@
     let matrix;
     let dataC;
     let dataN;
+    let thr_fc = 1.1;
+    let logFC_data;
+    let log_thr_fc = Math.log2(thr_fc);
 
     // Define a function to fetch data from a file with no header
     function fetchData(filename) {
@@ -254,6 +303,7 @@
                 .then(data => {
                     // Extract data from the JSON response
                     const { newdata, newdataC, newdataN, logFC } = data;
+                    logFC_data = logFC
 
                     // Now you have parsed the data into JavaScript objects
                     console.log("Parsed newdata: ", newdata);
@@ -281,6 +331,19 @@
               });
             })
     });
+
+    document.getElementById("log_thresholdSlider").addEventListener("input", function() {
+      // Update the threshold value on slider change
+      thr_fc = parseFloat(this.value);
+      document.getElementById("log_thresholdSliderValue").innerText = thr_fc;
+
+      // Calculate the quantile
+      log_thr_fc = Math.log2(thr_fc);
+        
+      // Call the updateHistogram function directly
+      updateLogFCHistogram(logFC_data);
+    });
+
 
     function updateScatterPlot(fData) {
       // Clear previous scatter plot content
