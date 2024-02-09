@@ -706,6 +706,7 @@
     <script src="https://cdn.jsdelivr.net/npm/simple-statistics-extras@1.2.0/dist/simple-statistics-extras.min.js"></script>
 
  <script>
+
   
   // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
   document.getElementById("computePValuesButton").addEventListener("click", function() {
@@ -734,11 +735,49 @@ Object.entries(data_copy).forEach(([gene, sampleData]) => {
 console.log(tTestResults);       
 });
   </script>
+<div id="tTestResults"></div>
 
+<script type="module">
+    import ttest from 'https://cdn.jsdelivr.net/gh/stdlib-js/stats-ttest@esm/index.mjs';
+    document.getElementById("computePValuesButton").addEventListener("click", function() {
 
+    // Your JavaScript code here
+    let tTestResults = [];
+    data_copy.forEach(geneObj => {
+    const gene = geneObj.gene;
+    const dataCObj = dataC_original.find(obj => obj.gene === gene);
+    const dataNObj = dataN_original.find(obj => obj.gene === gene);
 
+    if (dataCObj && dataNObj) {
+        const cleanDataC = Object.values(dataCObj).filter((val, key) => key !== 'gene' && !isNaN(val));
+        const cleanDataN = Object.values(dataNObj).filter((val, key) => key !== 'gene' && !isNaN(val));
+        console.log
 
-  
+        if (cleanDataC.length > 0 && cleanDataN.length > 0) {
+            const tTestResult = ttest(cleanDataC, cleanDataN);
+            tTestResults.push({ gene, tTestResult });
+        } else {
+            console.log(`Invalid data for gene ${gene}`);
+        }
+    } else {
+        console.log(`Gene ${gene} not found in dataC_original or dataN_original`);
+    }
+    
+  console.log(tTestResults);       
+
+    // Display the results
+    const tTestResultsContainer = document.getElementById('tTestResults');
+    tTestResults.forEach(result => {
+        const pValueFormatted = result.tTestResult.pValue.toFixed(4); // Adjust the number of decimal places as needed
+        const resultElement = document.createElement('p');
+        resultElement.textContent = `Gene ${result.gene}: p-value = ${pValueFormatted}`;
+        tTestResultsContainer.appendChild(resultElement);
+    });
+  });
+})
+
+</script>
+
 
 </body>
 </html>
