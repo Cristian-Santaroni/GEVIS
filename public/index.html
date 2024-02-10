@@ -191,6 +191,7 @@
     let newdataJSON
     let newdataCJSON
     let first_filter_number_genes;
+    let p_val_adj;
 
     function calculateLogFC(dataC, dataN) {
     const logFCData = [];
@@ -713,70 +714,69 @@
     console.log(dataC_copy)
     console.log(data_copy)
     console.log(dataN_copy)
-    let tTestResults = [];
+    
+      var req = ocpu.call("hello", {
+            data: data_copy,
+            dataC: dataC_copy,
+            dataN: dataN_copy
+        }, function(session) {
+            var filteredDataURL = session.loc + "/R/.val/json";
+            console.log(session);
+            // Fetch the filtered data from the URL
+            fetch(filteredDataURL)
+                .then(response => response.json())
+                .then(data => {
+                  p_val_adj=data
+                  console.log(data)
 
-// Assuming data_copy contains the gene expression data
-Object.entries(data_copy).forEach(([gene, sampleData]) => {
-    const dataC = dataC_copy[gene];
-    const dataN = dataN_copy[gene];
-    
-    const cleanDataC = Object.values(dataC).filter(val => !isNaN(val));
-    const cleanDataN = Object.values(dataN).filter(val => !isNaN(val));
-    
-    if (cleanDataC.length > 0 && cleanDataN.length > 0) {
-        const tTestResult = ss.tTestTwoSample(cleanDataC, cleanDataN);
-        console.log(tTestResult)
-        tTestResults.push({ gene, pValue: tTestResult.pValue });
-    } else {
-        console.log(`Invalid data for gene ${gene}`);
-    }
+                
+      const ind = p_val_adj.reduce((result, entry, index) => {
+          
+          if (entry.pval_adj > 0.05) {
+            result.push(index);
+          }
+          return result;
+        }, []);
+
+        if (ind.length > 0) {
+
+            //console.log(parsedLogFC.length)
+
+            // Remove entries corresponding to ind from dataN
+
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+
+
+            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from genes
+            //   genes = genes.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from logFC
+            //parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
+
+            //console.log(parsedLogFC.length)
+
+            console.log(data_copy)
+            console.log(dataN_copy)
+            console.log(dataC_copy)
+
+                              }
+
+      });
+    })
+
 });
 
-console.log(tTestResults);       
-});
+
   </script>
+
 <div id="tTestResults"></div>
 
-<script type="module">
-    import ttest from 'https://cdn.jsdelivr.net/gh/stdlib-js/stats-ttest@esm/index.mjs';
-    document.getElementById("computePValuesButton").addEventListener("click", function() {
-
-    // Your JavaScript code here
-    let tTestResults = [];
-    data_copy.forEach(geneObj => {
-    const gene = geneObj.gene;
-    const dataCObj = dataC_original.find(obj => obj.gene === gene);
-    const dataNObj = dataN_original.find(obj => obj.gene === gene);
-
-    if (dataCObj && dataNObj) {
-        const cleanDataC = Object.values(dataCObj).filter((val, key) => key !== 'gene' && !isNaN(val));
-        const cleanDataN = Object.values(dataNObj).filter((val, key) => key !== 'gene' && !isNaN(val));
-        console.log
-
-        if (cleanDataC.length > 0 && cleanDataN.length > 0) {
-            const tTestResult = ttest(cleanDataC, cleanDataN);
-            tTestResults.push({ gene, tTestResult });
-        } else {
-            console.log(`Invalid data for gene ${gene}`);
-        }
-    } else {
-        console.log(`Gene ${gene} not found in dataC_original or dataN_original`);
-    }
-    
-  console.log(tTestResults);       
-
-    // Display the results
-    const tTestResultsContainer = document.getElementById('tTestResults');
-    tTestResults.forEach(result => {
-        const pValueFormatted = result.tTestResult.pValue.toFixed(4); // Adjust the number of decimal places as needed
-        const resultElement = document.createElement('p');
-        resultElement.textContent = `Gene ${result.gene}: p-value = ${pValueFormatted}`;
-        tTestResultsContainer.appendChild(resultElement);
-    });
-  });
-})
-
-</script>
 
 
 </body>

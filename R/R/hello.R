@@ -1,39 +1,26 @@
+hello <- function(data, dataN, dataC) {
+  # Save the column of genes before removing the last column
+  genes <- data[, ncol(data)]
 
+  # Assuming data, dataN, and dataC are your matrices
+  data <- data[, -ncol(data)]
+  dataN <- dataN[, -ncol(dataN)]
+  dataC <- dataC[, -ncol(dataC)]
 
-hello <- function(data, dataC, dataN, variation, thr_prc) {
-  ind <- which(variation <= thr_prc)
-  number <- nrow(data)
-  print(paste("genes before filtering:", number))
+  N <- ncol(dataN)
+  M <- ncol(dataC)
+  # Now, the last column has been removed from each matrix
 
-  newdata <- data[-ind, ]
-  newdataC <- dataC[-ind, ]
-  newdataN <- dataN[-ind, ]
-  
-  # Exclude the first column (gene names) before calculating row means
-  newdataC_numeric <- as.matrix(newdataC[, -1])
-  newdataN_numeric <- as.matrix(newdataN[, -1])
+  # x is the first gene of the data matrix
+  pval <- apply(data, 1, function(x) {
+    t.test(x[1:N], x[(N+1):(M+N)], paired=FALSE)$p.value
+  })
 
-  number <- nrow(newdata)
+  # Adjustment p-value
+  pval_adj <- p.adjust(pval, method="fdr")
 
-  # Calculate row means for numeric columns only
-  logFC <- rowMeans(newdataC_numeric) - rowMeans(newdataN_numeric)
+  # Add the column of genes back to the result
+  result <- data.frame(Gene = genes, pval_adj = pval_adj)
 
-
-  print(paste("genes after filtering:", number))
-
-  # Create a named vector with gene names as names and log fold change values as elements
-  logFC_named <- setNames(logFC, newdataC[, 1])
-
-  # Convert named vector to a data frame with columns "Gene" and "logFC"
-  logFC_df <- data.frame(Gene = names(logFC_named), logFC = logFC_named, row.names = NULL)
-
-  # Convert data frame to a JSON string
-  logFC_json <- jsonlite::toJSON(logFC_df, auto_unbox = TRUE)
-
-  # Print or return the JSON string
-  print(logFC_json)
-
-
-  return(list(newdata = newdata, newdataC = newdataC, newdataN = newdataN, logFC = logFC_json))
+  return(result)
 }
-
