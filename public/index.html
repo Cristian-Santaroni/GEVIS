@@ -194,6 +194,11 @@
     let first_filter_number_genes;
     let p_val_adj;
 
+    let averageExpressions10C;
+    let averageExpressions10N;
+    let averageExpressionsC;
+    let averageExpressionsN;
+
     function calculateLogFC(dataC, dataN) {
     const logFCData = [];
 
@@ -352,11 +357,11 @@
             //console.log(dataC_copy)
             //console.log(dataN_copy)
 
-            var averageExpressionsC = calculateAverageExpressions(dataC_copy);
-            var averageExpressionsN = calculateAverageExpressions(dataN_copy);
+             averageExpressionsC = calculateAverageExpressions(dataC_copy);
+             averageExpressionsN = calculateAverageExpressions(dataN_copy);
 
-            var averageExpressions10C = calculateAverageLog10Expressions(dataC_copy);
-            var averageExpressions10N = calculateAverageLog10Expressions(dataN_copy);
+             averageExpressions10C = calculateAverageLog10Expressions(dataC_copy);
+             averageExpressions10N = calculateAverageLog10Expressions(dataN_copy);
 
 
 
@@ -370,8 +375,10 @@
                   // Calculate the quantile
             log_thr_fc = Math.log2(thr_fc);  
 
+
+
             updateScatterPlot(averageExpressionsN,averageExpressionsC,log_thr_fc,parsedLogFC_origin)
-            updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin)
+           // updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin)
 
 
             const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
@@ -583,12 +590,14 @@ function calculateAverageLog10Expressions(dataArray) {
 
       // Call the updateHistogram function directly
       updateLogFCHistogram(parsedLogFC_origin);
+      console.log(log_thr_fc)
+      updateScatterPlot(averageExpressionsN,averageExpressionsC,log_thr_fc,parsedLogFC_origin)
     });
 
     document.getElementById("log_thresholdSlider").addEventListener("change", function() {
 
-      console.log("sono dentro")
-      console.log("threshold "+thr_fc)
+     // console.log("sono dentro")
+      //console.log("threshold "+thr_fc)
         // Find indices where abs(logFC) < log2(thr_fc)
         const ind = parsedLogFC_origin.reduce((result, entry, index) => {
           
@@ -599,8 +608,6 @@ function calculateAverageLog10Expressions(dataArray) {
           return result;
         }, []);
 
-        
-      
         
         if (ind.length > 0) {
 
@@ -652,11 +659,22 @@ function calculateAverageLog10Expressions(dataArray) {
 
     // Create SVG container
     var svg = d3.select("#scatterPlot")
+        .html("")  // Clear previous content
         .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+        svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", -margin.top * 0.7)
+        .attr("text-anchor", "middle")
+        .style("font-size", "18px")
+        .text("Scatterplot");
+
+
 
     // Add X axis
     svg.append("g")
@@ -677,6 +695,7 @@ function calculateAverageLog10Expressions(dataArray) {
     return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC };
 });
     console.log(data)
+    var tooltip = d3.select("#tooltip");
 
     svg.selectAll("circle")
     .data(data)
@@ -692,12 +711,32 @@ function calculateAverageLog10Expressions(dataArray) {
             return "blue";
         }
         else{
-          return "yellow"
+          return "grey"
         }
     })
     .on("mouseover", function (event, d) {
-        // Add tooltip or other interactions if needed
-        // Example: console.log("Mouseover:", d.gene);
+        // Highlight the gene on mouseover
+        d3.select(this)
+            .style("stroke", "black")
+            .style("stroke-width", 2);
+
+        // Display tooltip on mouseover
+        tooltip.transition()
+            .duration(200)
+            .style("opacity", .9);
+
+        tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Expression (N):</strong> ${d.x.toFixed(2)}<br><strong>Expression (C):</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}`)
+            .style("left", (event.pageX + 5) + "px")
+            .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", function (d) {
+        // Remove the highlight and hide tooltip on mouseout
+        d3.select(this)
+            .style("stroke", "none");
+
+        tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
     });
 }
 
@@ -803,14 +842,9 @@ function calculateAverageLog10Expressions(dataArray) {
         .attr("x2", xScale(thr_prc));
 }
 
-  </script><button id="computePValuesButton">P-VALUE</button>
-    <script src="https://cdn.jsdelivr.net/npm/simple-statistics-extras@1.2.0/dist/simple-statistics-extras.min.js"></script>
-
- <script>
-
   
   // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
-  document.getElementById("computePValuesButton").addEventListener("click", function() {
+ /* document.getElementById("computePValuesButton").addEventListener("click", function() {
     console.log(dataC_copy)
     console.log(data_copy)
     console.log(dataN_copy)
@@ -870,11 +904,12 @@ function calculateAverageLog10Expressions(dataArray) {
       });
     })
 
-});
+});*/
+
 
 
   </script>
-
+<div id="tooltip" style="position: absolute; opacity: 0; background-color: white; border: 1px solid #ddd; padding: 10px;"></div>
 <div id="tTestResults"></div>
 
 
