@@ -377,8 +377,8 @@
 
 
 
-            updateScatterPlot(averageExpressionsN,averageExpressionsC,log_thr_fc,parsedLogFC_origin)
-           // updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin)
+           // updateScatterPlot(averageExpressionsN,averageExpressionsC,log_thr_fc,parsedLogFC_origin)
+            updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin)
 
 
             const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
@@ -591,7 +591,7 @@ function calculateAverageLog10Expressions(dataArray) {
       // Call the updateHistogram function directly
       updateLogFCHistogram(parsedLogFC_origin);
       console.log(log_thr_fc)
-      updateScatterPlot(averageExpressionsN,averageExpressionsC,log_thr_fc,parsedLogFC_origin)
+      updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin)
     });
 
     document.getElementById("log_thresholdSlider").addEventListener("change", function() {
@@ -611,7 +611,7 @@ function calculateAverageLog10Expressions(dataArray) {
         
         if (ind.length > 0) {
 
-          console.log(parsedLogFC.length)
+         // console.log(parsedLogFC.length)
 
           // Remove entries corresponding to ind from dataN
 
@@ -629,7 +629,7 @@ function calculateAverageLog10Expressions(dataArray) {
           // Remove entries corresponding to ind from logFC
           parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
           
-          console.log(parsedLogFC.length)
+          //console.log(parsedLogFC.length)
 
         }
 
@@ -694,7 +694,7 @@ function calculateAverageLog10Expressions(dataArray) {
 
     return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC };
 });
-    console.log(data)
+    //console.log(data)
     var tooltip = d3.select("#tooltip");
 
     svg.selectAll("circle")
@@ -702,7 +702,7 @@ function calculateAverageLog10Expressions(dataArray) {
     .enter().append("circle")
     .attr("cx", d => xScale(d.x))
     .attr("cy", d => yScale(d.y))
-    .attr("r", 5)
+    .attr("r", 2)
     .style("fill", d => {
         // Check if logFC is greater than or equal to the threshold
         if (d.logFC >= log_thr_fc) {
@@ -725,7 +725,7 @@ function calculateAverageLog10Expressions(dataArray) {
             .duration(200)
             .style("opacity", .9);
 
-        tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Expression (N):</strong> ${d.x.toFixed(2)}<br><strong>Expression (C):</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}`)
+        tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}`)
             .style("left", (event.pageX + 5) + "px")
             .style("top", (event.pageY - 28) + "px");
     })
