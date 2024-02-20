@@ -40,7 +40,7 @@
   </div>
   <div id="geneCount2"></div>
   <div id="scatterPlot"></div>
-
+  <button id="computePValuesButton" > compute p-val</button>
 
   <script>
     // Your existing JavaScript code goes here
@@ -844,7 +844,7 @@ function calculateAverageLog10Expressions(dataArray) {
 
   
   // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
- /* document.getElementById("computePValuesButton").addEventListener("click", function() {
+  document.getElementById("computePValuesButton").addEventListener("click", function() {
     console.log(dataC_copy)
     console.log(data_copy)
     console.log(dataN_copy)
@@ -904,11 +904,12 @@ function calculateAverageLog10Expressions(dataArray) {
       });
     })
 
-});*/
+});
 
 
 
   </script>
+ 
 <div id="tooltip" style="position: absolute; opacity: 0; background-color: white; border: 1px solid #ddd; padding: 10px;"></div>
 <div id="tTestResults"></div>
 
