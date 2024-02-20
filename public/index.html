@@ -39,6 +39,7 @@
   <div id="logFCHistogram">
   </div>
   <div id="geneCount2"></div>
+  <div id="scatterPlot"></div>
 
 
   <script>
@@ -168,7 +169,7 @@
 
 
   <script>
-    ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
+    //ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
     let variation_data;
     let variation_data_copy;
     let initial_num_genes;
@@ -347,10 +348,32 @@
 
             parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
             parsedLogFC = parsedLogFC_origin
+            
+            //console.log(dataC_copy)
+            //console.log(dataN_copy)
 
+            var averageExpressionsC = calculateAverageExpressions(dataC_copy);
+            var averageExpressionsN = calculateAverageExpressions(dataN_copy);
+
+            var averageExpressions10C = calculateAverageLog10Expressions(dataC_copy);
+            var averageExpressions10N = calculateAverageLog10Expressions(dataN_copy);
+
+
+
+
+            //console.log(averageExpressionsC);
+            //console.log(averageExpressionsN);
             updateLogFCHistogram(parsedLogFC_origin)
+            //updateScatterPlot(averageExpressionsN,averageExpressionsC)
+            //updateScatterPlot(averageExpressions10N,averageExpressions10C)
+
                   // Calculate the quantile
             log_thr_fc = Math.log2(thr_fc);  
+
+            updateScatterPlot(averageExpressionsN,averageExpressionsC,log_thr_fc,parsedLogFC_origin)
+            updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin)
+
+
             const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
           
                 if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
@@ -366,6 +389,73 @@
           })
           .catch(error => console.error('Error reading file:', error));
         });
+
+  function calculateAverageExpressions(dataArray) {
+    // Create an object to store the sum and count for each gene
+    var geneSumCount = {};
+
+    // Iterate through each gene object in the array
+    dataArray.forEach(function (geneData) {
+        var gene = geneData.gene;
+
+        // Iterate through each property (sample) in the gene object
+        for (var sample in geneData) {
+            if (sample !== 'gene') {
+                // If the gene is not in the sumCount object, initialize it
+                if (!geneSumCount[gene]) {
+                    geneSumCount[gene] = { sum: 0, count: 0 };
+                }
+
+                // Add the expression value to the sum and increment the count
+                geneSumCount[gene].sum += parseFloat(geneData[sample]);
+                geneSumCount[gene].count++;
+            }
+        }
+    });
+
+    // Calculate the average for each gene
+    var averageExpressions = {};
+    for (var gene in geneSumCount) {
+        averageExpressions[gene] = geneSumCount[gene].sum / geneSumCount[gene].count;
+    }
+
+    return averageExpressions;
+}
+
+function calculateAverageLog10Expressions(dataArray) {
+    // Create an object to store the sum and count for each gene
+    var geneSumCount = {};
+
+    // Iterate through each gene object in the array
+    dataArray.forEach(function (geneData) {
+        var gene = geneData.gene;
+
+        // Iterate through each property (sample) in the gene object
+        for (var sample in geneData) {
+            if (sample !== 'gene') {
+                // If the gene is not in the sumCount object, initialize it
+                if (!geneSumCount[gene]) {
+                    geneSumCount[gene] = { sum: 0, count: 0 };
+                }
+
+                // Apply Math.log10 to the expression value before summing
+                var log10Expression = Math.log2(parseFloat(geneData[sample]));
+
+                // Add the log10 expression value to the sum and increment the count
+                geneSumCount[gene].sum += log10Expression;
+                geneSumCount[gene].count++;
+            }
+        }
+    });
+
+    // Calculate the average log10 expression for each gene
+    var averageLog10Expressions = {};
+    for (var gene in geneSumCount) {
+        averageLog10Expressions[gene] = geneSumCount[gene].sum / geneSumCount[gene].count;
+    }
+
+    return averageLog10Expressions;
+}
       
 
     document.getElementById("thresholdSlider").addEventListener("input", function() {
@@ -408,6 +498,9 @@
       parsedLogFC = parsedLogFC_origin
 
       updateLogFCHistogram(parsedLogFC_origin)
+
+      //updateScatterPlot(parsedLogFC_origin)
+
 
       log_thr_fc = Math.log2(thr_fc);  
             const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
@@ -540,69 +633,76 @@
     })
 
 
-    function updateScatterPlot(fData) {
-      // Clear previous scatter plot content
-      d3.select("#scatterPlot").html("");
+    function updateScatterPlot(averageExpressionsN, averageExpressionsC,log_thr_fc,parsedLogFC_origin) {
+    // Set up margin, width, and height
+    var margin = { top: 10, right: 30, bottom: 30, left: 60 };
+    var width = 600 - margin.left - margin.right;
+    var height = 400 - margin.top - margin.bottom;
 
-      // Set up the SVG container for the scatter plot
-      const svgWidth = 900;
-      const svgHeight = 400;
-      const margin = { top: 20, right: 20, bottom: 30, left: 50 };
-      const width = svgWidth - margin.left - margin.right;
-      const height = svgHeight - margin.top - margin.bottom;
+  
 
-      const svg = d3.select("#scatterPlot")
-        .append("svg")
-        .attr("width", svgWidth)
-        .attr("height", svgHeight)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+    // Create x and y scales
+    var xScale = d3.scaleLinear()
+        .domain(d3.extent(Object.values(averageExpressionsN)))
+        .range([0, width]);
 
-      // Debugging: Print fData to console
-      console.log("fData:", fData);
-
-      // Create scales for x and y axes
-      const xScale = d3.scaleBand()
-        .domain(fData.map(d => d.Gene))  // Gene names as x-axis labels
-        .range([0, width])
-        .padding(0.1);
-
-      const yScale = d3.scaleLinear()
-        .domain([0, d3.max(fData, d => d3.max(Object.values(d).slice(1)))])  // Max expression value across all samples
+    var yScale = d3.scaleLinear()
+        .domain(d3.extent(Object.values(averageExpressionsC)))
         .range([height, 0]);
 
-      // Debugging: Print scales to console
-      console.log("xScale:", xScale.domain());
-      console.log("yScale:", yScale.domain());
+    // Create SVG container
+    var svg = d3.select("#scatterPlot")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      // Create circles for each data point
-      svg.selectAll("circle")
-        .data(fData)
-        .enter()
-        .append("circle")
-        .attr("cx", d => {
-          console.log("cx:", xScale(d.Gene) + xScale.bandwidth() / 2);
-          return xScale(d.Gene) + xScale.bandwidth() / 2;  // Center within the band
-        })
-        .attr("cy", d => {
-      console.log("cy:", yScale(d3.max(Object.values(d).slice(1))));
-      return yScale(d3.max(Object.values(d).slice(1)));
-        })
-        .attr("r", 5)  // Set the radius of the circles
-        .attr("fill", "steelblue");  // Set the color of the circles
+    // Add X axis
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale));
 
-      // Add x-axis
-      svg.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(xScale))
-        .selectAll("text")
-        .attr("transform", "rotate(-45)")
-        .style("text-anchor", "end");
-
-      // Add y-axis
-      svg.append("g")
+    // Add Y axis
+    svg.append("g")
         .call(d3.axisLeft(yScale));
-    }
+
+    //console.log(parsedLogFC_origin)
+    // Create circles for each gene
+    var data = Object.keys(averageExpressionsN).map(function (gene) {
+    // Find the corresponding logFC value from parsedLogFC_origin
+    var logFCObj = parsedLogFC_origin.find(d => d.Gene === gene) || null;
+    var logFC = logFCObj ? logFCObj.logFC : null;
+
+    return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC };
+});
+    console.log(data)
+
+    svg.selectAll("circle")
+    .data(data)
+    .enter().append("circle")
+    .attr("cx", d => xScale(d.x))
+    .attr("cy", d => yScale(d.y))
+    .attr("r", 5)
+    .style("fill", d => {
+        // Check if logFC is greater than or equal to the threshold
+        if (d.logFC >= log_thr_fc) {
+            return "red";
+        } else if(d.logFC <= -(log_thr_fc)) {
+            return "blue";
+        }
+        else{
+          return "yellow"
+        }
+    })
+    .on("mouseover", function (event, d) {
+        // Add tooltip or other interactions if needed
+        // Example: console.log("Mouseover:", d.gene);
+    });
+}
+
+
+
 
     function updateHistogram(variation_data) {
     // Filter data based on the threshold
@@ -757,7 +857,7 @@
             //   genes = genes.filter((entry, index) => !ind.includes(index));
 
             // Remove entries corresponding to ind from logFC
-            //parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
+            parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
 
             //console.log(parsedLogFC.length)
 
