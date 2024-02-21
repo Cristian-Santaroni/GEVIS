@@ -37,8 +37,7 @@
     <span id="log_thresholdSliderValue">1.1</span>
   </div>
 
-  <div id="logFCHistogram">
-  </div>
+  <div id="logFCHistogram"></div>
   <div id="geneCount2"></div><br>
   <div id="scatterPlot"></div>
   <button id="computePValuesButton" > compute p-val</button>
@@ -1103,6 +1102,19 @@ svg.append("text")
       .attr("stroke", "black")
       .style("width", 80)
 
+      var jitterWidth = 50
+    svg
+      .selectAll("indPoints")
+      .data(combinedData)
+      .enter()
+      .append("circle")
+        .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
+        .attr("cy", function(d){return(y(d.expression))})
+        .attr("r", 4)
+        .style("fill", "white")
+        .attr("stroke", "black")
+
+
 
   }
 
@@ -1258,7 +1270,7 @@ svg.append("text")
     .attr("y", margin.top)
     .attr("text-anchor", "middle")
     .style("font-size", "18px")
-    .text("The most Down Upregulated Gene " + geneName);
+    .text("The Most Downregulated Gene " + geneName);
 
 
    svg
@@ -1286,6 +1298,7 @@ svg.append("text")
         .attr("width", boxWidth )
         .attr("stroke", "black")
         .style("fill", "#69b3a2")
+
     svg
     .selectAll("medianLines")
     .data(sumstat)
@@ -1297,6 +1310,18 @@ svg.append("text")
       .attr("y2", function(d){return(y(d.value.median))})
       .attr("stroke", "black")
       .style("width", 80)
+
+    var jitterWidth = 50
+    svg
+      .selectAll("indPoints")
+      .data(combinedData)
+      .enter()
+      .append("circle")
+        .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
+        .attr("cy", function(d){return(y(d.expression))})
+        .attr("r", 4)
+        .style("fill", "white")
+        .attr("stroke", "black")
 
 
   }
