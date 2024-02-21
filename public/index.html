@@ -43,6 +43,7 @@
   <div id="scatterPlot"></div>
   <button id="computePValuesButton" > compute p-val</button>
   <div id="boxPlot"></div>
+  <div id="boxPlot1"></div>
 
 
   <script>
@@ -61,6 +62,9 @@
     let data_copy;
     let dataC_copy;
     let dataN_copy;
+    let data_copy1;
+    let dataC_copy1;
+    let dataN_copy1;
     let thr_fc = 1.1;
     let logFC_data;
     let log_thr_fc = Math.log2(thr_fc);
@@ -212,13 +216,13 @@
             if (ind.length > 0) {
 
               // Remove entries corresponding to ind from dataN
-              data_copy = data_original.filter((entry, index) => !ind.includes(index));
+              data_copy1 = data_original.filter((entry, index) => !ind.includes(index));
 
               // Remove entries corresponding to ind from dataC
-              dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+              dataC_copy1 = dataC_original.filter((entry, index) => !ind.includes(index));
 
               // Remove entries corresponding to ind from data
-              dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+              dataN_copy1 = dataN_original.filter((entry, index) => !ind.includes(index));
 
               // Remove entries corresponding to ind from genes
               //genes = genes.filter((entry, index) => !ind.includes(index));
@@ -227,6 +231,11 @@
               //parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
 
             }
+            dataN_copy=dataN_copy1
+            dataC_copy=dataC_copy1
+            data_copy=data_copy1
+
+
             // Update the gene count display
             const geneCountDiv = document.getElementById('geneCount');
             geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
@@ -236,13 +245,11 @@
             parsedLogFC_origin1= calculateLogFC(dataC_original,dataN_original)
             parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
             parsedLogFC = parsedLogFC_origin
-            
-            //console.log(dataC_copy)
-            //console.log(dataN_copy)
 
-             //averageExpressionsC = calculateAverageExpressions(dataC_copy);
-             //averageExpressionsN = calculateAverageExpressions(dataN_copy);
-
+             console.log("first parsed origin after",parsedLogFC_origin.length)
+             console.log("first data orign afterN ",dataN_copy.length)
+             console.log("first data orign afterC ",dataC_copy.length)
+          
              averageExpressions10C = calculateAverageLog10Expressions(dataC_copy);
              averageExpressions10N = calculateAverageLog10Expressions(dataN_copy);
 
@@ -251,21 +258,14 @@
                 .then(response => response.json())
                 .then(data => {
                   p_val_adj=data
-                  //console.log(data)
-
-            //console.log(p_val_adj)
-            //console.log(averageExpressionsC);
-            //console.log(averageExpressionsN);
+               
+            
+            
             updateLogFCHistogram(parsedLogFC_origin)
             
 
                   // Calculate the quantile
-            log_thr_fc = Math.log2(thr_fc);  
-
-
-
-           
-            //updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,p_val_adj)
+            log_thr_fc = Math.log2(thr_fc);           
 
           })
             const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
@@ -311,7 +311,7 @@
         // Remove entries corresponding to ind from data
         dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
 
-        data_copy= data_original.filter((entry, index) => !ind.includes(index));
+        data_copy  = data_original.filter((entry, index) => !ind.includes(index));
         
         // Remove entries corresponding to ind from genes
         //genes = genes.filter((entry, index) => !ind.includes(index));
@@ -363,10 +363,12 @@
         // Remove entries corresponding to ind from dataN
         data_copy = data_original.filter((entry, index) => !ind.includes(index));
 
+        dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
 
+        // Remove entries corresponding to ind from data
+        dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
         // Remove entries corresponding to ind from genes
         //genes = genes.filter((entry, index) => !ind.includes(index));
-
 
       }
       // Update the gene count display
@@ -407,17 +409,36 @@
           return result;
         }, []);
 
+        console.log("parsed log before ",parsedLogFC.length)
+        console.log("data copy beforeC ",dataC_copy.length)
+        console.log("data copy beforeN ",dataN_copy.length)
+        /////////////////////// 
+        
+        //DIMENSIONE DI PARSED E DATAC,DATAN SONO UGUALI , GIUSTAMENTE
+
+        //////////////////////
+
         if (ind.length>0){
 
-          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
           // Remove entries corresponding to ind from dataN
-          dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+          dataC_copy = dataC_copy1.filter((entry, index) => !ind.includes(index));
 
           // Remove entries corresponding to ind from dataN
-          dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+          dataN_copy = dataN_copy1.filter((entry, index) => !ind.includes(index));
 
-          data_copy = data_original.filter((entry, index) => !ind.includes(index));
+          data_copy = data_copy1.filter((entry, index) => !ind.includes(index));
+
+          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index)); 
         }
+        /////////////////////// 
+
+        //DIMENSIONE DI PARSED E DATAC,DATAN SONO DIVERSE , QUESTA COSA E' GIUSTA?
+
+        //////////////////////
+        console.log("parsed log after",parsedLogFC.length)
+        console.log("data copy afterC ",dataC_copy.length)
+        console.log("data copy afterN",dataN_copy.length)
+
 
       const geneCountDiv = document.getElementById('geneCount2');
       geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
@@ -428,7 +449,7 @@
       //updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,old_p_adj)
     });
 
-    document.getElementById("log_thresholdSlider").addEventListener("change", function() {
+   /* document.getElementById("log_thresholdSlider").addEventListener("change", function() {
 
      // console.log("sono dentro")
       //console.log("threshold "+thr_fc)
@@ -442,8 +463,10 @@
           return result;
         }, []);
         
-        console.log("parsed log ",parsedLogFC.length)
-        console.log("data copy before",data_copy.length)
+        //console.log("parsed log ",parsedLogFC.length)
+        //console.log("data copy beforeC ",dataC_copy.length)
+        //console.log("data copy beforeN",dataN_copy.length)
+        
         
         if (ind.length > 0) {
 
@@ -451,21 +474,14 @@
           // Remove entries corresponding to ind from dataN
 
           // Remove entries corresponding to ind from dataN
-          dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+          dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
 
           // Remove entries corresponding to ind from dataN
-          dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+          dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
 
-          data_copy = data_original.filter((entry, index) => !ind.includes(index));
+          data_copy = data_copy.filter((entry, index) => !ind.includes(index));
 
           
-          
-          /*console.log("data copy after",data_copy.length)
-          console.log("data copy after C",dataC_copy.length)
-          console.log("data copy after N",dataN_copy.length)*/
-          // Remove entries corresponding to ind from genes
-          //   genes = genes.filter((entry, index) => !ind.includes(index));
-
           // Remove entries corresponding to ind from logFC
           parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
           
@@ -473,11 +489,16 @@
 
         }
 
+        // console.log("parsed log ",parsedLogFC.length)
+        // console.log("data copy beforeC ",dataC_copy.length)
+        // console.log("data copy beforeN",dataN_copy.length)
+
         const geneCountDiv = document.getElementById('geneCount2');
         geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
         
         // Now, dataN, dataC, data, genes, and logFC are updated
     })
+*/
 
     // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
     document.getElementById("computePValuesButton").addEventListener("click", function() {
@@ -495,7 +516,7 @@
                 .then(response => response.json())
                 .then(data => {
                   old_p_adj=data
-                  console.log(data)
+                  //console.log(data)
 
                 
       const ind = old_p_adj.reduce((result, entry, index) => {
@@ -521,16 +542,16 @@
 
             data_copy = data_copy.filter((entry, index) => !ind.includes(index));
 
-
-            // Remove entries corresponding to ind from genes
-            //   genes = genes.filter((entry, index) => !ind.includes(index));
-
             // Remove entries corresponding to ind from logFC
-            parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
+            parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+
+            updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
+            updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+            updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
                               }
 
-              updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
-              updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+              
+
            
       });
     })
@@ -868,7 +889,7 @@
 
     // Add circles to the scatter plot
     var tooltip = d3.select("#tooltip");
-    console.log(data)
+    //console.log(data)
     svg.selectAll("circle")
         .data(data)
         .enter().append("circle")
@@ -886,20 +907,19 @@
             }
         })
         .on("mouseover", function (d) {
-    console.log(d.gene);
-    // Highlight the gene on mouseover
-    d3.select(this)
-        .style("stroke", "black")
-        .style("stroke-width", 2);
+          // Highlight the gene on mouseover
+          d3.select(this)
+              .style("stroke", "black")
+              .style("stroke-width", 2);
 
-    // Display tooltip on mouseover
-    tooltip.transition()
-        .style("opacity", .9);
+          // Display tooltip on mouseover
+          tooltip.transition()
+              .style("opacity", .9);
 
-    tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
-        .style("left", (d3.event.pageX + 15) + "px")
-        .style("top", (d3.event.pageY - 28) + "px");
-})
+          tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
+              .style("left", (d3.event.pageX + 15) + "px")
+              .style("top", (d3.event.pageY - 28) + "px");
+      })
 
         .on("mouseout", function (d) {
             // Remove the highlight and hide tooltip on mouseout
@@ -918,6 +938,183 @@
 
     //console.log(mostUpregulatedGene)
     var geneName = mostUpregulatedGene.Gene;
+    
+    console.log(dataN)  
+    console.log(dataC)
+    console.log(parsedLogFC)
+
+
+    //console.log(mostUpregulatedGene)
+
+    var geneDataN = dataN.filter(d => d.gene === geneName)
+    var geneDataC = dataC.filter(d => d.gene === geneName)
+
+   //console.log()
+
+    
+
+        function computeBoxPlotStatistics(data1) {
+          var expressionValues = data1.map(entry => entry.expression);
+
+          // Sort the data for calculating quartiles
+          expressionValues.sort((a, b) => a - b);
+
+          // Calculate quartiles and median
+          var q1 = d3.quantile(expressionValues, 0.25);
+          var q3 = d3.quantile(expressionValues, 0.75);
+          var median = d3.median(expressionValues);
+
+          // Calculate interquartile range (IQR)
+          var iqr = q3 - q1;
+
+
+          var min = q1 - 1.5 * iqr
+          var max = q3 + 1.5 * iqr
+
+        return {
+            q1: q1,
+            median: median,
+            q3: q3,
+            iqr: iqr,
+            min: min,
+            max: max
+        };
+    }
+    
+    let expressionValuesC
+      geneDataC.forEach(entry => {
+          expressionValuesC = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+        })
+
+        console.log(expressionValuesC)
+          
+      let expressionValuesN
+      geneDataN.forEach(entry => {
+          expressionValuesN = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+        })
+// Assuming you have expressionValuesC and expressionValuesN
+
+    // Create a new array to store the combined data
+    var combinedData = [];
+
+    // Iterate over expressionValuesC and add objects to combinedData with type 'case'
+    expressionValuesC.forEach(expression => {
+        combinedData.push({ expression: expression, type: 'case' });
+    });
+
+    // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
+    expressionValuesN.forEach(expression => {
+        combinedData.push({ expression: expression, type: 'normal' });
+    });
+
+    var boxPlotStatisticsC = computeBoxPlotStatistics(combinedData);
+
+
+    var sumstat = d3.nest()
+    .key(function(d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
+    .rollup(function(d) {
+        q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
+        median = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.5);
+        q3 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.75);
+        interQuantileRange = q3 - q1;
+        min = q1 - 1.5 * interQuantileRange;
+        max = q3 + 1.5 * interQuantileRange;
+
+        return { q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max };
+    })
+    .entries(combinedData);
+
+    
+  
+    var margin = {top: 10, right: 30, bottom: 30, left: 40},
+    width = 460 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+
+    var svg = d3.select("#boxPlot")
+    .html("")  // Clear previous content
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+   
+    var x = d3.scaleBand()
+    .range([ 0, width ])
+    .domain(["normal", "case"])
+    .paddingInner(1)
+    .paddingOuter(.5)
+    
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x))
+
+    var y = d3.scaleLinear()
+    .domain([0,boxPlotStatisticsC.max])
+    .range([height, 0])
+   svg.append("g").call(d3.axisLeft(y))
+
+
+   // Add a title
+svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", margin.top)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("The Most Upregulated Gene "+ geneName);
+
+   svg
+    .selectAll("vertLines")
+    .data(sumstat)
+    .enter()
+    .append("line")
+      .attr("x1", function(d){return(x(d.key))})
+      .attr("x2", function(d){return(x(d.key))})
+      .attr("y1", function(d){return(y(d.value.min))})
+      .attr("y2", function(d){return(y(d.value.max))})
+      .attr("stroke", "black")
+      .style("width", 40)
+
+  // rectangle for the main box
+  var boxWidth = 100
+  svg
+    .selectAll("boxes")
+    .data(sumstat)
+    .enter()
+    .append("rect")
+        .attr("x", function(d){return(x(d.key)-boxWidth/2)})
+        .attr("y", function(d){return(y(d.value.q3))})
+        .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
+        .attr("width", boxWidth )
+        .attr("stroke", "black")
+        .style("fill", "#69b3a2")
+    svg
+    .selectAll("medianLines")
+    .data(sumstat)
+    .enter()
+    .append("line")
+      .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
+      .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
+      .attr("y1", function(d){return(y(d.value.median))})
+      .attr("y2", function(d){return(y(d.value.median))})
+      .attr("stroke", "black")
+      .style("width", 80)
+
+
+  }
+
+
+    function updateBoxPlot1(parsedLogFC,dataN,dataC){
+    var mostDownregulatedGene = parsedLogFC.reduce((minGene, currentGene) => {
+      return currentGene.logFC < minGene.logFC ? currentGene : minGene;
+       }, parsedLogFC[0]);
+
+    //console.log(mostUpregulatedGene)
+    var geneName = mostDownregulatedGene.Gene;
+    
     
 
     var geneDataN = dataN.filter(d => d.gene === geneName)
@@ -1031,7 +1228,8 @@
     height = 400 - margin.top - margin.bottom;
 
 
-    var svg = d3.select("#boxPlot")
+    var svg = d3.select("#boxPlot1")
+      .html("")  // Clear previous content
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
@@ -1053,6 +1251,15 @@
     .domain([0,boxPlotStatisticsC.max])
     .range([height, 0])
    svg.append("g").call(d3.axisLeft(y))
+
+    // Add a title
+svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", margin.top)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("The most Down Upregulated Gene " + geneName);
+
 
    svg
     .selectAll("vertLines")
@@ -1093,7 +1300,8 @@
 
 
   }
-
+    
+  
     function calculateAverageExpressions(dataArray) {
       // Create an object to store the sum and count for each gene
       var geneSumCount = {};

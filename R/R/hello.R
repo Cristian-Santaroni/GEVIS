@@ -1,14 +1,13 @@
-hello <- function(data, dataN, dataC) {
+hello <- function(data) {
   # Save the column of genes before removing the last column
   genes <- data[, ncol(data)]
 
   # Assuming data, dataN, and dataC are your matrices
   data <- data[, -ncol(data)]
-  dataN <- dataN[, -ncol(dataN)]
-  dataC <- dataC[, -ncol(dataC)]
 
-  N <- ncol(dataN)
-  M <- ncol(dataC)
+
+  N <- 48
+  M <- 59
   # Now, the last column has been removed from each matrix
 
   # x is the first gene of the data matrix
