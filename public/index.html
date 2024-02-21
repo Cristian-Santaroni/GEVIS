@@ -9,6 +9,7 @@
   <script src="//cdn.opencpu.org/opencpu-0.4.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.0.0/simple-statistics.min.js"></script>
   <script src='https://cdn.jsdelivr.net/gh/kdpsingh/rjs@master/r.js'></script>
+  <script src="https://d3js.org/d3.v4.js"></script>
   <style>
     #thresholdSlider {
       width: 10%;
@@ -38,13 +39,615 @@
 
   <div id="logFCHistogram">
   </div>
-  <div id="geneCount2"></div>
+  <div id="geneCount2"></div><br>
   <div id="scatterPlot"></div>
   <button id="computePValuesButton" > compute p-val</button>
+  <div id="boxPlot"></div>
+
 
   <script>
-    // Your existing JavaScript code goes here
+    ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
+    let variation_data;
+    let variation_data_copy;
+    let initial_num_genes;
+    let data_upd
+    let prc_IQR = 0.1;
+    let thr_prc;
+    let filteredData;
+    let matrix;
+    let data_original;
+    let dataC_original;
+    let dataN_original;
+    let data_copy;
+    let dataC_copy;
+    let dataN_copy;
+    let thr_fc = 1.1;
+    let logFC_data;
+    let log_thr_fc = Math.log2(thr_fc);
+    let parsedLogFC;
+    let parsedLogFC_origin;
+    let parsedLogFC_origin1;
+    let newdataJSON
+    let newdataCJSON
+    let first_filter_number_genes;
+    let p_val_adj;
+
+    let averageExpressions10C;
+    let averageExpressions10N;
+    let averageExpressionsC;
+    let averageExpressionsN;
+
+    let old_p_adj
+
+    function calculateLogFC(dataC, dataN) {
+    const logFCData = [];
+
+    // Iterate over each gene
+    Object.keys(dataC).forEach(gene => {
+        // Get the values for the current gene from dataC and dataN
+        let valuesC = Object.values(dataC[gene]);
+        let valuesN = Object.values(dataN[gene]);
+
+        // Pop the last value if it's a gene string
+        let geneValueC;
+        if (isNaN(valuesC[valuesC.length - 1])) {
+            geneValueC = valuesC.pop(); // Remove and store the last value as the gene for dataC
+        }
+        let geneValueN;
+        if (isNaN(valuesN[valuesN.length - 1])) {
+            geneValueN = valuesN.pop(); // Remove and store the last value as the gene for dataN
+        }
+
+        // Calculate the row mean for dataC and dataN
+        const rowMeanC = valuesC.reduce((acc, val) => acc + val, 0) / valuesC.length;
+        const rowMeanN = valuesN.reduce((acc, val) => acc + val, 0) / valuesN.length;
+
+        // Calculate the log fold change
+        const logFC = rowMeanC - rowMeanN;
+
+        // Push the gene and its logFC to logFCData
+        logFCData.push({ "Gene": geneValueC, "logFC": logFC });
+    });
+
+    return logFCData
+
+}
+
+
+
+    function fetchJSON(url) {
+      return fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Rename the key '_row' to 'Gene' in each object of the JSON array
+          return data.map(obj => {
+            const newObj = { ...obj };
+            newObj['gene'] = newObj['_row'];
+            delete newObj['_row']; // Delete the old key
+            return newObj;
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching JSON:', error);
+        });
+    }
+
+
+
+    // Define a function to fetch data from a file with no header
+    function fetchData(filename) {
+    return fetch(filename)
+    .then(response => response.text())
+    .then(text => {
+        // Parse the data
+        const rows = text.trim().split('\n');
+        
+        // Extract sample GSM identifiers from the first row (excluding the first element)
+        const sampleGSMs = rows[0].trim().split('\t').slice(1);
+
+        // Map each row to an object representing gene expression for each sample
+        matrix = rows.slice(1).map(row => {
+            const [gene, ...expressions] = row.trim().split('\t');
+            
+            // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
+            return {
+                gene: gene,
+                expressions: expressions.map(parseFloat)
+            };
+        });
+
+        // Create a matrix with GSMs as headers
+        const matrixWithHeaders = matrix.reduce((result, entry) => {
+            const geneObj = {
+                Gene: entry.gene, // Optional: Change the key to "Gene" if needed
+                ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
+            };
+            result.push(geneObj);
+            return result;
+        }, []);
+        return matrixWithHeaders; // Return the matrix with headers
+    });
+  }
+
+
+    // Read the contents of the .txt file
+    Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json')])
+      .then(([dataC, dataN, data]) => {
+        dataC_original = dataC
+        dataN_original = dataN
+        data_original = data
+        fetch('variation_lung.txt')
+          .then(response => response.text())
+          .then(text => {
+            // Parse the data
+            const rows = text.split('\n');
+            variation_data = rows.slice(1).map(row => {
+              const [gene, variation] = row.trim().split('\t');
+              return parseFloat(variation);
+            });
+            const row_length= rows.length-1
+            initial_num_genes = row_length
+            variation_data_copy = (variation_data);
+            console.log("numero di geni iniziali prima di qualsiasi filtro "+row_length)
+
+
+
+
+            thr_prc = ss.quantile(variation_data, prc_IQR);
+            updateHistogram(variation_data);
+
+            const ind = variation_data_copy.reduce((result, entry, index) => {
+              
+              if (entry < thr_prc) {
+                result.push(index);
+              }
+              return result;
+            }, []);
+
+            if (ind.length > 0) {
+
+              // Remove entries corresponding to ind from dataN
+              data_copy = data_original.filter((entry, index) => !ind.includes(index));
+
+              // Remove entries corresponding to ind from dataC
+              dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+
+              // Remove entries corresponding to ind from data
+              dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+
+              // Remove entries corresponding to ind from genes
+              //genes = genes.filter((entry, index) => !ind.includes(index));
+
+              // Remove entries corresponding to ind from logFC
+              //parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+
+            }
+            // Update the gene count display
+            const geneCountDiv = document.getElementById('geneCount');
+            geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
+
+            first_filter_number_genes = data_copy.length
+
+            parsedLogFC_origin1= calculateLogFC(dataC_original,dataN_original)
+            parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
+            parsedLogFC = parsedLogFC_origin
+            
+            //console.log(dataC_copy)
+            //console.log(dataN_copy)
+
+             //averageExpressionsC = calculateAverageExpressions(dataC_copy);
+             //averageExpressionsN = calculateAverageExpressions(dataN_copy);
+
+             averageExpressions10C = calculateAverageLog10Expressions(dataC_copy);
+             averageExpressions10N = calculateAverageLog10Expressions(dataN_copy);
+
+
+             fetch('genes_and_pval_adj.json')
+                .then(response => response.json())
+                .then(data => {
+                  p_val_adj=data
+                  //console.log(data)
+
+            //console.log(p_val_adj)
+            //console.log(averageExpressionsC);
+            //console.log(averageExpressionsN);
+            updateLogFCHistogram(parsedLogFC_origin)
+            
+
+                  // Calculate the quantile
+            log_thr_fc = Math.log2(thr_fc);  
+
+
+
+           
+            //updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,p_val_adj)
+
+          })
+            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
+          
+                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+                  result.push(index);
+                }
+                return result;
+            }, []);
+
+          const geneCountDiv2 = document.getElementById('geneCount2');
+          geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
+
+
+          })
+          .catch(error => console.error('Error reading file:', error));
+        });
+
+    
+      
+
+    document.getElementById("thresholdSlider").addEventListener("input", function() {
+      // Update the threshold value on slider change
+      prc_IQR = parseFloat(this.value);
+      document.getElementById("thresholdValue").innerText = prc_IQR;
+
+      // Calculate the quantile
+      thr_prc = ss.quantile(variation_data_copy, prc_IQR);
+      updateHistogram(variation_data);
+
+      const ind = variation_data_copy.reduce((result, entry, index) => {
+        
+        if (entry <= thr_prc) {
+          result.push(index);
+        }
+        return result;
+      }, []);
+
+      if (ind.length > 0) {
+        // Remove entries corresponding to ind from dataC
+        dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+
+        // Remove entries corresponding to ind from data
+        dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+
+        data_copy= data_original.filter((entry, index) => !ind.includes(index));
+        
+        // Remove entries corresponding to ind from genes
+        //genes = genes.filter((entry, index) => !ind.includes(index));
+
+        // Remove entries corresponding to ind from logFC
+        //parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+
+      }
+      // Update the gene count display
+      const geneCountDiv = document.getElementById('geneCount');
+      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${dataC_copy.length}`;
+
+      first_filter_number_genes = dataC_copy.length
+
+      parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
+      parsedLogFC = parsedLogFC_origin
+
+      updateLogFCHistogram(parsedLogFC_origin)
+
+  
+
+
+      log_thr_fc = Math.log2(thr_fc);  
+            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
+          
+                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+                  result.push(index);
+                }
+                return result;
+            }, []);
+
+      const geneCountDiv2 = document.getElementById('geneCount2');
+      geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length - ind2.length}`;
+
+    });
+
+    document.getElementById("thresholdSlider").addEventListener("change", function() {
+
+      const ind = variation_data_copy.reduce((result, entry, index) => {
+        
+        if (entry <= thr_prc) {
+          result.push(index);
+        }
+        return result;
+      }, []);
+
+      if (ind.length > 0) {
+
+        // Remove entries corresponding to ind from dataN
+        data_copy = data_original.filter((entry, index) => !ind.includes(index));
+
+
+        // Remove entries corresponding to ind from genes
+        //genes = genes.filter((entry, index) => !ind.includes(index));
+
+
+      }
+      // Update the gene count display
+      const geneCountDiv = document.getElementById('geneCount');
+      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
+
+      first_filter_number_genes = data_copy.length
+
+      log_thr_fc = Math.log2(thr_fc);  
+            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
+          
+                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+                  result.push(index);
+                }
+                return result;
+            }, []);
+
+      const geneCountDiv2 = document.getElementById('geneCount2');
+      geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
+
+
+
+    });
+
+    document.getElementById("log_thresholdSlider").addEventListener("input", function() {
+      // Update the threshold value on slider change
+      thr_fc = parseFloat(this.value);
+      document.getElementById("log_thresholdSliderValue").innerText = thr_fc;
+
+      // Calculate the quantile
+      log_thr_fc = Math.log2(thr_fc);  
+      const ind = parsedLogFC_origin.reduce((result, entry, index) => {
+          
+          if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+            result.push(index);
+            
+          }
+          return result;
+        }, []);
+
+        if (ind.length>0){
+
+          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
+          // Remove entries corresponding to ind from dataN
+          dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+
+          // Remove entries corresponding to ind from dataN
+          dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+
+          data_copy = data_original.filter((entry, index) => !ind.includes(index));
+        }
+
+      const geneCountDiv = document.getElementById('geneCount2');
+      geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
+
+      // Call the updateHistogram function directly
+      updateLogFCHistogram(parsedLogFC_origin);
+      //console.log(log_thr_fc)
+      //updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,old_p_adj)
+    });
+
+    document.getElementById("log_thresholdSlider").addEventListener("change", function() {
+
+     // console.log("sono dentro")
+      //console.log("threshold "+thr_fc)
+        // Find indices where abs(logFC) < log2(thr_fc)
+        const ind = parsedLogFC_origin.reduce((result, entry, index) => {
+          
+          if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+            result.push(index);
+            
+          }
+          return result;
+        }, []);
+        
+        console.log("parsed log ",parsedLogFC.length)
+        console.log("data copy before",data_copy.length)
+        
+        if (ind.length > 0) {
+
+        
+          // Remove entries corresponding to ind from dataN
+
+          // Remove entries corresponding to ind from dataN
+          dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+
+          // Remove entries corresponding to ind from dataN
+          dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+
+          data_copy = data_original.filter((entry, index) => !ind.includes(index));
+
+          
+          
+          /*console.log("data copy after",data_copy.length)
+          console.log("data copy after C",dataC_copy.length)
+          console.log("data copy after N",dataN_copy.length)*/
+          // Remove entries corresponding to ind from genes
+          //   genes = genes.filter((entry, index) => !ind.includes(index));
+
+          // Remove entries corresponding to ind from logFC
+          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
+          
+          //console.log(parsedLogFC.length)
+
+        }
+
+        const geneCountDiv = document.getElementById('geneCount2');
+        geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
+        
+        // Now, dataN, dataC, data, genes, and logFC are updated
+    })
+
+    // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
+    document.getElementById("computePValuesButton").addEventListener("click", function() {
+    //console.log(dataC_copy)
+    //console.log(data_copy)
+    //console.log(dataN_copy)
+    
+      var req = ocpu.call("hello", {
+            data: data_copy
+        }, function(session) {
+            var filteredDataURL = session.loc + "/R/.val/json";
+            console.log(session);
+            // Fetch the filtered data from the URL
+            fetch(filteredDataURL)
+                .then(response => response.json())
+                .then(data => {
+                  old_p_adj=data
+                  //console.log(data)
+
+                
+      const ind = old_p_adj.reduce((result, entry, index) => {
+          
+          if (entry.pval_adj > 0.05) {
+            result.push(index);
+          }
+          return result;
+        }, []);
+
+        if (ind.length > 0) {
+
+            //console.log(parsedLogFC.length)
+
+            // Remove entries corresponding to ind from dataN
+
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+
+
+            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+
+
+            // Remove entries corresponding to ind from genes
+            //   genes = genes.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from logFC
+            parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
+
+            //console.log(parsedLogFC.length)
+
+            //console.log(data_copy)
+            //console.log(dataN_copy)
+            //console.log(dataC_copy)
+
+                              }
+
+              updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
+              updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+           
+      });
+    })
+
+});
+
+
+// Your existing JavaScript code goes here
     // Make sure to include the necessary libraries and define variables as needed
+
+
+    function updateHistogram(variation_data) {
+    // Filter data based on the threshold
+    const filteredData = variation_data.filter(variation => variation >= thr_prc);
+
+    // Create histogram using D3.js
+    const svgWidth = 900;
+    const svgHeight = 400;
+    const margin = { top: 20, right: 20, bottom: 30, left: 50 };
+    const width = svgWidth - margin.left - margin.right;
+    const height = svgHeight - margin.top - margin.bottom;
+
+    const svg = d3.select("#IQR")
+        .html("")  // Clear previous content
+        .append("svg")
+        .attr("width", svgWidth)
+        .attr("height", svgHeight)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Create histogram
+    const histogram = d3.histogram()
+        .value(variation => variation)
+        .domain(d3.extent(variation_data))
+        .thresholds(100);
+
+    const bins = histogram(variation_data);
+
+    const xScale = d3.scaleLinear()
+        .domain(d3.extent(variation_data))
+        .range([0, width]);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(bins, d => d.length)])
+        .range([height, 0]);
+
+    // Add histogram bars
+    svg.selectAll("rect")
+        .data(bins)
+        .enter()
+        .append("rect")
+        .attr("x", d => xScale(d.x0))
+        .attr("y", d => yScale(d.length))
+        .attr("width", d => xScale(d.x1) - xScale(d.x0))
+        .attr("height", d => height - yScale(d.length))
+        .attr("fill", d => {
+            const thresholdPosition = xScale(thr_prc);
+            if (xScale(d.x1) < thresholdPosition) {
+                return "grey"; // Set the color to grey if d.x1 is less than the threshold
+            } else {
+                return "steelblue"; // Set the original bar color
+            }
+        });
+
+    // Add overlay for colored portion
+    svg.selectAll(".overlay")
+        .data(bins)
+        .enter()
+        .append("rect")
+        .attr("class", "overlay")
+        .attr("x", d => {
+            const thresholdPosition = xScale(thr_prc);
+            return xScale(d.x0); // Start the overlay from the beginning of the bar
+        })
+        .attr("y", d => yScale(d.length))
+        .attr("width", d => {
+            const thresholdPosition = xScale(thr_prc);
+            const barWidth = xScale(d.x1) - xScale(d.x0);
+            if (xScale(d.x0) < thresholdPosition && xScale(d.x1) > thresholdPosition) {
+                // Calculate the width of the portion to color
+                return thresholdPosition - xScale(d.x0); // Only color the left portion
+            } else {
+                return 0; // Set width to 0 for bars where threshold is not in range
+            }
+        })
+        .attr("height", d => height - yScale(d.length))
+        .attr("fill", "grey") // Color the left portion of the overlay
+        .attr("opacity", 1); // Set opacity for transparency
+
+    // Add x-axis
+    svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(xScale));
+
+    // Add y-axis
+    svg.append("g")
+        .call(d3.axisLeft(yScale));
+
+    // Add a red line indicating the threshold
+    const thresholdLine = svg.append("line")
+        .attr("y1", 0)
+        .attr("y2", height)
+        .attr("stroke", "red")
+        .attr("stroke-width", 2);
+
+    // Update the position of the threshold line
+    thresholdLine.attr("x1", xScale(thr_prc))
+        .attr("x2", xScale(thr_prc));
+}
+    
 
     function updateLogFCHistogram(logFCData) {
     // Extract logFC values and convert them to numbers
@@ -165,271 +768,372 @@
 }
 
 
-    </script>
+    function updateScatterPlot(averageExpressionsN, averageExpressionsC, log_thr_fc, parsed, old_p_adj) {
+    // Set up margin, width, and height
+    var margin = { top: 10, right: 120, bottom: 60, left: 60 }; // Increased right margin for the legend
+    var width = 800 - margin.left - margin.right;
+    var height = 500 - margin.top - margin.bottom;
 
+    // Create x and y scales
+    var xScale = d3.scaleLinear()
+        .domain(d3.extent(Object.values(averageExpressionsN)))
+        .range([0, width]);
 
-  <script>
-    //ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
-    let variation_data;
-    let variation_data_copy;
-    let initial_num_genes;
-    let data_upd
-    let prc_IQR = 0.1;
-    let thr_prc;
-    let filteredData;
-    let matrix;
-    let data_original;
-    let dataC_original;
-    let dataN_original;
-    let data_copy;
-    let dataC_copy;
-    let dataN_copy;
-    let thr_fc = 1.1;
-    let logFC_data;
-    let log_thr_fc = Math.log2(thr_fc);
-    let parsedLogFC;
-    let parsedLogFC_origin;
-    let newdataJSON
-    let newdataCJSON
-    let first_filter_number_genes;
-    let p_val_adj;
+    var yScale = d3.scaleLinear()
+        .domain(d3.extent(Object.values(averageExpressionsC)))
+        .range([height, 0]);
 
-    let averageExpressions10C;
-    let averageExpressions10N;
-    let averageExpressionsC;
-    let averageExpressionsN;
+    // Create SVG container
+    var svg = d3.select("#scatterPlot")
+        .html("")  // Clear previous content
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    function calculateLogFC(dataC, dataN) {
-    const logFCData = [];
+    // Add X axis label
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", height + margin.bottom - 10)
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Expression (Normal)");
 
-    // Iterate over each gene
-    Object.keys(dataC).forEach(gene => {
-        // Get the values for the current gene from dataC and dataN
-        let valuesC = Object.values(dataC[gene]);
-        let valuesN = Object.values(dataN[gene]);
+    // Add Y axis label
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height / 2)
+        .attr("y", -margin.left + 10)
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Expression (Case)");
 
-        // Pop the last value if it's a gene string
-        let geneValueC;
-        if (isNaN(valuesC[valuesC.length - 1])) {
-            geneValueC = valuesC.pop(); // Remove and store the last value as the gene for dataC
-        }
-        let geneValueN;
-        if (isNaN(valuesN[valuesN.length - 1])) {
-            geneValueN = valuesN.pop(); // Remove and store the last value as the gene for dataN
-        }
+    // Add title
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", -margin.top )
+        .attr("text-anchor", "middle")
+        .style("font-size", "18px")
+        .text("Scatterplot");
 
-        // Calculate the row mean for dataC and dataN
-        const rowMeanC = valuesC.reduce((acc, val) => acc + val, 0) / valuesC.length;
-        const rowMeanN = valuesN.reduce((acc, val) => acc + val, 0) / valuesN.length;
+    // Add X axis
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale));
 
-        // Calculate the log fold change
-        const logFC = rowMeanC - rowMeanN;
+    // Add Y axis
+    svg.append("g")
+        .call(d3.axisLeft(yScale));
 
-        // Push the gene and its logFC to logFCData
-        logFCData.push({ "Gene": geneValueC, "logFC": logFC });
+    // Create circles for each gene
+    var data = Object.keys(averageExpressionsN).map(function (gene) {
+        // Find the corresponding logFC value from parsedLogFC_origin
+        var logFCObj = parsed.find(d => d.Gene === gene) || null;
+        var logFC = logFCObj ? logFCObj.logFC : null;
+
+        var pval_adjObj = old_p_adj.find(d => d.Gene === gene) || null;
+        var pval_adj = pval_adjObj ? pval_adjObj.pval_adj : null;
+
+        return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj };
     });
 
-    return logFCData
+    // Create a legend
+    var legend = svg.append("g")
+        .attr("transform", "translate(" + (width + 2) + "," + 20 + ")");
 
+    legend.append("circle")
+        .attr("cx", 10)
+        .attr("cy", 10)
+        .attr("r", 3)
+        .style("fill", "red");
+
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 10)
+        .text("Upregulated");
+
+    legend.append("circle")
+        .attr("cx", 10)
+        .attr("cy", 30)
+        .attr("r", 3)
+        .style("fill", "blue");
+
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 30)
+        .text("Downregulated");
+
+    legend.append("circle")
+        .attr("cx", 10)
+        .attr("cy", 50)
+        .attr("r", 3)
+        .style("fill", "grey");
+
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 50)
+        .text("Not Significant");
+
+    // Add circles to the scatter plot
+    var tooltip = d3.select("#tooltip");
+
+    svg.selectAll("circle")
+        .data(data)
+        .enter().append("circle")
+        .attr("cx", d => xScale(d.x))
+        .attr("cy", d => yScale(d.y))
+        .attr("r", 2)
+        .style("fill", d => {
+            // Check if logFC is greater than or equal to the threshold
+            if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05) {
+                return "red";
+            } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
+                return "blue";
+            } else {
+                return "grey";
+            }
+        })
+        .on("mouseover", function (event, d) {
+            // Highlight the gene on mouseover
+            d3.select(this)
+                .style("stroke", "black")
+                .style("stroke-width", 2);
+
+            // Display tooltip on mouseover
+            tooltip.transition()
+                .style("opacity", .9);
+
+            tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
+                .style("left", (event.pageX + 15) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function (d) {
+            // Remove the highlight and hide tooltip on mouseout
+            d3.select(this)
+                .style("stroke", "none");
+
+            tooltip.transition()
+                .style("opacity", 0);
+        });
 }
 
+    function updateBoxPlot(parsedLogFC,dataN,dataC){
+        var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
+      return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
+       }, parsedLogFC[0]);
+
+    //console.log(mostUpregulatedGene)
+    var geneName = mostUpregulatedGene.Gene;
+    
+
+    var geneDataN = dataN.filter(d => d.gene === geneName)
+    var geneDataC = dataC.filter(d => d.gene === geneName)
+
+    let ymin = Number.POSITIVE_INFINITY;
+    let ymax = Number.NEGATIVE_INFINITY;
 
 
-    function fetchJSON(url) {
-      return fetch(url)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then(data => {
-          // Rename the key '_row' to 'Gene' in each object of the JSON array
-          return data.map(obj => {
-            const newObj = { ...obj };
-            newObj['gene'] = newObj['_row'];
-            delete newObj['_row']; // Delete the old key
-            return newObj;
-          });
-        })
-        .catch(error => {
-          console.error('Error fetching JSON:', error);
-        });
+    console.log(geneDataC)  
+    console.log(geneDataC)
+
+        function computeBoxPlotStatistics(data1) {
+          var expressionValues = data1.map(entry => entry.expression);
+
+          // Sort the data for calculating quartiles
+          expressionValues.sort((a, b) => a - b);
+
+          // Calculate quartiles and median
+          var q1 = d3.quantile(expressionValues, 0.25);
+          var q3 = d3.quantile(expressionValues, 0.75);
+          var median = d3.median(expressionValues);
+
+          // Calculate interquartile range (IQR)
+          var iqr = q3 - q1;
+
+
+          var min = q1 - 1.5 * iqr
+          var max = q3 + 1.5 * iqr
+
+        return {
+            q1: q1,
+            median: median,
+            q3: q3,
+            iqr: iqr,
+            min: min,
+            max: max
+        };
     }
+    let expressionValuesC
+      geneDataC.forEach(entry => {
+          expressionValuesC = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
 
+        })
+    let expressionValuesN
+      geneDataN.forEach(entry => {
+          expressionValuesN = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
 
+        })
+// Assuming you have expressionValuesC and expressionValuesN
 
-    // Define a function to fetch data from a file with no header
-    function fetchData(filename) {
-    return fetch(filename)
-    .then(response => response.text())
-    .then(text => {
-        // Parse the data
-        const rows = text.trim().split('\n');
-        
-        // Extract sample GSM identifiers from the first row (excluding the first element)
-        const sampleGSMs = rows[0].trim().split('\t').slice(1);
+    // Create a new array to store the combined data
+    var combinedData = [];
 
-        // Map each row to an object representing gene expression for each sample
-        matrix = rows.slice(1).map(row => {
-            const [gene, ...expressions] = row.trim().split('\t');
-            
-            // Create an object with gene code as the key and an object with sample GSMs and expressions as the value
-            return {
-                gene: gene,
-                expressions: expressions.map(parseFloat)
-            };
-        });
-
-        // Create a matrix with GSMs as headers
-        const matrixWithHeaders = matrix.reduce((result, entry) => {
-            const geneObj = {
-                Gene: entry.gene, // Optional: Change the key to "Gene" if needed
-                ...Object.fromEntries(sampleGSMs.map((gsm, index) => [gsm, entry.expressions[index]]))
-            };
-            result.push(geneObj);
-            return result;
-        }, []);
-        return matrixWithHeaders; // Return the matrix with headers
+    // Iterate over expressionValuesC and add objects to combinedData with type 'case'
+    expressionValuesC.forEach(expression => {
+        combinedData.push({ expression: expression, type: 'case' });
     });
+
+    // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
+    expressionValuesN.forEach(expression => {
+        combinedData.push({ expression: expression, type: 'normal' });
+    });
+
+// Now combinedData has the desired structure
+    console.log(combinedData);
+
+   
+
+    var boxPlotStatisticsC = computeBoxPlotStatistics(combinedData);
+
+
+    var sumstat = d3.nest()
+    .key(function(d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
+    .rollup(function(d) {
+        q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
+        median = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.5);
+        q3 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.75);
+        interQuantileRange = q3 - q1;
+        min = q1 - 1.5 * interQuantileRange;
+        max = q3 + 1.5 * interQuantileRange;
+
+        return { q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max };
+    })
+    .entries(combinedData);
+
+    console.log("Q1:", boxPlotStatisticsC.q1);
+    console.log("Q3:", boxPlotStatisticsC.q3);
+    console.log("Median:", boxPlotStatisticsC.median);
+    console.log("IQR:", boxPlotStatisticsC.iqr);
+    /*geneDataN.forEach(entry => {
+    // Extract the numeric expression values
+    var expressionValues = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+    
+    // Find the maximum expression value for each gene
+    entry.expression = d3.max(expressionValues);
+
+    // Update ymin and ymax based on the current gene's expression value
+    ymin = Math.min(ymin, entry.expression);
+    ymax = Math.max(ymax, entry.expression);
+
+    });
+    */
+    
+    console.log(boxPlotStatisticsC)
+    
+  
+    var margin = {top: 10, right: 30, bottom: 30, left: 40},
+    width = 460 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+
+    var svg = d3.select("#boxPlot")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+   
+    var x = d3.scaleBand()
+    .range([ 0, width ])
+    .domain(["normal", "case"])
+    .paddingInner(1)
+    .paddingOuter(.5)
+    
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x))
+
+    var y = d3.scaleLinear()
+    .domain([0,boxPlotStatisticsC.max])
+    .range([height, 0])
+   svg.append("g").call(d3.axisLeft(y))
+
+   svg
+    .selectAll("vertLines")
+    .data(sumstat)
+    .enter()
+    .append("line")
+      .attr("x1", function(d){return(x(d.key))})
+      .attr("x2", function(d){return(x(d.key))})
+      .attr("y1", function(d){return(y(d.value.min))})
+      .attr("y2", function(d){return(y(d.value.max))})
+      .attr("stroke", "black")
+      .style("width", 40)
+
+  // rectangle for the main box
+  var boxWidth = 100
+  svg
+    .selectAll("boxes")
+    .data(sumstat)
+    .enter()
+    .append("rect")
+        .attr("x", function(d){return(x(d.key)-boxWidth/2)})
+        .attr("y", function(d){return(y(d.value.q3))})
+        .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
+        .attr("width", boxWidth )
+        .attr("stroke", "black")
+        .style("fill", "#69b3a2")
+    svg
+    .selectAll("medianLines")
+    .data(sumstat)
+    .enter()
+    .append("line")
+      .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
+      .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
+      .attr("y1", function(d){return(y(d.value.median))})
+      .attr("y2", function(d){return(y(d.value.median))})
+      .attr("stroke", "black")
+      .style("width", 80)
+
+
   }
 
+    function calculateAverageExpressions(dataArray) {
+      // Create an object to store the sum and count for each gene
+      var geneSumCount = {};
 
-    // Read the contents of the .txt file
-    Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json')])
-      .then(([dataC, dataN, data]) => {
-        dataC_original = dataC
-        dataN_original = dataN
-        data_original = data
-        fetch('variation_lung.txt')
-          .then(response => response.text())
-          .then(text => {
-            // Parse the data
-            const rows = text.split('\n');
-            variation_data = rows.slice(1).map(row => {
-              const [gene, variation] = row.trim().split('\t');
-              return parseFloat(variation);
-            });
-            const row_length= rows.length-1
-            initial_num_genes = row_length
-            variation_data_copy = (variation_data);
-            console.log("numero di geni iniziali prima di qualsiasi filtro "+row_length)
+      // Iterate through each gene object in the array
+      dataArray.forEach(function (geneData) {
+          var gene = geneData.gene;
 
+          // Iterate through each property (sample) in the gene object
+          for (var sample in geneData) {
+              if (sample !== 'gene') {
+                  // If the gene is not in the sumCount object, initialize it
+                  if (!geneSumCount[gene]) {
+                      geneSumCount[gene] = { sum: 0, count: 0 };
+                  }
 
-            thr_prc = ss.quantile(variation_data, prc_IQR);
-            updateHistogram(variation_data);
-
-            const ind = variation_data_copy.reduce((result, entry, index) => {
-              
-              if (entry < thr_prc) {
-                result.push(index);
+                  // Add the expression value to the sum and increment the count
+                  geneSumCount[gene].sum += parseFloat(geneData[sample]);
+                  geneSumCount[gene].count++;
               }
-              return result;
-            }, []);
+          }
+      });
 
-            if (ind.length > 0) {
+      // Calculate the average for each gene
+      var averageExpressions = {};
+      for (var gene in geneSumCount) {
+          averageExpressions[gene] = geneSumCount[gene].sum / geneSumCount[gene].count;
+      }
 
-              // Remove entries corresponding to ind from dataN
-              data_copy = data_original.filter((entry, index) => !ind.includes(index));
+      return averageExpressions;
+  }
 
-              // Remove entries corresponding to ind from dataC
-              dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
-
-              // Remove entries corresponding to ind from data
-              dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
-
-              // Remove entries corresponding to ind from genes
-              //genes = genes.filter((entry, index) => !ind.includes(index));
-
-              // Remove entries corresponding to ind from logFC
-              //parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
-
-            }
-            // Update the gene count display
-            const geneCountDiv = document.getElementById('geneCount');
-            geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
-
-            first_filter_number_genes = data_copy.length
-
-            parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
-            parsedLogFC = parsedLogFC_origin
-            
-            //console.log(dataC_copy)
-            //console.log(dataN_copy)
-
-             averageExpressionsC = calculateAverageExpressions(dataC_copy);
-             averageExpressionsN = calculateAverageExpressions(dataN_copy);
-
-             averageExpressions10C = calculateAverageLog10Expressions(dataC_copy);
-             averageExpressions10N = calculateAverageLog10Expressions(dataN_copy);
-
-
-
-
-            //console.log(averageExpressionsC);
-            //console.log(averageExpressionsN);
-            updateLogFCHistogram(parsedLogFC_origin)
-            //updateScatterPlot(averageExpressionsN,averageExpressionsC)
-            //updateScatterPlot(averageExpressions10N,averageExpressions10C)
-
-                  // Calculate the quantile
-            log_thr_fc = Math.log2(thr_fc);  
-
-
-
-           // updateScatterPlot(averageExpressionsN,averageExpressionsC,log_thr_fc,parsedLogFC_origin)
-            updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin)
-
-
-            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
-          
-                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-                  result.push(index);
-                }
-                return result;
-            }, []);
-
-          const geneCountDiv2 = document.getElementById('geneCount2');
-          geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
-
-
-          })
-          .catch(error => console.error('Error reading file:', error));
-        });
-
-  function calculateAverageExpressions(dataArray) {
-    // Create an object to store the sum and count for each gene
-    var geneSumCount = {};
-
-    // Iterate through each gene object in the array
-    dataArray.forEach(function (geneData) {
-        var gene = geneData.gene;
-
-        // Iterate through each property (sample) in the gene object
-        for (var sample in geneData) {
-            if (sample !== 'gene') {
-                // If the gene is not in the sumCount object, initialize it
-                if (!geneSumCount[gene]) {
-                    geneSumCount[gene] = { sum: 0, count: 0 };
-                }
-
-                // Add the expression value to the sum and increment the count
-                geneSumCount[gene].sum += parseFloat(geneData[sample]);
-                geneSumCount[gene].count++;
-            }
-        }
-    });
-
-    // Calculate the average for each gene
-    var averageExpressions = {};
-    for (var gene in geneSumCount) {
-        averageExpressions[gene] = geneSumCount[gene].sum / geneSumCount[gene].count;
-    }
-
-    return averageExpressions;
-}
-
-function calculateAverageLog10Expressions(dataArray) {
+    function calculateAverageLog10Expressions(dataArray) {
     // Create an object to store the sum and count for each gene
     var geneSumCount = {};
 
@@ -463,454 +1167,11 @@ function calculateAverageLog10Expressions(dataArray) {
 
     return averageLog10Expressions;
 }
-      
-
-    document.getElementById("thresholdSlider").addEventListener("input", function() {
-      // Update the threshold value on slider change
-      prc_IQR = parseFloat(this.value);
-      document.getElementById("thresholdValue").innerText = prc_IQR;
-
-      // Calculate the quantile
-      thr_prc = ss.quantile(variation_data_copy, prc_IQR);
-      updateHistogram(variation_data);
-
-      const ind = variation_data_copy.reduce((result, entry, index) => {
-        
-        if (entry <= thr_prc) {
-          result.push(index);
-        }
-        return result;
-      }, []);
-
-      if (ind.length > 0) {
-        // Remove entries corresponding to ind from dataC
-        dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
-
-        // Remove entries corresponding to ind from data
-        dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
-        // Remove entries corresponding to ind from genes
-        //genes = genes.filter((entry, index) => !ind.includes(index));
-
-        // Remove entries corresponding to ind from logFC
-        //parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
-
-      }
-      // Update the gene count display
-      const geneCountDiv = document.getElementById('geneCount');
-      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${dataC_copy.length}`;
-
-      first_filter_number_genes = dataC_copy.length
-
-      parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
-      parsedLogFC = parsedLogFC_origin
-
-      updateLogFCHistogram(parsedLogFC_origin)
-
-      //updateScatterPlot(parsedLogFC_origin)
-
-
-      log_thr_fc = Math.log2(thr_fc);  
-            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
-          
-                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-                  result.push(index);
-                }
-                return result;
-            }, []);
-
-      const geneCountDiv2 = document.getElementById('geneCount2');
-      geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length - ind2.length}`;
-
-    });
-
-    document.getElementById("thresholdSlider").addEventListener("change", function() {
-
-      const ind = variation_data_copy.reduce((result, entry, index) => {
-        
-        if (entry <= thr_prc) {
-          result.push(index);
-        }
-        return result;
-      }, []);
-
-      if (ind.length > 0) {
-
-        // Remove entries corresponding to ind from dataN
-        data_copy = data_original.filter((entry, index) => !ind.includes(index));
-
-        // Remove entries corresponding to ind from genes
-        //genes = genes.filter((entry, index) => !ind.includes(index));
-
-
-      }
-      // Update the gene count display
-      const geneCountDiv = document.getElementById('geneCount');
-      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
-
-      first_filter_number_genes = data_copy.length
-
-      log_thr_fc = Math.log2(thr_fc);  
-            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
-          
-                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-                  result.push(index);
-                }
-                return result;
-            }, []);
-
-      const geneCountDiv2 = document.getElementById('geneCount2');
-      geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
-
-
-
-    });
-
-    document.getElementById("log_thresholdSlider").addEventListener("input", function() {
-      // Update the threshold value on slider change
-      thr_fc = parseFloat(this.value);
-      document.getElementById("log_thresholdSliderValue").innerText = thr_fc;
-
-      // Calculate the quantile
-      log_thr_fc = Math.log2(thr_fc);  
-      const ind = parsedLogFC_origin.reduce((result, entry, index) => {
-          
-          if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-            result.push(index);
-            
-          }
-          return result;
-        }, []);
-
-        if (ind.length>0){
-          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
-        }
-
-      const geneCountDiv = document.getElementById('geneCount2');
-      geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
-
-      // Call the updateHistogram function directly
-      updateLogFCHistogram(parsedLogFC_origin);
-      console.log(log_thr_fc)
-      updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin)
-    });
-
-    document.getElementById("log_thresholdSlider").addEventListener("change", function() {
-
-     // console.log("sono dentro")
-      //console.log("threshold "+thr_fc)
-        // Find indices where abs(logFC) < log2(thr_fc)
-        const ind = parsedLogFC_origin.reduce((result, entry, index) => {
-          
-          if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-            result.push(index);
-            
-          }
-          return result;
-        }, []);
-
-        
-        if (ind.length > 0) {
-
-         // console.log(parsedLogFC.length)
-
-          // Remove entries corresponding to ind from dataN
-
-          // Remove entries corresponding to ind from dataN
-          dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
-
-          // Remove entries corresponding to ind from dataN
-          dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
-
-          data_copy = data_copy.filter((entry, index) => !ind.includes(index));
-
-          // Remove entries corresponding to ind from genes
-          //   genes = genes.filter((entry, index) => !ind.includes(index));
-
-          // Remove entries corresponding to ind from logFC
-          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
-          
-          //console.log(parsedLogFC.length)
-
-        }
-
-        const geneCountDiv = document.getElementById('geneCount2');
-        geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
-
-        // Now, dataN, dataC, data, genes, and logFC are updated
-    })
-
-
-    function updateScatterPlot(averageExpressionsN, averageExpressionsC,log_thr_fc,parsedLogFC_origin) {
-    // Set up margin, width, and height
-    var margin = { top: 10, right: 30, bottom: 30, left: 60 };
-    var width = 600 - margin.left - margin.right;
-    var height = 400 - margin.top - margin.bottom;
-
-  
-
-    // Create x and y scales
-    var xScale = d3.scaleLinear()
-        .domain(d3.extent(Object.values(averageExpressionsN)))
-        .range([0, width]);
-
-    var yScale = d3.scaleLinear()
-        .domain(d3.extent(Object.values(averageExpressionsC)))
-        .range([height, 0]);
-
-    // Create SVG container
-    var svg = d3.select("#scatterPlot")
-        .html("")  // Clear previous content
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-        svg.append("text")
-        .attr("x", width / 2)
-        .attr("y", -margin.top * 0.7)
-        .attr("text-anchor", "middle")
-        .style("font-size", "18px")
-        .text("Scatterplot");
-
-
-
-    // Add X axis
-    svg.append("g")
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(xScale));
-
-    // Add Y axis
-    svg.append("g")
-        .call(d3.axisLeft(yScale));
-
-    //console.log(parsedLogFC_origin)
-    // Create circles for each gene
-    var data = Object.keys(averageExpressionsN).map(function (gene) {
-    // Find the corresponding logFC value from parsedLogFC_origin
-    var logFCObj = parsedLogFC_origin.find(d => d.Gene === gene) || null;
-    var logFC = logFCObj ? logFCObj.logFC : null;
-
-    return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC };
-});
-    //console.log(data)
-    var tooltip = d3.select("#tooltip");
-
-    svg.selectAll("circle")
-    .data(data)
-    .enter().append("circle")
-    .attr("cx", d => xScale(d.x))
-    .attr("cy", d => yScale(d.y))
-    .attr("r", 2)
-    .style("fill", d => {
-        // Check if logFC is greater than or equal to the threshold
-        if (d.logFC >= log_thr_fc) {
-            return "red";
-        } else if(d.logFC <= -(log_thr_fc)) {
-            return "blue";
-        }
-        else{
-          return "grey"
-        }
-    })
-    .on("mouseover", function (event, d) {
-        // Highlight the gene on mouseover
-        d3.select(this)
-            .style("stroke", "black")
-            .style("stroke-width", 2);
-
-        // Display tooltip on mouseover
-        tooltip.transition()
-            .duration(200)
-            .style("opacity", .9);
-
-        tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}`)
-            .style("left", (event.pageX + 5) + "px")
-            .style("top", (event.pageY - 28) + "px");
-    })
-    .on("mouseout", function (d) {
-        // Remove the highlight and hide tooltip on mouseout
-        d3.select(this)
-            .style("stroke", "none");
-
-        tooltip.transition()
-            .duration(500)
-            .style("opacity", 0);
-    });
-}
-
-
-
-
-    function updateHistogram(variation_data) {
-    // Filter data based on the threshold
-    const filteredData = variation_data.filter(variation => variation >= thr_prc);
-
-    // Create histogram using D3.js
-    const svgWidth = 900;
-    const svgHeight = 400;
-    const margin = { top: 20, right: 20, bottom: 30, left: 50 };
-    const width = svgWidth - margin.left - margin.right;
-    const height = svgHeight - margin.top - margin.bottom;
-
-    const svg = d3.select("#IQR")
-        .html("")  // Clear previous content
-        .append("svg")
-        .attr("width", svgWidth)
-        .attr("height", svgHeight)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    // Create histogram
-    const histogram = d3.histogram()
-        .value(variation => variation)
-        .domain(d3.extent(variation_data))
-        .thresholds(100);
-
-    const bins = histogram(variation_data);
-
-    const xScale = d3.scaleLinear()
-        .domain(d3.extent(variation_data))
-        .range([0, width]);
-
-    const yScale = d3.scaleLinear()
-        .domain([0, d3.max(bins, d => d.length)])
-        .range([height, 0]);
-
-    // Add histogram bars
-    svg.selectAll("rect")
-        .data(bins)
-        .enter()
-        .append("rect")
-        .attr("x", d => xScale(d.x0))
-        .attr("y", d => yScale(d.length))
-        .attr("width", d => xScale(d.x1) - xScale(d.x0))
-        .attr("height", d => height - yScale(d.length))
-        .attr("fill", d => {
-            const thresholdPosition = xScale(thr_prc);
-            if (xScale(d.x1) < thresholdPosition) {
-                return "grey"; // Set the color to grey if d.x1 is less than the threshold
-            } else {
-                return "steelblue"; // Set the original bar color
-            }
-        });
-
-    // Add overlay for colored portion
-    svg.selectAll(".overlay")
-        .data(bins)
-        .enter()
-        .append("rect")
-        .attr("class", "overlay")
-        .attr("x", d => {
-            const thresholdPosition = xScale(thr_prc);
-            return xScale(d.x0); // Start the overlay from the beginning of the bar
-        })
-        .attr("y", d => yScale(d.length))
-        .attr("width", d => {
-            const thresholdPosition = xScale(thr_prc);
-            const barWidth = xScale(d.x1) - xScale(d.x0);
-            if (xScale(d.x0) < thresholdPosition && xScale(d.x1) > thresholdPosition) {
-                // Calculate the width of the portion to color
-                return thresholdPosition - xScale(d.x0); // Only color the left portion
-            } else {
-                return 0; // Set width to 0 for bars where threshold is not in range
-            }
-        })
-        .attr("height", d => height - yScale(d.length))
-        .attr("fill", "grey") // Color the left portion of the overlay
-        .attr("opacity", 1); // Set opacity for transparency
-
-    // Add x-axis
-    svg.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(xScale));
-
-    // Add y-axis
-    svg.append("g")
-        .call(d3.axisLeft(yScale));
-
-    // Add a red line indicating the threshold
-    const thresholdLine = svg.append("line")
-        .attr("y1", 0)
-        .attr("y2", height)
-        .attr("stroke", "red")
-        .attr("stroke-width", 2);
-
-    // Update the position of the threshold line
-    thresholdLine.attr("x1", xScale(thr_prc))
-        .attr("x2", xScale(thr_prc));
-}
-
-  
-  // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
-  document.getElementById("computePValuesButton").addEventListener("click", function() {
-    console.log(dataC_copy)
-    console.log(data_copy)
-    console.log(dataN_copy)
-    
-      var req = ocpu.call("hello", {
-            data: data_copy,
-            dataC: dataC_copy,
-            dataN: dataN_copy
-        }, function(session) {
-            var filteredDataURL = session.loc + "/R/.val/json";
-            console.log(session);
-            // Fetch the filtered data from the URL
-            fetch(filteredDataURL)
-                .then(response => response.json())
-                .then(data => {
-                  p_val_adj=data
-                  console.log(data)
-
-                
-      const ind = p_val_adj.reduce((result, entry, index) => {
-          
-          if (entry.pval_adj > 0.05) {
-            result.push(index);
-          }
-          return result;
-        }, []);
-
-        if (ind.length > 0) {
-
-            //console.log(parsedLogFC.length)
-
-            // Remove entries corresponding to ind from dataN
-
-            // Remove entries corresponding to ind from dataN
-            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
-
-            // Remove entries corresponding to ind from dataN
-            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
-
-
-            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
-
-            // Remove entries corresponding to ind from genes
-            //   genes = genes.filter((entry, index) => !ind.includes(index));
-
-            // Remove entries corresponding to ind from logFC
-            parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
-
-            //console.log(parsedLogFC.length)
-
-            console.log(data_copy)
-            console.log(dataN_copy)
-            console.log(dataC_copy)
-
-                              }
-
-      });
-    })
-
-});
-
 
 
   </script>
  
-<div id="tooltip" style="position: absolute; opacity: 0; background-color: white; border: 1px solid #ddd; padding: 10px;"></div>
+<div id="tooltip" style="position: absolute; opacity: 0; background-color: white; border: 1px solid #ddd; padding: 5px;"></div>
 <div id="tTestResults"></div>
 
 
