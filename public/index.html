@@ -495,7 +495,7 @@
                 .then(response => response.json())
                 .then(data => {
                   old_p_adj=data
-                  //console.log(data)
+                  console.log(data)
 
                 
       const ind = old_p_adj.reduce((result, entry, index) => {
@@ -527,13 +527,6 @@
 
             // Remove entries corresponding to ind from logFC
             parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
-
-            //console.log(parsedLogFC.length)
-
-            //console.log(data_copy)
-            //console.log(dataN_copy)
-            //console.log(dataC_copy)
-
                               }
 
               updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
@@ -544,9 +537,6 @@
 
 });
 
-
-// Your existing JavaScript code goes here
-    // Make sure to include the necessary libraries and define variables as needed
 
 
     function updateHistogram(variation_data) {
@@ -648,7 +638,6 @@
         .attr("x2", xScale(thr_prc));
 }
     
-
     function updateLogFCHistogram(logFCData) {
     // Extract logFC values and convert them to numbers
     const logFCValues = logFCData.map(entry => entry.logFC);
@@ -838,6 +827,8 @@
         return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj };
     });
 
+    
+
     // Create a legend
     var legend = svg.append("g")
         .attr("transform", "translate(" + (width + 2) + "," + 20 + ")");
@@ -877,7 +868,7 @@
 
     // Add circles to the scatter plot
     var tooltip = d3.select("#tooltip");
-
+    console.log(data)
     svg.selectAll("circle")
         .data(data)
         .enter().append("circle")
@@ -894,20 +885,22 @@
                 return "grey";
             }
         })
-        .on("mouseover", function (event, d) {
-            // Highlight the gene on mouseover
-            d3.select(this)
-                .style("stroke", "black")
-                .style("stroke-width", 2);
+        .on("mouseover", function (d) {
+    console.log(d.gene);
+    // Highlight the gene on mouseover
+    d3.select(this)
+        .style("stroke", "black")
+        .style("stroke-width", 2);
 
-            // Display tooltip on mouseover
-            tooltip.transition()
-                .style("opacity", .9);
+    // Display tooltip on mouseover
+    tooltip.transition()
+        .style("opacity", .9);
 
-            tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
-                .style("left", (event.pageX + 15) + "px")
-                .style("top", (event.pageY - 28) + "px");
-        })
+    tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
+        .style("left", (d3.event.pageX + 15) + "px")
+        .style("top", (d3.event.pageY - 28) + "px");
+})
+
         .on("mouseout", function (d) {
             // Remove the highlight and hide tooltip on mouseout
             d3.select(this)
