@@ -799,241 +799,242 @@
 
 
 
-    // Set up margin, width, and height
-var margin = { top: 10, right: 120, bottom: 60, left: 60 };
-var width = 800 - margin.left - margin.right;
-var height = 500 - margin.top - margin.bottom;
+            // Set up margin, width, and height
+        var margin = { top: 10, right: 120, bottom: 60, left: 60 };
+        var width = 800 - margin.left - margin.right;
+        var height = 500 - margin.top - margin.bottom;
 
-// Create SVG container
-var svg = d3.select("#scatterPlot")
-    .html("")  // Clear previous content
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        // Create SVG container
+        var svg = d3.select("#scatterPlot")
+            .html("")  // Clear previous content
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-// Create x and y scales
-var xScale = d3.scaleLinear()
-    .domain(d3.extent(Object.values(averageExpressionsN)))
-    .range([0, width]);
+        // Create x and y scales
+        var xScale = d3.scaleLinear()
+            .domain(d3.extent(Object.values(averageExpressionsN)))
+            .range([0, width]);
 
-var yScale = d3.scaleLinear()
-    .domain(d3.extent(Object.values(averageExpressionsC)))
-    .range([height, 0]);
+        var yScale = d3.scaleLinear()
+            .domain(d3.extent(Object.values(averageExpressionsC)))
+            .range([height, 0]);
 
-// Add X axis
-var xAxis = svg.append("g")
-    .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(xScale));
+        // Add X axis
+        var xAxis = svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xScale));
 
-// Add Y axis
-var yAxis = svg.append("g")
-    .call(d3.axisLeft(yScale));
+        // Add Y axis
+        var yAxis = svg.append("g")
+            .call(d3.axisLeft(yScale));
 
-// Add a clipPath: everything out of this area won't be drawn.
-var clip = svg.append("defs").append("SVG:clipPath")
-    .attr("id", "clip")
-    .append("SVG:rect")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("x", 0)
-    .attr("y", 0);
+        // Add a clipPath: everything out of this area won't be drawn.
+        var clip = svg.append("defs").append("SVG:clipPath")
+            .attr("id", "clip")
+            .append("SVG:rect")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("x", 0)
+            .attr("y", 0);
 
-// Create the scatter variable: where both the circles and the brush take place
-var scatter = svg.append('g')
-    .attr("clip-path", "url(#clip)");
+        // Create the scatter variable: where both the circles and the brush take place
+        var scatter = svg.append('g')
+            .attr("clip-path", "url(#clip)");
 
-// Set the zoom and Pan features
-var zoom = d3.zoom()
-    .scaleExtent([0.5, 20])
-    .extent([[0, 0], [width, height]])
-    .on("zoom", updateChart);
+        // Set the zoom and Pan features
+        var zoom = d3.zoom()
+            .scaleExtent([0.5, 20])
+            .extent([[0, 0], [width, height]])
+            .on("zoom", updateChart);
 
-// Add an invisible rect on top of the chart area
-svg.append("rect")
-    .attr("width", width)
-    .attr("height", height)
-    .style("fill", "none")
-    .style("pointer-events", "all")  // Set pointer-events to "all" here
-    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-    .lower()
-    .on("wheel",zoom)
-    svg.call(zoom);
+        // Add an invisible rect on top of the chart area
+        svg.append("rect")
+            .attr("width", width)
+            .attr("height", height)
+            .style("fill", "none")
+            .style("pointer-events", "all")  // Set pointer-events to "all" here
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+            .lower();
+
+        // Attach zoom behavior to the SVG
+        svg.call(zoom);
+
+        // Attach click event to the reset button
+        d3.select("#resetButton")
+            .on("click", resetZoom);
 
 
-    d3.select("#resetButton")
-    .on("click", resetZoom);
+            // Add X axis label
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .text("Expression (Normal)");
+
+            // Add Y axis label
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -margin.left + 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .text("Expression (Case)");
+
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", -margin.top )
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("Scatterplot");
+
+            // // Add X axis
+            // svg.append("g")
+            //     .attr("transform", "translate(0," + height + ")")
+            //     .call(d3.axisBottom(xScale));
+
+            // // Add Y axis
+            // svg.append("g")
+            //     .call(d3.axisLeft(yScale));
+
+            // Create circles for each gene
+            var data = Object.keys(averageExpressionsN).map(function (gene) {
+                // Find the corresponding logFC value from parsedLogFC_origin
+                var logFCObj = parsed.find(d => d.Gene === gene) || null;
+                var logFC = logFCObj ? logFCObj.logFC : null;
+
+                var pval_adjObj = old_p_adj.find(d => d.Gene === gene) || null;
+                var pval_adj = pval_adjObj ? pval_adjObj.pval_adj : null;
+
+                return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj };
+            });
+
+            
+
+            // Create a legend
+            var legend = svg.append("g")
+                .attr("transform", "translate(" + (width + 2) + "," + 20 + ")");
+
+            legend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 10)
+                .attr("r", 3)
+                .style("fill", "red");
+
+            legend.append("text")
+                .attr("x", 20)
+                .attr("y", 10)
+                .text("Upregulated");
+
+            legend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 30)
+                .attr("r", 3)
+                .style("fill", "blue");
+
+            legend.append("text")
+                .attr("x", 20)
+                .attr("y", 30)
+                .text("Downregulated");
+
+            legend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 50)
+                .attr("r", 3)
+                .style("fill", "grey");
+
+            legend.append("text")
+                .attr("x", 20)
+                .attr("y", 50)
+                .text("Not Significant");
+
+            // Add circles to the scatter plot
+            var tooltip = d3.select("#tooltip");
+            //console.log(data)
+            scatter.selectAll("circle")
+                .data(data)
+                .enter().append("circle")
+                .attr("cx", d => xScale(d.x))
+                .attr("cy", d => yScale(d.y))
+                .attr("r", d=>{
+                  if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName ) {
+                        return "2";
+                  }
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                        return "2";
+                    } else if(d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                        return "2";
+                    } else if(d.logFC >= log_thr_fc && d.pval_adj <= 0.05 && d.gene == mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName){
+                            return "4"
+                    }
+                    else if(d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene == mostDownregulatedGeneName){
+                          return "4"
+                    }
+                })
+                .style("fill", d => {
+                    // Check if logFC is greater than or equal to the threshold
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 ) {
+                        return "red";
+                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
+                        return "blue";
+                    } else  {
+                        return "grey";
+                    }
+                    
+                })
+
+                .on("mouseover", function (d) {
+                  // Highlight the gene on mouseover
+                  d3.select(this)
+                      .style("stroke", "black")
+                      .style("stroke-width", 2);
+                    
+                  // Display tooltip on mouseover
+                  tooltip.transition()
+                      .style("opacity", .9);
+
+                  tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
+                      .style("left", (d3.event.pageX + 15) + "px")
+                      .style("top", (d3.event.pageY - 28) + "px");
+              })
 
 
-    // Add X axis label
-    svg.append("text")
-        .attr("x", width / 2)
-        .attr("y", height + margin.bottom - 10)
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px")
-        .text("Expression (Normal)");
+                .on("mouseout", function (d) {
+                    // Remove the highlight and hide tooltip on mouseout
+                    d3.select(this)
+                        .style("stroke", "none");
 
-    // Add Y axis label
-    svg.append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("x", -height / 2)
-        .attr("y", -margin.left + 10)
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px")
-        .text("Expression (Case)");
+                    tooltip.transition()
+                        .style("opacity", 0);
+                });
 
-    // Add title
-    svg.append("text")
-        .attr("x", width / 2)
-        .attr("y", -margin.top )
-        .attr("text-anchor", "middle")
-        .style("font-size", "18px")
-        .text("Scatterplot");
+                function updateChart() {
+            // recover the new scale
+            var newX = d3.event.transform.rescaleX(xScale);
+            var newY = d3.event.transform.rescaleY(yScale);
 
-    // Add X axis
-    svg.append("g")
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(xScale));
+            // update axes with these new boundaries
+            xAxis.call(d3.axisBottom(newX));
+            yAxis.call(d3.axisLeft(newY));
 
-    // Add Y axis
-    svg.append("g")
-        .call(d3.axisLeft(yScale));
+            // update circle position
+            scatter
+                .selectAll("circle")
+                .attr('cx', function (d) { return newX(d.x); })
+                .attr('cy', function (d) { return newY(d.y); });
+        }
 
-    // Create circles for each gene
-    var data = Object.keys(averageExpressionsN).map(function (gene) {
-        // Find the corresponding logFC value from parsedLogFC_origin
-        var logFCObj = parsed.find(d => d.Gene === gene) || null;
-        var logFC = logFCObj ? logFCObj.logFC : null;
-
-        var pval_adjObj = old_p_adj.find(d => d.Gene === gene) || null;
-        var pval_adj = pval_adjObj ? pval_adjObj.pval_adj : null;
-
-        return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj };
-    });
-
-    
-
-    // Create a legend
-    var legend = svg.append("g")
-        .attr("transform", "translate(" + (width + 2) + "," + 20 + ")");
-
-    legend.append("circle")
-        .attr("cx", 10)
-        .attr("cy", 10)
-        .attr("r", 3)
-        .style("fill", "red");
-
-    legend.append("text")
-        .attr("x", 20)
-        .attr("y", 10)
-        .text("Upregulated");
-
-    legend.append("circle")
-        .attr("cx", 10)
-        .attr("cy", 30)
-        .attr("r", 3)
-        .style("fill", "blue");
-
-    legend.append("text")
-        .attr("x", 20)
-        .attr("y", 30)
-        .text("Downregulated");
-
-    legend.append("circle")
-        .attr("cx", 10)
-        .attr("cy", 50)
-        .attr("r", 3)
-        .style("fill", "grey");
-
-    legend.append("text")
-        .attr("x", 20)
-        .attr("y", 50)
-        .text("Not Significant");
-
-    // Add circles to the scatter plot
-    var tooltip = d3.select("#tooltip");
-    //console.log(data)
-    scatter.selectAll("circle")
-        .data(data)
-        .enter().append("circle")
-        .attr("cx", d => xScale(d.x))
-        .attr("cy", d => yScale(d.y))
-        .attr("r", d=>{
-          if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName ) {
-                return "2";
+        // Define the resetZoom function
+        function resetZoom() {
+            // Reset the zoom transformation
+            svg.transition()
+              .duration(750)
+              .call(zoom.transform, d3.zoomIdentity);
           }
-            else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
-                return "2";
-            } else if(d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
-                return "2";
-            } else if(d.logFC >= log_thr_fc && d.pval_adj <= 0.05 && d.gene == mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName){
-                    return "4"
-            }
-            else if(d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene == mostDownregulatedGeneName){
-                  return "4"
-            }
-        })
-        .style("fill", d => {
-            // Check if logFC is greater than or equal to the threshold
-            if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 ) {
-                return "red";
-            } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
-                return "blue";
-            } else  {
-                return "grey";
-            }
-            
-        })
-
-        .on("mouseover", function (d) {
-          // Highlight the gene on mouseover
-          d3.select(this)
-              .style("stroke", "black")
-              .style("stroke-width", 2);
-            
-          // Display tooltip on mouseover
-          tooltip.transition()
-              .style("opacity", .9);
-
-          tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
-              .style("left", (d3.event.pageX + 15) + "px")
-              .style("top", (d3.event.pageY - 28) + "px");
-      })
-
-
-        .on("mouseout", function (d) {
-            // Remove the highlight and hide tooltip on mouseout
-            d3.select(this)
-                .style("stroke", "none");
-
-            tooltip.transition()
-                .style("opacity", 0);
-        });
-
-        function updateChart() {
-    // recover the new scale
-    var newX = d3.event.transform.rescaleX(xScale);
-    var newY = d3.event.transform.rescaleY(yScale);
-
-    // update axes with these new boundaries
-    xAxis.call(d3.axisBottom(newX));
-    yAxis.call(d3.axisLeft(newY));
-
-    // update circle position
-    scatter
-        .selectAll("circle")
-        .attr('cx', function (d) { return newX(d.x); })
-        .attr('cy', function (d) { return newY(d.y); });
-}
-
- // Define the resetZoom function
- function resetZoom() {
-    // Reset the zoom transformation
-    svg.transition()
-      .duration(750)
-      .call(zoom.transform, d3.zoomIdentity);
-  }
 
 
 
