@@ -39,7 +39,7 @@
 
   <div id="logFCHistogram"></div>
   <div id="geneCount2"></div><br>
-  <div id="scatterPlot"></div>
+  <div id="scatterPlot"></div> <button id="resetButton">Reset Zoom</button> 
   <button id="computePValuesButton" > compute p-val</button>
   <div id="boxPlot"></div>
   <div id="boxPlot1"></div>
@@ -411,11 +411,11 @@
             return result;
           }, []);
 
-          console.log("parsed log before ",parsedLogFC.length)
-          console.log("data copy beforeC ",dataC_copy.length)
-          console.log("data copy beforeN ",dataN_copy.length)
+          // console.log("parsed log before ",parsedLogFC.length)
+          // console.log("data copy beforeC ",dataC_copy.length)
+          // console.log("data copy beforeN ",dataN_copy.length)
 
-          console.log("parsed log origin ",parsedLogFC_origin.length)
+          // console.log("parsed log origin ",parsedLogFC_origin.length)
           /////////////////////// 
           
           //DIMENSIONE DI PARSED E DATAC,DATAN SONO UGUALI , GIUSTAMENTE
@@ -440,10 +440,10 @@
           //DIMENSIONE DI PARSED E DATAC,DATAN SONO DIVERSE , QUESTA COSA E' GIUSTA?
 
           //////////////////////
-          console.log("parsed log after",parsedLogFC.length)
-          console.log("data copy afterC ",dataC_copy.length)
-          console.log("data copy afterN",dataN_copy.length)
-          console.log("parsedLogFCorig ",parsedLogFC_origin.length)
+          // console.log("parsed log after",parsedLogFC.length)
+          // console.log("data copy afterC ",dataC_copy.length)
+          // console.log("data copy afterN",dataN_copy.length)
+          // console.log("parsedLogFCorig ",parsedLogFC_origin.length)
 
 
         const geneCountDiv = document.getElementById('geneCount2');
@@ -796,28 +796,75 @@
        console.log(mostUpregulatedGene)
        var mostUpregulatedGeneName = mostUpregulatedGene.Gene;
        var mostDownregulatedGeneName = mostDownregulatedGene.Gene;
+
+
+
     // Set up margin, width, and height
-    var margin = { top: 10, right: 120, bottom: 60, left: 60 }; // Increased right margin for the legend
-    var width = 800 - margin.left - margin.right;
-    var height = 500 - margin.top - margin.bottom;
+var margin = { top: 10, right: 120, bottom: 60, left: 60 };
+var width = 800 - margin.left - margin.right;
+var height = 500 - margin.top - margin.bottom;
 
-    // Create x and y scales
-    var xScale = d3.scaleLinear()
-        .domain(d3.extent(Object.values(averageExpressionsN)))
-        .range([0, width]);
+// Create SVG container
+var svg = d3.select("#scatterPlot")
+    .html("")  // Clear previous content
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    var yScale = d3.scaleLinear()
-        .domain(d3.extent(Object.values(averageExpressionsC)))
-        .range([height, 0]);
+// Create x and y scales
+var xScale = d3.scaleLinear()
+    .domain(d3.extent(Object.values(averageExpressionsN)))
+    .range([0, width]);
 
-    // Create SVG container
-    var svg = d3.select("#scatterPlot")
-        .html("")  // Clear previous content
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+var yScale = d3.scaleLinear()
+    .domain(d3.extent(Object.values(averageExpressionsC)))
+    .range([height, 0]);
+
+// Add X axis
+var xAxis = svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(xScale));
+
+// Add Y axis
+var yAxis = svg.append("g")
+    .call(d3.axisLeft(yScale));
+
+// Add a clipPath: everything out of this area won't be drawn.
+var clip = svg.append("defs").append("SVG:clipPath")
+    .attr("id", "clip")
+    .append("SVG:rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("x", 0)
+    .attr("y", 0);
+
+// Create the scatter variable: where both the circles and the brush take place
+var scatter = svg.append('g')
+    .attr("clip-path", "url(#clip)");
+
+// Set the zoom and Pan features
+var zoom = d3.zoom()
+    .scaleExtent([0.5, 20])
+    .extent([[0, 0], [width, height]])
+    .on("zoom", updateChart);
+
+// Add an invisible rect on top of the chart area
+svg.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .style("fill", "none")
+    .style("pointer-events", "all")  // Set pointer-events to "all" here
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+    .lower()
+    .on("wheel",zoom)
+    svg.call(zoom);
+
+
+    d3.select("#resetButton")
+    .on("click", resetZoom);
+
 
     // Add X axis label
     svg.append("text")
@@ -907,7 +954,7 @@
     // Add circles to the scatter plot
     var tooltip = d3.select("#tooltip");
     //console.log(data)
-    svg.selectAll("circle")
+    scatter.selectAll("circle")
         .data(data)
         .enter().append("circle")
         .attr("cx", d => xScale(d.x))
@@ -938,12 +985,13 @@
             }
             
         })
+
         .on("mouseover", function (d) {
           // Highlight the gene on mouseover
           d3.select(this)
               .style("stroke", "black")
               .style("stroke-width", 2);
-
+            
           // Display tooltip on mouseover
           tooltip.transition()
               .style("opacity", .9);
@@ -953,6 +1001,7 @@
               .style("top", (d3.event.pageY - 28) + "px");
       })
 
+
         .on("mouseout", function (d) {
             // Remove the highlight and hide tooltip on mouseout
             d3.select(this)
@@ -961,6 +1010,38 @@
             tooltip.transition()
                 .style("opacity", 0);
         });
+
+        function updateChart() {
+    // recover the new scale
+    var newX = d3.event.transform.rescaleX(xScale);
+    var newY = d3.event.transform.rescaleY(yScale);
+
+    // update axes with these new boundaries
+    xAxis.call(d3.axisBottom(newX));
+    yAxis.call(d3.axisLeft(newY));
+
+    // update circle position
+    scatter
+        .selectAll("circle")
+        .attr('cx', function (d) { return newX(d.x); })
+        .attr('cy', function (d) { return newY(d.y); });
+}
+
+ // Define the resetZoom function
+ function resetZoom() {
+    // Reset the zoom transformation
+    svg.transition()
+      .duration(750)
+      .call(zoom.transform, d3.zoomIdentity);
+  }
+
+
+
+       
+        
+
+
+        
 }
 
     function updateBoxPlot(parsedLogFC,dataN,dataC){
@@ -1356,7 +1437,7 @@ svg.append("text")
   }
     
     function updateParallel(parsedLogFc,data,dataC,dataN){
-      console.log (parsedLogFC)
+      //console.log (parsedLogFC)
       // var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
       // return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
       //  }, parsedLogFC[0]);
@@ -1470,6 +1551,7 @@ svg.append("text")
 
         // append the svg object to the body of the page
         var svg = d3.select("#parallelCoordinates")
+        .html("")  // Clear previous content
         .append("svg")
           .attr("width", width + margin.left + margin.right)
           .attr("height", height + margin.top + margin.bottom)
@@ -1478,8 +1560,8 @@ svg.append("text")
                 "translate(" + margin.left + "," + margin.top + ")");
 
           var color = d3.scaleOrdinal()
-              .domain(["case","control" ])
-              .range([ "#440154ff", "#21908dff"])
+              .domain(["case","normal" ])
+              .range([ "blue", "red"])
 
           dimensions = [mostUpregulatedGeneName, mostDownregulatedGeneName]
 
@@ -1494,31 +1576,7 @@ svg.append("text")
             x = d3.scalePoint()
               .range([0, width])
               .domain(dimensions);
-
-
-              var highlight = function(d){
-
-                selected_type = d.type
-
-                // first every group turns grey
-                d3.selectAll(".line")
-                  .transition().duration(200)
-                  .style("stroke", "lightgrey")
-                  .style("opacity", "0.2")
-                // Second the hovered specie takes its color
-                d3.selectAll("." + selected_type)
-                  .transition().duration(200)
-                  .style("stroke", color(selected_type))
-                  .style("opacity", "1")
-                }
-
-              // Unhighlight
-              var doNotHighlight = function(d){
-                d3.selectAll(".line")
-                  .transition().duration(200).delay(1000)
-                  .style("stroke", function(d){ return( color(d.type))} )
-                  .style("opacity", "1")
-              }
+              
 
               function path(d) {
               // Extract gene, expressions, and type from the structure
@@ -1532,32 +1590,32 @@ svg.append("text")
               ]);
             }
 
-                svg
-                .selectAll("myPath")
-                .data(structureCombinedData.mostUpregulated.expressions) // Assuming both genes have the same number of expressions
-                .enter().append("path")
-                .attr("d", function (_, i) {
-                  // For each iteration, create a line connecting the expressions of both genes at the same index
-                  var dataPoint = {
-                    mostUpregulated: {
-                      gene: structureCombinedData.mostUpregulated.gene,
-                      expressions: structureCombinedData.mostUpregulated.expressions[i],
-                      type: structureCombinedData.mostUpregulated.type[i]
-                    },
-                    mostDownregulated: {
-                      gene: structureCombinedData.mostDownregulated.gene,
-                      expressions: structureCombinedData.mostDownregulated.expressions[i],
-                      type: structureCombinedData.mostDownregulated.type[i]
-                    }
-                  };
-                  return path(dataPoint);
-                })
-                .style("fill", "none")
-                .style("stroke", function(d){ return( color(d.type))} )
-                .style("opacity", 0.5)
-                .on("mouseover", highlight)
-                .on("mouseleave", doNotHighlight)
 
+            var lineTypes = structureCombinedData.mostUpregulated.type;
+
+            svg
+              .selectAll("myPath")
+              .data(structureCombinedData.mostUpregulated.expressions) // Assuming both genes have the same number of expressions
+              .enter()
+              .append("path")
+              .attr("d", function (_, i) {
+                // For each iteration, create a line connecting the expressions of both genes at the same index
+                var dataPoint = {
+                  mostUpregulated: {
+                    gene: structureCombinedData.mostUpregulated.gene,
+                    expressions: structureCombinedData.mostUpregulated.expressions[i],
+                  },
+                  mostDownregulated: {
+                    gene: structureCombinedData.mostDownregulated.gene,
+                    expressions: structureCombinedData.mostDownregulated.expressions[i],
+                  }
+                };
+                return path(dataPoint);
+              })
+              .style("fill", "none")
+              .style("stroke", function (_, i) { return color(lineTypes[i]); })
+              .style("opacity", 0.5);
+            
         // Draw the axis:
         svg.selectAll("myAxis")
           // For each dimension of the dataset I add a 'g' element:
@@ -1575,12 +1633,6 @@ svg.append("text")
             .style("fill", "black")
   
 }
-
-    
-
-
-
-
 
     function calculateAverageExpressions(dataArray) {
       // Create an object to store the sum and count for each gene
