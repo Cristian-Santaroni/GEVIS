@@ -43,6 +43,7 @@
   <button id="computePValuesButton" > compute p-val</button>
   <div id="boxPlot"></div>
   <div id="boxPlot1"></div>
+  <div id="parallelCoordinates"></div>
 
 
   <script>
@@ -552,6 +553,7 @@
             updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
             updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
             updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
+            updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy)
                               }
 
               
@@ -782,6 +784,18 @@
 }
 
     function updateScatterPlot(averageExpressionsN, averageExpressionsC, log_thr_fc, parsed, old_p_adj) {
+
+      var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
+      return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
+       }, parsedLogFC[0]);
+
+       var mostDownregulatedGene = parsedLogFC.reduce((minGene, currentGene) => {
+      return currentGene.logFC < minGene.logFC ? currentGene : minGene;
+       }, parsedLogFC[0]);
+
+       console.log(mostUpregulatedGene)
+       var mostUpregulatedGeneName = mostUpregulatedGene.Gene;
+       var mostDownregulatedGeneName = mostDownregulatedGene.Gene;
     // Set up margin, width, and height
     var margin = { top: 10, right: 120, bottom: 60, left: 60 }; // Increased right margin for the legend
     var width = 800 - margin.left - margin.right;
@@ -898,16 +912,31 @@
         .enter().append("circle")
         .attr("cx", d => xScale(d.x))
         .attr("cy", d => yScale(d.y))
-        .attr("r", 2)
+        .attr("r", d=>{
+          if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName ) {
+                return "2";
+          }
+            else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                return "2";
+            } else if(d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                return "2";
+            } else if(d.logFC >= log_thr_fc && d.pval_adj <= 0.05 && d.gene == mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName){
+                    return "4"
+            }
+            else if(d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene == mostDownregulatedGeneName){
+                  return "4"
+            }
+        })
         .style("fill", d => {
             // Check if logFC is greater than or equal to the threshold
-            if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05) {
+            if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 ) {
                 return "red";
             } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
                 return "blue";
-            } else {
+            } else  {
                 return "grey";
             }
+            
         })
         .on("mouseover", function (d) {
           // Highlight the gene on mouseover
@@ -942,9 +971,9 @@
     //console.log(mostUpregulatedGene)
     var geneName = mostUpregulatedGene.Gene;
     
-    console.log(dataN)  
-    console.log(dataC)
-    console.log(parsedLogFC)
+    // console.log(dataN)  
+    // console.log(dataC)
+    // console.log(parsedLogFC)
 
 
     //console.log(mostUpregulatedGene)
@@ -990,7 +1019,7 @@
 
         })
 
-        console.log(expressionValuesC)
+        //console.log(expressionValuesC)
           
       let expressionValuesN
       geneDataN.forEach(entry => {
@@ -1030,7 +1059,8 @@
     .entries(combinedData);
 
     
-  
+    
+
     var margin = {top: 10, right: 30, bottom: 30, left: 40},
     width = 460 - margin.left - margin.right,
     height = 400 - margin.top - margin.bottom;
@@ -1135,12 +1165,10 @@ svg.append("text")
     var geneDataN = dataN.filter(d => d.gene === geneName)
     var geneDataC = dataC.filter(d => d.gene === geneName)
 
-    let ymin = Number.POSITIVE_INFINITY;
-    let ymax = Number.NEGATIVE_INFINITY;
+    
 
-
-    console.log(geneDataC)  
-    console.log(geneDataC)
+     console.log(geneDataC)  
+     console.log(geneDataC)
 
         function computeBoxPlotStatistics(data1) {
           var expressionValues = data1.map(entry => entry.expression);
@@ -1327,6 +1355,233 @@ svg.append("text")
         .attr("stroke", "black")
   }
     
+    function updateParallel(parsedLogFc,data,dataC,dataN){
+      console.log (parsedLogFC)
+      // var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
+      // return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
+      //  }, parsedLogFC[0]);
+
+      //  var mostDownregulatedGene = parsedLogFC.reduce((minGene, currentGene) => {
+      // return currentGene.logFC < minGene.logFC ? currentGene : minGene;
+      //  }, parsedLogFC[0]);
+
+
+       var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
+
+      var mostUpregulatedGene = sortedLogFC[0];
+      var secondMostUpregulatedGene = sortedLogFC[1];
+
+      var mostDownregulatedGene = sortedLogFC[sortedLogFC.length - 1];
+      var secondMostDownregulatedGene = sortedLogFC[sortedLogFC.length - 2];
+
+      var mostUpregulatedGeneName = mostUpregulatedGene.Gene
+      //var secondMostUpregulatedGeneName = secondMostUpregulatedGene.Gene
+      var mostDownregulatedGeneName = mostDownregulatedGene.Gene
+      //var secondMostDownregulatedGeneName = secondMostDownregulatedGene.Gene
+
+
+      var geneDataNUp = dataN.filter(d => d.gene === mostUpregulatedGeneName)
+      var geneDataCUp = dataC.filter(d => d.gene === mostUpregulatedGeneName)
+      
+      var geneDataNDown = dataN.filter(d => d.gene === mostDownregulatedGeneName)
+      var geneDataCDown = dataC.filter(d => d.gene === mostDownregulatedGeneName)
+
+      // console.log (geneDataNUp)
+      // console.log (geneDataCUp)
+
+      // console.log (geneDataNDown)
+      // console.log (geneDataCDown)
+
+          
+
+      let expressionValuesCUp
+      geneDataCUp.forEach(entry => {
+          expressionValuesCUp = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+        })
+      let expressionValuesNUp
+        geneDataNUp.forEach(entry => {
+            expressionValuesNUp = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+          })
+
+      let expressionValuesCDown
+      geneDataCDown.forEach(entry => {
+          expressionValuesCDown = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+        })
+      let expressionValuesNDown
+        geneDataNDown.forEach(entry => {
+            expressionValuesNDown = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+          })
+
+            
+
+
+      var combinedDataUp = [];
+
+          // Iterate over expressionValuesC and add objects to combinedData with type 'case'
+          expressionValuesCUp.forEach(expression => {
+              combinedDataUp.push({ expression: expression, type: 'case' });
+          });
+
+          // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
+          expressionValuesNUp.forEach(expression => {
+              combinedDataUp.push({ expression: expression, type: 'normal' });
+          });
+
+
+
+          var combinedDataDown = [];
+
+              // Iterate over expressionValuesC and add objects to combinedData with type 'case'
+              expressionValuesCDown.forEach(expression => {
+                  combinedDataDown.push({ expression: expression, type: 'case' });
+              });
+
+              // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
+              expressionValuesNDown.forEach(expression => {
+                  combinedDataDown.push({ expression: expression, type: 'normal' });
+              });
+
+
+
+              var structureCombinedData = {
+                        mostUpregulated: {
+                          gene: mostUpregulatedGeneName,
+                            expressions: combinedDataUp.map(entry => entry.expression),
+                            type: combinedDataUp.map(entry => entry.type)
+                        },
+                        mostDownregulated: {
+                            gene: mostDownregulatedGeneName,
+                            expressions: combinedDataDown.map(entry => entry.expression),
+                            type: combinedDataDown.map(entry => entry.type)
+                        }
+                    };
+                    
+  console.log(structureCombinedData);
+          
+
+  // set the dimensions and margins of the graph
+        var margin = {top: 30, right: 50, bottom: 10, left: 50},
+          width = 460 - margin.left - margin.right,
+          height = 400 - margin.top - margin.bottom;
+
+        // append the svg object to the body of the page
+        var svg = d3.select("#parallelCoordinates")
+        .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+          var color = d3.scaleOrdinal()
+              .domain(["case","control" ])
+              .range([ "#440154ff", "#21908dff"])
+
+          dimensions = [mostUpregulatedGeneName, mostDownregulatedGeneName]
+
+          var y = {}
+            for (i in dimensions) {
+              name = dimensions[i]
+              y[name] = d3.scaleLinear()
+                .domain( [0,20] ) 
+                .range([height, 0])
+            }
+            // Build the X scale -> it find the best position for each Y axis
+            x = d3.scalePoint()
+              .range([0, width])
+              .domain(dimensions);
+
+
+              var highlight = function(d){
+
+                selected_type = d.type
+
+                // first every group turns grey
+                d3.selectAll(".line")
+                  .transition().duration(200)
+                  .style("stroke", "lightgrey")
+                  .style("opacity", "0.2")
+                // Second the hovered specie takes its color
+                d3.selectAll("." + selected_type)
+                  .transition().duration(200)
+                  .style("stroke", color(selected_type))
+                  .style("opacity", "1")
+                }
+
+              // Unhighlight
+              var doNotHighlight = function(d){
+                d3.selectAll(".line")
+                  .transition().duration(200).delay(1000)
+                  .style("stroke", function(d){ return( color(d.type))} )
+                  .style("opacity", "1")
+              }
+
+              function path(d) {
+              // Extract gene, expressions, and type from the structure
+              var expressionsUp = d.mostUpregulated.expressions;
+              var expressionsDown = d.mostDownregulated.expressions;
+
+              // Return x and y coordinates using dimensions, x, and y functions
+              return d3.line()([
+                [x(mostUpregulatedGeneName), y[mostUpregulatedGeneName](expressionsUp)],
+                [x(mostDownregulatedGeneName), y[mostDownregulatedGeneName](expressionsDown)]
+              ]);
+            }
+
+                svg
+                .selectAll("myPath")
+                .data(structureCombinedData.mostUpregulated.expressions) // Assuming both genes have the same number of expressions
+                .enter().append("path")
+                .attr("d", function (_, i) {
+                  // For each iteration, create a line connecting the expressions of both genes at the same index
+                  var dataPoint = {
+                    mostUpregulated: {
+                      gene: structureCombinedData.mostUpregulated.gene,
+                      expressions: structureCombinedData.mostUpregulated.expressions[i],
+                      type: structureCombinedData.mostUpregulated.type[i]
+                    },
+                    mostDownregulated: {
+                      gene: structureCombinedData.mostDownregulated.gene,
+                      expressions: structureCombinedData.mostDownregulated.expressions[i],
+                      type: structureCombinedData.mostDownregulated.type[i]
+                    }
+                  };
+                  return path(dataPoint);
+                })
+                .style("fill", "none")
+                .style("stroke", function(d){ return( color(d.type))} )
+                .style("opacity", 0.5)
+                .on("mouseover", highlight)
+                .on("mouseleave", doNotHighlight)
+
+        // Draw the axis:
+        svg.selectAll("myAxis")
+          // For each dimension of the dataset I add a 'g' element:
+          .data(dimensions).enter()
+          .append("g")
+          // I translate this element to its right position on the x axis
+          .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+          // And I build the axis with the call function
+          .each(function(d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
+          // Add axis title
+          .append("text")
+            .style("text-anchor", "middle")
+            .attr("y", -9)
+            .text(function(d) { return d; })
+            .style("fill", "black")
+  
+}
+
+    
+
+
+
+
+
     function calculateAverageExpressions(dataArray) {
       // Create an object to store the sum and count for each gene
       var geneSumCount = {};

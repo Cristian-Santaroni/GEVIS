@@ -6,8 +6,8 @@ hello <- function(data) {
   data <- data[, -ncol(data)]
 
 
-  N <- 48
-  M <- 59
+  N <- 49
+  M <- 58
   # Now, the last column has been removed from each matrix
 
   # x is the first gene of the data matrix
