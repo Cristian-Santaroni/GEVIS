@@ -198,9 +198,6 @@
             variation_data_copy = (variation_data);
             console.log("numero di geni iniziali prima di qualsiasi filtro "+row_length)
 
-
-
-
             thr_prc = ss.quantile(variation_data, prc_IQR);
             updateHistogram(variation_data);
 
@@ -245,9 +242,9 @@
             parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
             parsedLogFC = parsedLogFC_origin
 
-             console.log("first parsed origin after",parsedLogFC_origin.length)
-             console.log("first data orign afterN ",dataN_copy.length)
-             console.log("first data orign afterC ",dataC_copy.length)
+            //  console.log("first parsed origin after",parsedLogFC_origin.length)
+            //  console.log("first data orign afterN ",dataN_copy.length)
+            //  console.log("first data orign afterC ",dataC_copy.length)
           
              averageExpressions10C = calculateAverageLog10Expressions(dataC_copy);
              averageExpressions10N = calculateAverageLog10Expressions(dataN_copy);
@@ -303,35 +300,37 @@
         return result;
       }, []);
 
+
       if (ind.length > 0) {
         // Remove entries corresponding to ind from dataC
-        dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+        dataC_copy1 = dataC_original.filter((entry, index) => !ind.includes(index));
 
         // Remove entries corresponding to ind from data
-        dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+        dataN_copy1 = dataN_original.filter((entry, index) => !ind.includes(index));
 
-        data_copy  = data_original.filter((entry, index) => !ind.includes(index));
+        data_copy1  = data_original.filter((entry, index) => !ind.includes(index));
         
         // Remove entries corresponding to ind from genes
         //genes = genes.filter((entry, index) => !ind.includes(index));
 
         // Remove entries corresponding to ind from logFC
-        //parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+        //parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
 
       }
       // Update the gene count display
       const geneCountDiv = document.getElementById('geneCount');
-      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${dataC_copy.length}`;
+      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${dataC_copy1.length}`;
 
       first_filter_number_genes = dataC_copy.length
 
-      parsedLogFC_origin = calculateLogFC(dataC_copy, dataN_copy);
+      parsedLogFC_origin = calculateLogFC(dataC_copy1, dataN_copy1);
       parsedLogFC = parsedLogFC_origin
 
+      
       updateLogFCHistogram(parsedLogFC_origin)
 
   
-
+      console.log(parsedLogFC_origin)
 
       log_thr_fc = Math.log2(thr_fc);  
             const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
@@ -360,12 +359,12 @@
       if (ind.length > 0) {
 
         // Remove entries corresponding to ind from dataN
-        data_copy = data_original.filter((entry, index) => !ind.includes(index));
+       // data_copy = data_original.filter((entry, index) => !ind.includes(index));
 
-        dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+       // dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
 
         // Remove entries corresponding to ind from data
-        dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
+        //dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
         // Remove entries corresponding to ind from genes
         //genes = genes.filter((entry, index) => !ind.includes(index));
 
@@ -392,63 +391,70 @@
 
     });
 
+    
+
+
     document.getElementById("log_thresholdSlider").addEventListener("input", function() {
-      // Update the threshold value on slider change
-      thr_fc = parseFloat(this.value);
-      document.getElementById("log_thresholdSliderValue").innerText = thr_fc;
+        // Update the threshold value on slider change
+        thr_fc = parseFloat(this.value);
+        document.getElementById("log_thresholdSliderValue").innerText = thr_fc;
 
-      // Calculate the quantile
-      log_thr_fc = Math.log2(thr_fc);  
-      const ind = parsedLogFC_origin.reduce((result, entry, index) => {
-          
-          if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-            result.push(index);
+        // Calculate the quantile
+        log_thr_fc = Math.log2(thr_fc);  
+        const ind = parsedLogFC_origin.reduce((result, entry, index) => {
             
+            if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+              result.push(index);
+              
+            }
+            return result;
+          }, []);
+
+          console.log("parsed log before ",parsedLogFC.length)
+          console.log("data copy beforeC ",dataC_copy.length)
+          console.log("data copy beforeN ",dataN_copy.length)
+
+          console.log("parsed log origin ",parsedLogFC_origin.length)
+          /////////////////////// 
+          
+          //DIMENSIONE DI PARSED E DATAC,DATAN SONO UGUALI , GIUSTAMENTE
+
+          //////////////////////
+
+          if (ind.length>0){
+
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy1.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy1.filter((entry, index) => !ind.includes(index));
+
+            data_copy = data_copy1.filter((entry, index) => !ind.includes(index));
+
+            parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index)); 
           }
-          return result;
-        }, []);
 
-        console.log("parsed log before ",parsedLogFC.length)
-        console.log("data copy beforeC ",dataC_copy.length)
-        console.log("data copy beforeN ",dataN_copy.length)
-        /////////////////////// 
-        
-        //DIMENSIONE DI PARSED E DATAC,DATAN SONO UGUALI , GIUSTAMENTE
+          /////////////////////// 
 
-        //////////////////////
+          //DIMENSIONE DI PARSED E DATAC,DATAN SONO DIVERSE , QUESTA COSA E' GIUSTA?
 
-        if (ind.length>0){
-
-          // Remove entries corresponding to ind from dataN
-          dataC_copy = dataC_copy1.filter((entry, index) => !ind.includes(index));
-
-          // Remove entries corresponding to ind from dataN
-          dataN_copy = dataN_copy1.filter((entry, index) => !ind.includes(index));
-
-          data_copy = data_copy1.filter((entry, index) => !ind.includes(index));
-
-          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index)); 
-        }
-        /////////////////////// 
-
-        //DIMENSIONE DI PARSED E DATAC,DATAN SONO DIVERSE , QUESTA COSA E' GIUSTA?
-
-        //////////////////////
-        console.log("parsed log after",parsedLogFC.length)
-        console.log("data copy afterC ",dataC_copy.length)
-        console.log("data copy afterN",dataN_copy.length)
+          //////////////////////
+          console.log("parsed log after",parsedLogFC.length)
+          console.log("data copy afterC ",dataC_copy.length)
+          console.log("data copy afterN",dataN_copy.length)
+          console.log("parsedLogFCorig ",parsedLogFC_origin.length)
 
 
-      const geneCountDiv = document.getElementById('geneCount2');
-      geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
+        const geneCountDiv = document.getElementById('geneCount2');
+        geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
 
-      // Call the updateHistogram function directly
-      updateLogFCHistogram(parsedLogFC_origin);
-      //console.log(log_thr_fc)
-      //updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,old_p_adj)
-    });
+        // Call the updateHistogram function directly
+        updateLogFCHistogram(parsedLogFC_origin);
+        //console.log(log_thr_fc)
+        //updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,old_p_adj)
+      });
 
-   /* document.getElementById("log_thresholdSlider").addEventListener("change", function() {
+    document.getElementById("log_thresholdSlider").addEventListener("change", function() {
 
      // console.log("sono dentro")
       //console.log("threshold "+thr_fc)
@@ -469,20 +475,19 @@
         
         if (ind.length > 0) {
 
-        
           // Remove entries corresponding to ind from dataN
 
-          // Remove entries corresponding to ind from dataN
-          dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+          // // Remove entries corresponding to ind from dataN
+          // dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
 
-          // Remove entries corresponding to ind from dataN
-          dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+          // // Remove entries corresponding to ind from dataN
+          // dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
 
-          data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+          // data_copy = data_copy.filter((entry, index) => !ind.includes(index));
 
           
-          // Remove entries corresponding to ind from logFC
-          parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
+          // // Remove entries corresponding to ind from logFC
+          // parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
           
           //console.log(parsedLogFC.length)
 
@@ -497,7 +502,7 @@
         
         // Now, dataN, dataC, data, genes, and logFC are updated
     })
-*/
+
 
     // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
     document.getElementById("computePValuesButton").addEventListener("click", function() {
@@ -775,7 +780,6 @@
         .attr("opacity", 1); // Set opacity for transparency
 
 }
-
 
     function updateScatterPlot(averageExpressionsN, averageExpressionsC, log_thr_fc, parsed, old_p_adj) {
     // Set up margin, width, and height
@@ -1110,14 +1114,13 @@ svg.append("text")
       .append("circle")
         .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
         .attr("cy", function(d){return(y(d.expression))})
-        .attr("r", 4)
+        .attr("r", 2)
         .style("fill", "white")
         .attr("stroke", "black")
 
 
 
   }
-
 
     function updateBoxPlot1(parsedLogFC,dataN,dataC){
     var mostDownregulatedGene = parsedLogFC.reduce((minGene, currentGene) => {
@@ -1319,14 +1322,11 @@ svg.append("text")
       .append("circle")
         .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
         .attr("cy", function(d){return(y(d.expression))})
-        .attr("r", 4)
+        .attr("r", 2)
         .style("fill", "white")
         .attr("stroke", "black")
-
-
   }
     
-  
     function calculateAverageExpressions(dataArray) {
       // Create an object to store the sum and count for each gene
       var geneSumCount = {};
@@ -1393,6 +1393,7 @@ svg.append("text")
 
     return averageLog10Expressions;
 }
+
 
 
   </script>
