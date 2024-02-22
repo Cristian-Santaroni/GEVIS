@@ -10,6 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.0.0/simple-statistics.min.js"></script>
   <script src='https://cdn.jsdelivr.net/gh/kdpsingh/rjs@master/r.js'></script>
   <script src="https://d3js.org/d3.v4.js"></script>
+  
   <style>
     #thresholdSlider {
       width: 10%;
@@ -40,11 +41,12 @@
   <div id="logFCHistogram"></div>
   <div id="geneCount2"></div><br>
   <div id="scatterPlot"></div> <button id="resetButton">Reset Zoom</button> 
+  <div id="parallelcoordinates"></div>
   <button id="computePValuesButton" > compute p-val</button>
   <div id="boxPlot"></div>
   <div id="boxPlot1"></div>
   <div id="parallelCoordinates"></div>
-
+  
 
   <script>
     ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
@@ -80,7 +82,7 @@
     let averageExpressions10N;
     let averageExpressionsC;
     let averageExpressionsN;
-
+    let selectedGeneData=[];
     let old_p_adj
 
     function calculateLogFC(dataC, dataN) {
@@ -1010,9 +1012,19 @@
 
                     tooltip.transition()
                         .style("opacity", 0);
-                });
+                })
+                .on("click", function (d) {
+                  // On click, filter data for the selected gene
+                  selectedGeneData.push(data.filter(gene => gene.gene === d.gene));
+                  console.log(selectedGeneData)
+                  // Call a function to create parallel coordinates plot using selectedGeneData
+                  createParallelCoordinates(selectedGeneData);
+              });
 
-                function updateChart() {
+
+
+
+            function updateChart() {
             // recover the new scale
             var newX = d3.event.transform.rescaleX(xScale);
             var newY = d3.event.transform.rescaleY(yScale);
@@ -1044,6 +1056,85 @@
 
         
 }
+
+    function createParallelCoordinates(selectedGeneData) {
+      var dataArray = Object.values(selectedGeneData);
+      console.log(dataArray[0]);
+      console.log([selectedGeneData]);
+
+  var margin = {top: 30, right: 50, bottom: 10, left: 50},
+  width = 460 - margin.left - margin.right,
+  height = 400 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+    var svg = d3.select("#parallelcoordinates")
+    .html("")
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+
+            dimensions = ["x", "y","logFC","pval_adj" ]
+
+  var y = {}
+  for (i in dimensions) {
+    name = dimensions[i]
+    y[name] = d3.scaleLinear()
+      .domain( [-8,8] ) // --> Same axis range for each group
+      // --> different axis range for each group --> .domain( [d3.extent(data, function(d) { return +d[name]; })] )
+      .range([height, 0])
+  }
+    // Build the X scale -> it find the best position for each Y axis
+  var x = d3.scalePoint()
+    .range([0, width])
+    .domain(dimensions)
+
+
+    function path(d) {
+      console.log(d)
+      return d3.line()(dimensions.map(function(p,i) { 
+        return [  x(p), y[p](d[p])   ];}));
+  }
+  selectedGeneData.forEach(element => {
+    svg
+  .selectAll("myPath")
+  .data(element) // Use the entire array directly
+  .enter()
+  .append("path")
+  .style("fill", "none" )
+  .style("stroke", "red" )
+  .style("opacity", 0.5)
+  .attr("d", path);
+});
+  // Draw the lines
+  
+
+
+  // Draw the axis:
+  svg.selectAll("myAxis")
+    // For each dimension of the dataset I add a 'g' element:
+    .data(dimensions).enter()
+    .append("g")
+    .attr("class", "axis")
+    // I translate this element to its right position on the x axis
+    .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+    // And I build the axis with the call function
+    .each(function(d) { d3.select(this).call(d3.axisLeft().ticks(5).scale(y[d])); })
+    // Add axis title
+    .append("text")
+      .style("text-anchor", "middle")
+      .attr("y", -9)
+      .text(function(d) { return d; })
+      .style("fill", "black")
+}
+
+
+
+
+    
 
     function updateBoxPlot(parsedLogFC,dataN,dataC){
         var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
