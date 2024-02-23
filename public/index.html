@@ -454,6 +454,7 @@
 
         // Calculate the quantile
         log_thr_fc = Math.log2(thr_fc);  
+        console.log(log_thr_fc)
         const ind = parsedLogFC_origin.reduce((result, entry, index) => {
             
             if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
@@ -504,14 +505,11 @@
         // Call the updateHistogram function directly
         updateLogFCHistogram(parsedLogFC_origin);
         //console.log(log_thr_fc)
-        //updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,old_p_adj)
       });
 
     document.getElementById("log_thresholdSlider").addEventListener("change", function() {
 
-     // console.log("sono dentro")
-      //console.log("threshold "+thr_fc)
-        // Find indices where abs(logFC) < log2(thr_fc)
+   
         const ind = parsedLogFC_origin.reduce((result, entry, index) => {
           
           if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
@@ -565,35 +563,35 @@
           return result;
         }, []);
 
-        if (ind.length > 0) {
+        // if (ind.length > 0) {
+        //     //console.log(parsedLogFC.length)
 
-            //console.log(parsedLogFC.length)
+        //     // Remove entries corresponding to ind from dataN
 
-            // Remove entries corresponding to ind from dataN
+        //     // Remove entries corresponding to ind from dataN
+        //     dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
 
-            // Remove entries corresponding to ind from dataN
-            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
-
-            // Remove entries corresponding to ind from dataN
-            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+        //     // Remove entries corresponding to ind from dataN
+        //     dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
 
 
-            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+        //     data_copy = data_copy.filter((entry, index) => !ind.includes(index));
 
-            // Remove entries corresponding to ind from logFC
-            parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
-
-            updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
-            updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
-            updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
-            updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy)
-                              }
+        //     // Remove entries corresponding to ind from logFC
+        //     parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+            
+            
+        //     updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+        //     updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
+        //     updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy)
+            
+        //   }
 
       });
     })
 
 
-
+        updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
         //updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
         // console.log("parsed log ",parsedLogFC.length)
         // console.log("data copy beforeC ",dataC_copy.length)
@@ -872,7 +870,7 @@
 
     function updateScatterPlot(averageExpressionsN, averageExpressionsC, log_thr_fc, parsed, old_p_adj) {
 
-      console.log(threshold)
+      console.log(parsed)
 
       var mostUpregulatedGene = parsed.reduce((maxGene, currentGene) => {
       return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
