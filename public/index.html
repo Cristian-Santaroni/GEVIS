@@ -85,6 +85,8 @@
     let selectedGeneData=[];
     let old_p_adj
 
+    var scatter;
+
     function calculateLogFC(dataC, dataN) {
     const logFCData = [];
 
@@ -120,7 +122,6 @@
 }
 
 
-
     function fetchJSON(url) {
       return fetch(url)
         .then(response => {
@@ -142,8 +143,6 @@
           console.error('Error fetching JSON:', error);
         });
     }
-
-
 
     // Define a function to fetch data from a file with no header
     function fetchData(filename) {
@@ -179,7 +178,6 @@
         return matrixWithHeaders; // Return the matrix with headers
     });
   }
-
 
     // Read the contents of the .txt file
     Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json')])
@@ -282,9 +280,6 @@
           })
           .catch(error => console.error('Error reading file:', error));
         });
-
-    
-      
 
     document.getElementById("thresholdSlider").addEventListener("input", function() {
       // Update the threshold value on slider change
@@ -393,9 +388,6 @@
 
 
     });
-
-    
-
 
     document.getElementById("log_thresholdSlider").addEventListener("input", function() {
         // Update the threshold value on slider change
@@ -506,7 +498,6 @@
         // Now, dataN, dataC, data, genes, and logFC are updated
     })
 
-
     // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
     document.getElementById("computePValuesButton").addEventListener("click", function() {
     //console.log(dataC_copy)
@@ -558,15 +549,10 @@
             updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy)
                               }
 
-              
-
-           
       });
     })
 
 });
-
-
 
     function updateHistogram(variation_data) {
     // Filter data based on the threshold
@@ -843,7 +829,7 @@
             .attr("y", 0);
 
         // Create the scatter variable: where both the circles and the brush take place
-        var scatter = svg.append('g')
+         scatter = svg.append('g')
             .attr("clip-path", "url(#clip)");
 
         // Set the zoom and Pan features
@@ -909,10 +895,17 @@
                 var logFCObj = parsed.find(d => d.Gene === gene) || null;
                 var logFC = logFCObj ? logFCObj.logFC : null;
 
+                if( logFC <= log_thr_fc ){
+                  var type = "down"
+                }
+                else{
+                  var type = "up"
+                }
+
                 var pval_adjObj = old_p_adj.find(d => d.Gene === gene) || null;
                 var pval_adj = pval_adjObj ? pval_adjObj.pval_adj : null;
 
-                return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj };
+                return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj, type: type };
             });
 
             
@@ -988,7 +981,6 @@
                     }
                     
                 })
-
                 .on("mouseover", function (d) {
                   // Highlight the gene on mouseover
                   d3.select(this)
@@ -1003,8 +995,6 @@
                       .style("left", (d3.event.pageX + 15) + "px")
                       .style("top", (d3.event.pageY - 28) + "px");
               })
-
-
                 .on("mouseout", function (d) {
                     // Remove the highlight and hide tooltip on mouseout
                     d3.select(this)
@@ -1014,15 +1004,43 @@
                         .style("opacity", 0);
                 })
                 .on("click", function (d) {
-                  // On click, filter data for the selected gene
-                  selectedGeneData.push(data.filter(gene => gene.gene === d.gene));
-                  console.log(selectedGeneData)
-                  // Call a function to create parallel coordinates plot using selectedGeneData
-                  createParallelCoordinates(selectedGeneData);
-              });
+                  var selectedElement = d3.select(this);
+                  
+                  // Check if the element is already highlighted
+                  var isHighlighted = selectedElement.style("fill") === "green";
 
+                  if (isHighlighted) {
+                    console.log("sono verde")
+                      // If already highlighted, remove the highlighting
+                      selectedElement.style("fill",d => {
+                    // Check if logFC is greater than or equal to the threshold
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 ) {
+                        return "red";
+                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
+                        return "blue";
+                    } else  {
+                        return "grey";
+                    }
 
+                  });
+                  for (let i = 0; i < selectedGeneData.length; i++) {
+                    selectedGeneData[i] = selectedGeneData[i].filter(gene => gene.gene !== d.gene);
+                  }
+                createParallelCoordinates(selectedGeneData);
+                  } else {
+                      // If not highlighted, apply the highlighting
+                      selectedElement
+                          .style("fill", "green")
+                          .style("stroke-width", 2);
 
+                      // On click, filter data for the selected gene
+                      selectedGeneData.push(data.filter(gene => gene.gene === d.gene));
+                      console.log(selectedGeneData);
+
+                      // Call a function to create parallel coordinates plot using selectedGeneData
+                      createParallelCoordinates(selectedGeneData);
+                  }
+                });
 
             function updateChart() {
             // recover the new scale
@@ -1040,13 +1058,13 @@
                 .attr('cy', function (d) { return newY(d.y); });
         }
 
-        // Define the resetZoom function
-        function resetZoom() {
-            // Reset the zoom transformation
-            svg.transition()
-              .duration(750)
-              .call(zoom.transform, d3.zoomIdentity);
-          }
+            // Define the resetZoom function
+            function resetZoom() {
+                // Reset the zoom transformation
+                svg.transition()
+                  .duration(750)
+                  .call(zoom.transform, d3.zoomIdentity);
+              }
 
 
 
@@ -1058,83 +1076,160 @@
 }
 
     function createParallelCoordinates(selectedGeneData) {
-      var dataArray = Object.values(selectedGeneData);
-      console.log(dataArray[0]);
+     // var dataArray = Object.values(selectedGeneData);
+      //console.log(dataArray[0]);
       console.log([selectedGeneData]);
 
-  var margin = {top: 30, right: 50, bottom: 10, left: 50},
-  width = 460 - margin.left - margin.right,
-  height = 400 - margin.top - margin.bottom;
+        var margin = {top: 30, right: 50, bottom: 10, left: 50},
+        width = 460 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
 
-// append the svg object to the body of the page
-    var svg = d3.select("#parallelcoordinates")
-    .html("")
-    .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-      .attr("transform",
-            "translate(" + margin.left + "," + margin.top + ")");
+      // append the svg object to the body of the page
+          var svg = d3.select("#parallelcoordinates")
+          .html("")
+          .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
 
 
-            dimensions = ["x", "y","logFC","pval_adj" ]
+                  dimensions = ["x", "y","logFC","pval_adj"]
+          
+        var color=d3.scaleOrdinal().domain(["up","down"]).range(["red","blue"])
 
-  var y = {}
-  for (i in dimensions) {
-    name = dimensions[i]
-    y[name] = d3.scaleLinear()
-      .domain( [-8,8] ) // --> Same axis range for each group
-      // --> different axis range for each group --> .domain( [d3.extent(data, function(d) { return +d[name]; })] )
-      .range([height, 0])
+
+          var highlight = function(d){
+
+            selected_reg= d.type
+
+            // first every group turns grey
+            d3.selectAll(".line")
+            .transition().duration(200)
+            .style("stroke", "lightgrey")
+            .style("opacity", "0.2")
+
+            // Second the hovered specie takes its color
+            d3.selectAll("." + selected_reg)
+            .transition().duration(200)
+            .style("stroke", color(selected_reg))
+            .style("opacity", "1")
+
+          }
+
+            // Unhighlight
+          var doNotHighlight = function(d){
+            d3.selectAll(".line")
+              .transition().duration(200).delay(1000)
+              .style("stroke", function(d){ return( color(d.type))} )
+              .style("opacity", "1")
+          }
+
+        var y = {}
+        for (i in dimensions) {
+          name = dimensions[i]
+          y[name] = d3.scaleLinear()
+            .domain( [-8,8] ) // --> Same axis range for each group
+            // --> different axis range for each group --> .domain( [d3.extent(data, function(d) { return +d[name]; })] )
+            .range([height, 0])
+        }
+          // Build the X scale -> it find the best position for each Y axis
+        var x = d3.scalePoint()
+          .range([0, width])
+          .domain(dimensions)
+
+
+          function path(d) {
+            console.log(d)
+            return d3.line()(dimensions.map(function(p,i) { 
+              return [  x(p), y[p](d[p])   ];}));
+        }
+
+        if(selectedGeneData && selectedGeneData.length > 0){
+          console.log(selectedGeneData.length)
+        selectedGeneData.forEach(element => {
+
+          svg
+        .selectAll("myPath")
+        .data(element) // Use the entire array directly
+        .enter()
+        .append("path")
+        .attr("class", function (d) { return "line " + d.type } )
+        .style("fill", "none" )
+        .style("stroke", function(d){ return( color(d.type))} )
+        .style("opacity", 0.5)
+        .on("mouseover", highlight)
+        .on("mouseleave", doNotHighlight )
+        .attr("d", path)
+        .on("click", onLineClick); // Add click event to new lines
+    });
   }
-    // Build the X scale -> it find the best position for each Y axis
-  var x = d3.scalePoint()
-    .range([0, width])
-    .domain(dimensions)
 
-
-    function path(d) {
-      console.log(d)
-      return d3.line()(dimensions.map(function(p,i) { 
-        return [  x(p), y[p](d[p])   ];}));
-  }
-  selectedGeneData.forEach(element => {
-    svg
-  .selectAll("myPath")
-  .data(element) // Use the entire array directly
-  .enter()
-  .append("path")
-  .style("fill", "none" )
-  .style("stroke", "red" )
-  .style("opacity", 0.5)
-  .attr("d", path);
-});
-  // Draw the lines
   
 
 
-  // Draw the axis:
-  svg.selectAll("myAxis")
-    // For each dimension of the dataset I add a 'g' element:
-    .data(dimensions).enter()
-    .append("g")
-    .attr("class", "axis")
-    // I translate this element to its right position on the x axis
-    .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
-    // And I build the axis with the call function
-    .each(function(d) { d3.select(this).call(d3.axisLeft().ticks(5).scale(y[d])); })
-    // Add axis title
-    .append("text")
-      .style("text-anchor", "middle")
-      .attr("y", -9)
-      .text(function(d) { return d; })
-      .style("fill", "black")
-}
+        // Draw the axis:
+        svg.selectAll("myAxis")
+          // For each dimension of the dataset I add a 'g' element:
+          .data(dimensions).enter()
+          .append("g")
+          .attr("class", "axis")
+          // I translate this element to its right position on the x axis
+          .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+          // And I build the axis with the call function
+          .each(function(d) { d3.select(this).call(d3.axisLeft().ticks(5).scale(y[d])); })
+          // Add axis title
+          .append("text")
+            .style("text-anchor", "middle")
+            .attr("y", -9)
+            .text(function(d) { return d; })
+            .style("fill", "black")
+
+        function onLineClick(d) {
+        // Remove the clicked gene from selectedGeneData
+        //selectedGeneData = selectedGeneData.filter(gene => gene.gene !== d.gene);
+        for (let i = 0; i < selectedGeneData.length; i++) {
+          selectedGeneData[i] = selectedGeneData[i].filter(gene => gene.gene !== d.gene);
+      }
+      //console.log(selectedGeneData)
+        // Remove the line from the parallel coordinates plot
+        svg.selectAll(".line." + d.type)
+            .remove();
+
+        // Remove highlighting color in the scatter plot
+         scatter.selectAll("circle")
+             .filter(circleData => circleData.gene === d.gene)
+             .style("fill", d => {
+                    // Check if logFC is greater than or equal to the threshold
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 ) {
+                        return "red";
+                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
+                        return "blue";
+                    } else  {
+                        return "grey";
+                    }
+                  });
+                  
+
+        // Update parallel coordinates plot
+        createParallelCoordinates(selectedGeneData);
+    }
+
+        
+      }
+
+      
+    
+
+    
+        
 
 
 
 
     
+
 
     function updateBoxPlot(parsedLogFC,dataN,dataC){
         var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
@@ -1792,8 +1887,6 @@ svg.append("text")
 
     return averageLog10Expressions;
 }
-
-
 
   </script>
  
