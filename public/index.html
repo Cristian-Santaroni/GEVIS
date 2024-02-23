@@ -36,17 +36,30 @@
     <label for="log_thresholdSlider">LogFC threshold:</label>
     <input type="range" id="log_thresholdSlider" min="1.1" max="10" step="0.01" value="1.1">
     <span id="log_thresholdSliderValue">1.1</span>
+    <div id="logFCHistogram"></div>
   </div>
-
-  <div id="logFCHistogram"></div>
+<div> 
+  <button id="resetButton">Reset Zoom</button>
+  <label for="thresholdSelect">Select Threshold:</label>
+   <select id="thresholdSelect">
+    <option value="0.05" selected>0.05</option>
+  <option value="0.01">0.01</option>
+   </select>
+  <div id="scatterPlot"></div>  
+  
+</div>
+  
   <div id="geneCount2"></div><br>
-  <div id="scatterPlot"></div> <button id="resetButton">Reset Zoom</button> 
+ 
   <div id="parallelcoordinates"></div>
-  <button id="computePValuesButton" > compute p-val</button>
+  
   <div id="boxPlot"></div>
   <div id="boxPlot1"></div>
   <div id="parallelCoordinates"></div>
   
+  
+ 
+
 
   <script>
     ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
@@ -77,7 +90,7 @@
     let newdataCJSON
     let first_filter_number_genes;
     let p_val_adj;
-
+    let threshold= 0.05;
     let averageExpressions10C;
     let averageExpressions10N;
     let averageExpressionsC;
@@ -260,7 +273,52 @@
             
             updateLogFCHistogram(parsedLogFC_origin)
             
+              var req = ocpu.call("hello", {
+              data: data_copy
+          }, function(session) {
+              var filteredDataURL = session.loc + "/R/.val/json";
+              console.log(session);
+              // Fetch the filtered data from the URL
+              fetch(filteredDataURL)
+                  .then(response => response.json())
+                  .then(data => {
+                    old_p_adj=data
+                    const ind = old_p_adj.reduce((result, entry, index) => {
+          
+          if (entry.pval_adj > threshold) {
+            result.push(index);
+          }
+          return result;
+        }, []);
 
+        if (ind.length > 0) {
+
+            //console.log(parsedLogFC.length)
+
+            // Remove entries corresponding to ind from dataN
+
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+
+
+            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from logFC
+            parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+
+            updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
+            updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+            updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
+            updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy)
+                              }
+
+      });
+    })
+
+            
                   // Calculate the quantile
             log_thr_fc = Math.log2(thr_fc);           
 
@@ -488,38 +546,20 @@
 
         }
 
-        // console.log("parsed log ",parsedLogFC.length)
-        // console.log("data copy beforeC ",dataC_copy.length)
-        // console.log("data copy beforeN",dataN_copy.length)
 
-        const geneCountDiv = document.getElementById('geneCount2');
-        geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
-        
-        // Now, dataN, dataC, data, genes, and logFC are updated
-    })
-
-    // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
-    document.getElementById("computePValuesButton").addEventListener("click", function() {
-    //console.log(dataC_copy)
-    //console.log(data_copy)
-    //console.log(dataN_copy)
-    
-      var req = ocpu.call("hello", {
-            data: data_copy
-        }, function(session) {
-            var filteredDataURL = session.loc + "/R/.val/json";
-            console.log(session);
-            // Fetch the filtered data from the URL
-            fetch(filteredDataURL)
-                .then(response => response.json())
-                .then(data => {
-                  old_p_adj=data
-                  //console.log(data)
-
-                
-      const ind = old_p_adj.reduce((result, entry, index) => {
+        var req = ocpu.call("hello", {
+              data: data_copy
+          }, function(session) {
+              var filteredDataURL = session.loc + "/R/.val/json";
+              console.log(session);
+              // Fetch the filtered data from the URL
+              fetch(filteredDataURL)
+                  .then(response => response.json())
+                  .then(data => {
+                    old_p_adj=data
+                    const ind = old_p_adj.reduce((result, entry, index) => {
           
-          if (entry.pval_adj > 0.05) {
+          if (entry.pval_adj > threshold) {
             result.push(index);
           }
           return result;
@@ -552,7 +592,66 @@
       });
     })
 
-});
+
+
+        //updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+        // console.log("parsed log ",parsedLogFC.length)
+        // console.log("data copy beforeC ",dataC_copy.length)
+        // console.log("data copy beforeN",dataN_copy.length)
+
+        const geneCountDiv = document.getElementById('geneCount2');
+        geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
+        
+        // Now, dataN, dataC, data, genes, and logFC are updated
+    })
+
+    // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
+    document.getElementById('thresholdSelect').addEventListener('change', function () {
+    //console.log(dataC_copy)
+    //console.log(data_copy)
+    //console.log(dataN_copy)
+    
+        threshold = parseFloat(this.value);
+
+          const ind = old_p_adj.reduce((result, entry, index) => {
+          
+          if (entry.pval_adj > threshold) {
+            result.push(index);
+          }
+          return result;
+        }, []);
+
+        updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+
+        if (ind.length > 0) {
+
+            //console.log(parsedLogFC.length)
+
+            // Remove entries corresponding to ind from dataN
+
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+
+
+            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from logFC
+            parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+
+            
+            updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+            updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
+            updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy) 
+                              }
+
+      })
+    
+  
+
+//});
 
     function updateHistogram(variation_data) {
     // Filter data based on the threshold
@@ -773,13 +872,15 @@
 
     function updateScatterPlot(averageExpressionsN, averageExpressionsC, log_thr_fc, parsed, old_p_adj) {
 
-      var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
-      return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
-       }, parsedLogFC[0]);
+      console.log(threshold)
 
-       var mostDownregulatedGene = parsedLogFC.reduce((minGene, currentGene) => {
+      var mostUpregulatedGene = parsed.reduce((maxGene, currentGene) => {
+      return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
+       }, parsed[0]);
+
+       var mostDownregulatedGene = parsed.reduce((minGene, currentGene) => {
       return currentGene.logFC < minGene.logFC ? currentGene : minGene;
-       }, parsedLogFC[0]);
+       }, parsed[0]);
 
        console.log(mostUpregulatedGene)
        var mostUpregulatedGeneName = mostUpregulatedGene.Gene;
@@ -800,7 +901,7 @@
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+              
         // Create x and y scales
         var xScale = d3.scaleLinear()
             .domain(d3.extent(Object.values(averageExpressionsN)))
@@ -808,18 +909,22 @@
 
         var yScale = d3.scaleLinear()
             .domain(d3.extent(Object.values(averageExpressionsC)))
-            .range([height, 0]);
+            .range([height, 0])
+            .nice()
+
+            
 
         // Add X axis
         var xAxis = svg.append("g")
             .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(xScale));
+            .call(d3.axisBottom(xScale).tickSize(-height*1.3).ticks(10))
 
         // Add Y axis
         var yAxis = svg.append("g")
-            .call(d3.axisLeft(yScale));
-
-        // Add a clipPath: everything out of this area won't be drawn.
+            .call(d3.axisLeft(yScale).tickSize(-width*1.3).ticks(7))
+    
+        // Customization
+        svg.selectAll(".tick line").attr("stroke", "#EBEBEB")
         var clip = svg.append("defs").append("SVG:clipPath")
             .attr("id", "clip")
             .append("SVG:rect")
@@ -905,7 +1010,7 @@
                 var pval_adjObj = old_p_adj.find(d => d.Gene === gene) || null;
                 var pval_adj = pval_adjObj ? pval_adjObj.pval_adj : null;
 
-                return { gene: gene, x: averageExpressionsN[gene], y: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj, type: type };
+                return { gene: gene, Normal: averageExpressionsN[gene], Case: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj, type: type };
             });
 
             
@@ -953,28 +1058,28 @@
             scatter.selectAll("circle")
                 .data(data)
                 .enter().append("circle")
-                .attr("cx", d => xScale(d.x))
-                .attr("cy", d => yScale(d.y))
+                .attr("cx", d => xScale(d.Normal))
+                .attr("cy", d => yScale(d.Case))
                 .attr("r", d=>{
-                  if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName ) {
+                  if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName ) {
                         return "2";
                   }
-                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
                         return "2";
                     } else if(d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
                         return "2";
-                    } else if(d.logFC >= log_thr_fc && d.pval_adj <= 0.05 && d.gene == mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName){
+                    } else if(d.logFC >= log_thr_fc && d.pval_adj <= threshold && d.gene == mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName){
                             return "4"
                     }
-                    else if(d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05 && d.gene != mostUpregulatedGeneName && d.gene == mostDownregulatedGeneName){
+                    else if(d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && d.gene != mostUpregulatedGeneName && d.gene == mostDownregulatedGeneName){
                           return "4"
                     }
                 })
                 .style("fill", d => {
                     // Check if logFC is greater than or equal to the threshold
-                    if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 ) {
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
                         return "red";
-                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
+                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
                         return "blue";
                     } else  {
                         return "grey";
@@ -991,7 +1096,7 @@
                   tooltip.transition()
                       .style("opacity", .9);
 
-                  tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.x.toFixed(2)}<br><strong>Case:</strong> ${d.y.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
+                  tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.Normal.toFixed(2)}<br><strong>Case:</strong> ${d.Case.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
                       .style("left", (d3.event.pageX + 15) + "px")
                       .style("top", (d3.event.pageY - 28) + "px");
               })
@@ -1014,9 +1119,9 @@
                       // If already highlighted, remove the highlighting
                       selectedElement.style("fill",d => {
                     // Check if logFC is greater than or equal to the threshold
-                    if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 ) {
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
                         return "red";
-                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
+                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
                         return "blue";
                     } else  {
                         return "grey";
@@ -1046,16 +1151,16 @@
             // recover the new scale
             var newX = d3.event.transform.rescaleX(xScale);
             var newY = d3.event.transform.rescaleY(yScale);
-
+            
             // update axes with these new boundaries
-            xAxis.call(d3.axisBottom(newX));
-            yAxis.call(d3.axisLeft(newY));
-
+            xAxis.call(d3.axisBottom(newX).tickSize(-height * 1.3).ticks(10));
+            yAxis.call(d3.axisLeft(newY).tickSize(-width * 1.3).ticks(7));
+            svg.selectAll(".tick line").attr("stroke", "#EBEBEB")
             // update circle position
             scatter
                 .selectAll("circle")
-                .attr('cx', function (d) { return newX(d.x); })
-                .attr('cy', function (d) { return newY(d.y); });
+                .attr('cx', function (d) { return newX(d.Normal); })
+                .attr('cy', function (d) { return newY(d.Case); });
         }
 
             // Define the resetZoom function
@@ -1095,7 +1200,7 @@
                   "translate(" + margin.left + "," + margin.top + ")");
 
 
-                  dimensions = ["x", "y","logFC","pval_adj"]
+                  dimensions = ["Normal", "Case","logFC","pval_adj"]
           
         var color=d3.scaleOrdinal().domain(["up","down"]).range(["red","blue"])
 
@@ -1149,7 +1254,6 @@
         if(selectedGeneData && selectedGeneData.length > 0){
           console.log(selectedGeneData.length)
         selectedGeneData.forEach(element => {
-
           svg
         .selectAll("myPath")
         .data(element) // Use the entire array directly
@@ -1202,9 +1306,9 @@
              .filter(circleData => circleData.gene === d.gene)
              .style("fill", d => {
                     // Check if logFC is greater than or equal to the threshold
-                    if (d.logFC >= log_thr_fc && d.pval_adj <= 0.05 ) {
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
                         return "red";
-                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= 0.05) {
+                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
                         return "blue";
                     } else  {
                         return "grey";
@@ -1218,18 +1322,6 @@
 
         
       }
-
-      
-    
-
-    
-        
-
-
-
-
-    
-
 
     function updateBoxPlot(parsedLogFC,dataN,dataC){
         var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
@@ -1653,6 +1745,7 @@ svg.append("text")
       
       var geneDataNDown = dataN.filter(d => d.gene === mostDownregulatedGeneName)
       var geneDataCDown = dataC.filter(d => d.gene === mostDownregulatedGeneName)
+
 
       // console.log (geneDataNUp)
       // console.log (geneDataCUp)
