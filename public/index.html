@@ -10,47 +10,93 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.0.0/simple-statistics.min.js"></script>
   <script src='https://cdn.jsdelivr.net/gh/kdpsingh/rjs@master/r.js'></script>
   <script src="https://d3js.org/d3.v4.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+  <script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
   
   <style>
+
     #thresholdSlider {
-      width: 10%;
+      width: 5%;
+    }
+
+    .flex {
+  display: flex;
+  flex-direction: row;
+  max-width: fit-content;
+  
+  }
+  .flex-container {
+  display: flex;
+  flex-direction: column;
+  max-width: fit-content;
+  
+  }
+
+  .flex-container > div {
+  margin-right: 20px; /* Add spacing between items */
+  }
+
+
+    body{
+      background-color: rgb(230, 220, 220);
+    }
+
+    #style_scatter{
+      border: 2px solid #ddd; /* Border color */
+    border-radius: 8px; /* Border radius for rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow effect */
     }
   </style>
 </head>
 <body>
   
-  <h2>IQR frequency distribution</h2>
+  <div class="flex">
+
+  <div class="flex-container">
+    <div>
+      <label for="thresholdSlider">InterQuantile range:</label>
+      <input type="range" id="thresholdSlider" min="0.1" max="0.99" step="0.01" value="0.1" style="width: 200px;">
+      <span id="thresholdValue">0.1</span>
+    </div>
+    <div id="IQR"></div>
+   
+  <div id="logFCHistogram"></div>
+    <div>
+      <label for="log_thresholdSlider">LogFC threshold:</label>
+      <input type="range" id="log_thresholdSlider" min="1.1" max="10" step="0.01" value="1.1" style="width: 200px;">
+      <span id="log_thresholdSliderValue">1.1</span>
+    </div>
   
-  <div>
-    <label for="thresholdSlider">InterQuantile range:</label>
-    <input type="range" id="thresholdSlider" min="0.1" max="0.99" step="0.01" value="0.1">
-    <span id="thresholdValue">0.1</span>
   </div>
-  <div id="IQR">
-  </div>
-  <div id="geneCount"></div>
 
 
-  <h2>LogFC Histogram</h2>
-  <div>
-    <label for="log_thresholdSlider">LogFC threshold:</label>
-    <input type="range" id="log_thresholdSlider" min="1.1" max="10" step="0.01" value="1.1">
-    <span id="log_thresholdSliderValue">1.1</span>
-    <div id="logFCHistogram"></div>
-  </div>
-<div> 
-  <button id="resetButton">Reset Zoom</button>
-  <label for="thresholdSelect">Select Threshold:</label>
-   <select id="thresholdSelect">
-    <option value="0.05" selected>0.05</option>
-  <option value="0.01">0.01</option>
-   </select>
-  <div id="scatterPlot"></div>  
+  <div> 
+    <div class="flex-container">
+     <div id="style_scatter">
+    <div id="scatterPlot"></div>
+    <button id="resetButton" class="btn btn-secondary">Reset Zoom</button> 
+    <label for="thresholdSelect">Select Threshold:</label>
+     <select id="thresholdSelect" class="btn btn-secondary dropdown-toggle">
+      <option value="0.05" selected>0.05</option>
+    <option value="0.01">0.01</option>
+     </select>
+  </div> 
+   <div>
   
+  </div>
 </div>
+</div>
+  </div>
   
-  <div id="geneCount2"></div><br>
- 
+  
   <div id="parallelcoordinates"></div>
   
   <div id="boxPlot"></div>
@@ -192,6 +238,44 @@
     });
   }
 
+  var width = 100,
+    height = 100,
+    n = 18,
+    r = 5,
+    π = Math.PI,
+    p = 1000;
+    const margin = { top: 10, right: 20, bottom: 30, left: 130 };
+
+var svg = d3.select("#scatterPlot").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("background", "none")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+var g = svg.selectAll("g")
+    .data(d3.range(0, 2 * π, 2 * π / n))
+    .enter().append("g")
+    .attr("transform", function(d) {
+        var x = width  * (0.35 * Math.cos(d) + 0.5),
+            y = height * (0.35 * Math.sin(d) + 0.5);
+        return "translate(" + [x, y] + ")rotate(" + d * 180 / π + ")";
+    });
+var moons = g.append("path")
+    .attr("fill", "#808080");
+d3.timer(function(t) {
+    var θ = 2 * π * (t % p / p);
+    moons.attr("d", function(d) { return moon((θ + d) % (2 * π)); });
+});
+function moon(θ) {
+    var rx0 = θ < π ? r : -r,
+        s0  = θ < π ? 0 : 1,
+        rx1 = r * Math.cos(θ),
+        s1  = θ < π/2 || (π <= θ && θ < 3*π/2) ? 0 : 1;
+    return "M" + [                  0,  r] +
+           "A" + [rx0, r, 0, 0, s0, 0, -r] +
+           "A" + [rx1, r, 0, 0, s1, 0,  r];
+}
+
     // Read the contents of the .txt file
     Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json')])
       .then(([dataC, dataN, data]) => {
@@ -247,8 +331,8 @@
 
 
             // Update the gene count display
-            const geneCountDiv = document.getElementById('geneCount');
-            geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
+            // const geneCountDiv = document.getElementById('geneCount');
+            // geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
 
             first_filter_number_genes = data_copy.length
 
@@ -331,8 +415,8 @@
                 return result;
             }, []);
 
-          const geneCountDiv2 = document.getElementById('geneCount2');
-          geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
+          // const geneCountDiv2 = document.getElementById('geneCount2');
+          // geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
 
 
           })
@@ -440,8 +524,8 @@
                 return result;
             }, []);
 
-      const geneCountDiv2 = document.getElementById('geneCount2');
-      geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
+      // const geneCountDiv2 = document.getElementById('geneCount2');
+      // geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
 
 
 
@@ -499,8 +583,8 @@
           // console.log("parsedLogFCorig ",parsedLogFC_origin.length)
 
 
-        const geneCountDiv = document.getElementById('geneCount2');
-        geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
+        // const geneCountDiv = document.getElementById('geneCount2');
+        // geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
 
         // Call the updateHistogram function directly
         updateLogFCHistogram(parsedLogFC_origin);
@@ -563,29 +647,30 @@
           return result;
         }, []);
 
-        // if (ind.length > 0) {
-        //     //console.log(parsedLogFC.length)
+        if (ind.length > 0) {
 
-        //     // Remove entries corresponding to ind from dataN
+            //console.log(parsedLogFC.length)
 
-        //     // Remove entries corresponding to ind from dataN
-        //     dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+            // Remove entries corresponding to ind from dataN
 
-        //     // Remove entries corresponding to ind from dataN
-        //     dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
 
 
-        //     data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
 
-        //     // Remove entries corresponding to ind from logFC
-        //     parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+            // Remove entries corresponding to ind from logFC
+            parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
             
             
-        //     updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
-        //     updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
-        //     updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy)
+            updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+            updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
+            updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy)
             
-        //   }
+          }
 
       });
     })
@@ -597,8 +682,8 @@
         // console.log("data copy beforeC ",dataC_copy.length)
         // console.log("data copy beforeN",dataN_copy.length)
 
-        const geneCountDiv = document.getElementById('geneCount2');
-        geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
+        // const geneCountDiv = document.getElementById('geneCount2');
+        // geneCountDiv.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length}`;
         
         // Now, dataN, dataC, data, genes, and logFC are updated
     })
@@ -643,7 +728,9 @@
             updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
             updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
             updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy) 
-                              }
+                              
+          
+          }
 
       })
     
@@ -656,9 +743,9 @@
     const filteredData = variation_data.filter(variation => variation >= thr_prc);
 
     // Create histogram using D3.js
-    const svgWidth = 900;
-    const svgHeight = 400;
-    const margin = { top: 20, right: 20, bottom: 30, left: 50 };
+    const svgWidth = 400;
+    const svgHeight = 300;
+    const margin = { top: 40, right: 20, bottom: 30, left: 50 };
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
@@ -738,6 +825,14 @@
     svg.append("g")
         .call(d3.axisLeft(yScale));
 
+    // Add title
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", -margin.top * 0.7)
+        .attr("text-anchor", "middle")
+        .style("font-size", "18px")
+        .text("IQR Frequency distribution");
+
     // Add a red line indicating the threshold
     const thresholdLine = svg.append("line")
         .attr("y1", 0)
@@ -755,9 +850,9 @@
     const logFCValues = logFCData.map(entry => entry.logFC);
 
     // Define histogram parameters
-    const svgWidth = 900;
-    const svgHeight = 400;
-    const margin = { top: 20, right: 20, bottom: 50, left: 50 };
+    const svgWidth = 500;
+    const svgHeight = 300;
+    const margin = { top: 50, right: 20, bottom: 50, left: 50 };
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
@@ -915,11 +1010,11 @@
         // Add X axis
         var xAxis = svg.append("g")
             .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(xScale).tickSize(-height*1.3).ticks(10))
+            .call(d3.axisBottom(xScale))
 
         // Add Y axis
         var yAxis = svg.append("g")
-            .call(d3.axisLeft(yScale).tickSize(-width*1.3).ticks(7))
+            .call(d3.axisLeft(yScale))
     
         // Customization
         svg.selectAll(".tick line").attr("stroke", "#EBEBEB")
@@ -1151,9 +1246,9 @@
             var newY = d3.event.transform.rescaleY(yScale);
             
             // update axes with these new boundaries
-            xAxis.call(d3.axisBottom(newX).tickSize(-height * 1.3).ticks(10));
-            yAxis.call(d3.axisLeft(newY).tickSize(-width * 1.3).ticks(7));
-            svg.selectAll(".tick line").attr("stroke", "#EBEBEB")
+            xAxis.call(d3.axisBottom(newX));
+            yAxis.call(d3.axisLeft(newY));
+            
             // update circle position
             scatter
                 .selectAll("circle")
@@ -1322,6 +1417,7 @@
       }
 
     function updateBoxPlot(parsedLogFC,dataN,dataC){
+
         var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
       return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
        }, parsedLogFC[0]);
