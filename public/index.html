@@ -30,7 +30,7 @@
     .flex {
   display: flex;
   flex-direction: row;
-  max-width: fit-content;
+  max-width: space-between;
   
   }
   .flex-container {
@@ -54,6 +54,81 @@
     border-radius: 8px; /* Border radius for rounded corners */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow effect */
     }
+
+
+    input.range1 {
+  --c: grey; /* active color */
+  --l: 8px; /* line thickness */
+  --h: 30px; /* thumb height */
+  --w: 10px; /* thumb width */
+
+  width: 400px;
+  height: var(--h); /* needed for Firefox */
+  --_c: color-mix(in srgb, var(--c), #000 var(--p, 0%));
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+input.range1:focus-visible,
+input.range1:hover {
+  --p: 25%;
+}
+
+/* chromium */
+input.range1[type="range" i]::-webkit-slider-thumb {
+  height: var(--h);
+  width: var(--w);
+  background: var(--_c);
+  border-image: linear-gradient(90deg, var(--_c) 50%, orange 0) 0 1/calc(50% - var(--l)/2) 100vw/0 100vw;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: .3s;
+}
+
+/* Second range slider with a different color scheme */
+input.range2 {
+  --c: grey; /* active color */
+  --l: 8px; /* line thickness */
+  --h: 30px; /* thumb height */
+  --w: 10px; /* thumb width */
+
+  width: 400px;
+  height: var(--h); /* needed for Firefox */
+  --_c: color-mix(in srgb, var(--c), #000 var(--p, 0%));
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+input.range2:focus-visible,
+input.range2:hover {
+  --p: 25%;
+}
+
+/* chromium */
+input.range2[type="range" i]::-webkit-slider-thumb {
+  height: var(--h);
+  width: var(--w);
+  background: var(--_c);
+  border-image: linear-gradient(90deg, var(--_c) 50%, steelblue 0) 0 1/calc(50% - var(--l)/2) 100vw/0 100vw;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: .3s;
+}
+
+@supports not (color: color-mix(in srgb,red,red)) {
+  input {
+    --_c: var(--c);
+  }
+}
+
   </style>
 </head>
 <body>
@@ -64,21 +139,18 @@
   
   <div class="flex-container"><!--div(2) che mette in riga iqr e FC-->
     <div id="style_scatter">
-    <div> <!--div(3) bottoni IQR-->
-      <label for="thresholdSlider">InterQuantile range:</label>
-      <input type="range" id="thresholdSlider" min="0.1" max="0.99" step="0.01" value="0.1" style="width: 200px;">
-      <span id="thresholdValue">0.1</span>
-    </div><!-- div(3)-->
-  
-
+    
 
     <div id="IQR"></div><!--div(4) IQR-->
-   
+    <div> <!--div(3) bottoni IQR-->
+      <input type="range" id="thresholdSlider" class="range2" min="0.1" max="0.99" step="0.01" value="0.1" style="width: 200px;">
+      <span id="thresholdValue">0.1</span>
+    </div><!-- div(3)-->
   <div id="logFCHistogram"></div> <!-- div(5) FC-->
 
     <div><!-- div(6) bottoni FC-->
-      <label for="log_thresholdSlider">LogFC threshold:</label>
-      <input type="range" id="log_thresholdSlider" min="1.1" max="10" step="0.01" value="1.1" style="width: 200px;">
+      
+      <input type="range" id="log_thresholdSlider" class="range1" min="1.1" max="10" step="0.01" value="1.1" style="width: 200px;">
       <span id="log_thresholdSliderValue">1.1</span>
     </div><!--div(6)-->
   </div>
@@ -96,6 +168,8 @@
     <option value="0.01">0.01</option>
      </select>
   </div> 
+
+  <div id="parallelcoordinates"></div>
 </div>
 </div>
 
@@ -115,7 +189,7 @@
   </div> <!-- div(1)-->
   
   
- 
+
   
  
 
@@ -156,6 +230,8 @@
     let averageExpressionsN;
     let selectedGeneData=[];
     let old_p_adj
+
+    let metadata;
 
     //info box plot
     var sumstat1
@@ -218,6 +294,19 @@
             delete newObj['_row']; // Delete the old key
             return newObj;
           });
+        })
+        .catch(error => {
+          console.error('Error fetching JSON:', error);
+        });
+    }
+
+    function fetchMeta(url) {
+      return fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
         })
         .catch(error => {
           console.error('Error fetching JSON:', error);
@@ -322,11 +411,12 @@ function moon(θ) {
 
 
     // Read the contents of the .txt file
-    Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json')])
-      .then(([dataC, dataN, data]) => {
+    Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json'),fetchMeta('metadata.json')])
+      .then(([dataC, dataN, data,meta]) => {
         dataC_original = dataC
         dataN_original = dataN
         data_original = data
+        metadata=meta
         fetch('variation_lung.txt')
           .then(response => response.text())
           .then(text => {
@@ -441,7 +531,29 @@ function moon(θ) {
             updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
             updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
             updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
-            updateParallel(parsedLogFC,data_copy,dataC_copy,dataN_copy)
+            var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
+
+            var mostUpregulatedGene = sortedLogFC[0];
+            var secondMostUpregulatedGene = sortedLogFC[1];
+
+            var mostDownregulatedGene = sortedLogFC[sortedLogFC.length - 1];
+            var secondMostDownregulatedGene = sortedLogFC[sortedLogFC.length - 2];
+
+            var mostUpregulatedGeneName = mostUpregulatedGene.Gene
+            //var secondMostUpregulatedGeneName = secondMostUpregulatedGene.Gene
+            var mostDownregulatedGeneName = mostDownregulatedGene.Gene
+            //var secondMostDownregulatedGeneName = secondMostDownregulatedGene.Gene
+
+
+            genes = [mostUpregulatedGeneName, mostDownregulatedGeneName]
+            selectedGeneData.push(mostUpregulatedGeneName)
+            selectedGeneData.push(mostDownregulatedGeneName)
+
+            updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy)
+
+
+
+
                               }
 
       });
@@ -787,7 +899,7 @@ function moon(θ) {
     const filteredData = variation_data.filter(variation => variation >= thr_prc);
 
     // Create histogram using D3.js
-    const svgWidth = 400;
+    const svgWidth = 500;
     const svgHeight = 300;
     const margin = { top: 20, right: 20, bottom: 40, left: 50 };
     const width = svgWidth - margin.left - margin.right;
@@ -1299,7 +1411,7 @@ legend.append("text")
             // Add title
             svg.append("text")
                 .attr("x", width / 2)
-                .attr("y", -margin.top )
+                .attr("y", 15 )
                 .attr("text-anchor", "middle")
                 .style("font-size", "18px")
                 .text("Scatterplot");
@@ -1331,47 +1443,6 @@ legend.append("text")
 
                 return { gene: gene, Normal: averageExpressionsN[gene], Case: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj, type: type };
             });
-
-            
-
-            // // Create a legend
-            // var legend = svg.append("g")
-            //     .attr("transform", "translate(" + (width + 2) + "," + 20 + ")");
-
-            // legend.append("circle")
-            //     .attr("cx", 10)
-            //     .attr("cy", 10)
-            //     .attr("r", 3)
-            //     .style("fill", "red");
-
-            // legend.append("text")
-            //     .attr("x", 20)
-            //     .attr("y", 10)
-            //     .text("Upregulated");
-
-            // legend.append("circle")
-            //     .attr("cx", 10)
-            //     .attr("cy", 30)
-            //     .attr("r", 3)
-            //     .style("fill", "blue");
-
-            // legend.append("text")
-            //     .attr("x", 20)
-            //     .attr("y", 30)
-            //     .text("Downregulated");
-
-            // legend.append("circle")
-            //     .attr("cx", 10)
-            //     .attr("cy", 50)
-            //     .attr("r", 3)
-            //     .style("fill", "grey");
-
-            // legend.append("text")
-            //     .attr("x", 20)
-            //     .attr("y", 50)
-            //     .text("Not Significant");
-
-
 
             // Create a legend
     var legend = svg.append("g")
@@ -1526,10 +1597,8 @@ var legendRect = legend.append("rect")
                     }
 
                   });
-                  for (let i = 0; i < selectedGeneData.length; i++) {
-                    selectedGeneData[i] = selectedGeneData[i].filter(gene => gene.gene !== d.gene);
-                  }
-                createParallelCoordinates(selectedGeneData);
+                  selectedGeneData = selectedGeneData.filter(gene => gene !== d.gene);
+                  updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy)
                   } else {
                       // If not highlighted, apply the highlighting
                       selectedElement
@@ -1537,11 +1606,11 @@ var legendRect = legend.append("rect")
                           .style("stroke-width", 2);
 
                       // On click, filter data for the selected gene
-                      selectedGeneData.push(data.filter(gene => gene.gene === d.gene));
+                      selectedGeneData.push(d.gene);
                       console.log(selectedGeneData);
 
                       // Call a function to create parallel coordinates plot using selectedGeneData
-                      createParallelCoordinates(selectedGeneData);
+                      updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy)
                   }
                 });
 
@@ -2193,203 +2262,150 @@ svg.append("text")
         .attr("stroke", "black")
   }
     
-    function updateParallel(parsedLogFc,data,dataC,dataN){
-      //console.log (parsedLogFC)
-      // var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
-      // return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
-      //  }, parsedLogFC[0]);
+  function updateParallel(geneselected, data, dataC, dataN) {
+    let structureCombinedData = [];
 
-      //  var mostDownregulatedGene = parsedLogFC.reduce((minGene, currentGene) => {
-      // return currentGene.logFC < minGene.logFC ? currentGene : minGene;
-      //  }, parsedLogFC[0]);
+    geneselected.forEach(geneName => {
+        var geneDataN = dataN.filter(d => d.gene === geneName);
+        var geneDataC = dataC.filter(d => d.gene === geneName);
 
+        // Extract GSM values for each gene
+        var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
+        var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
 
-       var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
+        let expressionValuesC = [];
+        geneDataC.forEach(entry => {
+            expressionValuesC.push(...Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val)));
+        });
 
-      var mostUpregulatedGene = sortedLogFC[0];
-      var secondMostUpregulatedGene = sortedLogFC[1];
+        let expressionValuesN = [];
+        geneDataN.forEach(entry => {
+            expressionValuesN.push(...Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val)));
+        });
 
-      var mostDownregulatedGene = sortedLogFC[sortedLogFC.length - 1];
-      var secondMostDownregulatedGene = sortedLogFC[sortedLogFC.length - 2];
+        var combinedData = [];
+        expressionValuesC.forEach((expression, i) => {
+            combinedData.push({ GSM: gsmValuesC[i], expression: expression, type: 'case', index: i });
+        });
+        expressionValuesN.forEach((expression, i) => {
+            combinedData.push({ GSM: gsmValuesN[i], expression: expression, type: 'normal', index: i });
+        });
 
-      var mostUpregulatedGeneName = mostUpregulatedGene.Gene
-      //var secondMostUpregulatedGeneName = secondMostUpregulatedGene.Gene
-      var mostDownregulatedGeneName = mostDownregulatedGene.Gene
-      //var secondMostDownregulatedGeneName = secondMostDownregulatedGene.Gene
+        structureCombinedData.push({
+            gene: geneName,
+            expressions: combinedData
+        });
+    });
 
+    console.log(structureCombinedData);
 
-      var geneDataNUp = dataN.filter(d => d.gene === mostUpregulatedGeneName)
-      var geneDataCUp = dataC.filter(d => d.gene === mostUpregulatedGeneName)
-      
-      var geneDataNDown = dataN.filter(d => d.gene === mostDownregulatedGeneName)
-      var geneDataCDown = dataC.filter(d => d.gene === mostDownregulatedGeneName)
+    // set the dimensions and margins of the graph
+    var margin = { top: 30, right: 50, bottom: 10, left: 50 },
+        width = 1000 - margin.left - margin.right,
+        height = 350 - margin.top - margin.bottom;
 
-
-      // console.log (geneDataNUp)
-      // console.log (geneDataCUp)
-
-      // console.log (geneDataNDown)
-      // console.log (geneDataCDown)
-
-          
-
-      let expressionValuesCUp
-      geneDataCUp.forEach(entry => {
-          expressionValuesCUp = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-        })
-      let expressionValuesNUp
-        geneDataNUp.forEach(entry => {
-            expressionValuesNUp = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-          })
-
-      let expressionValuesCDown
-      geneDataCDown.forEach(entry => {
-          expressionValuesCDown = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-        })
-      let expressionValuesNDown
-        geneDataNDown.forEach(entry => {
-            expressionValuesNDown = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-          })
-
-            
-
-
-      var combinedDataUp = [];
-
-          // Iterate over expressionValuesC and add objects to combinedData with type 'case'
-          expressionValuesCUp.forEach(expression => {
-              combinedDataUp.push({ expression: expression, type: 'case' });
-          });
-
-          // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
-          expressionValuesNUp.forEach(expression => {
-              combinedDataUp.push({ expression: expression, type: 'normal' });
-          });
-
-
-
-          var combinedDataDown = [];
-
-              // Iterate over expressionValuesC and add objects to combinedData with type 'case'
-              expressionValuesCDown.forEach(expression => {
-                  combinedDataDown.push({ expression: expression, type: 'case' });
-              });
-
-              // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
-              expressionValuesNDown.forEach(expression => {
-                  combinedDataDown.push({ expression: expression, type: 'normal' });
-              });
-
-
-
-              var structureCombinedData = {
-                        mostUpregulated: {
-                          gene: mostUpregulatedGeneName,
-                            expressions: combinedDataUp.map(entry => entry.expression),
-                            type: combinedDataUp.map(entry => entry.type)
-                        },
-                        mostDownregulated: {
-                            gene: mostDownregulatedGeneName,
-                            expressions: combinedDataDown.map(entry => entry.expression),
-                            type: combinedDataDown.map(entry => entry.type)
-                        }
-                    };
-                    
-  console.log(structureCombinedData);
-          
-
-  // set the dimensions and margins of the graph
-        var margin = {top: 30, right: 50, bottom: 10, left: 50},
-          width = 460 - margin.left - margin.right,
-          height = 400 - margin.top - margin.bottom;
-
-        // append the svg object to the body of the page
-        var svg = d3.select("#parallelCoordinates")
+    // append the svg object to the body of the page
+    var svg = d3.select("#parallelcoordinates")
         .html("")  // Clear previous content
         .append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
         .append("g")
-          .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-          var color = d3.scaleOrdinal()
-              .domain(["case","normal" ])
-              .range([ "blue", "red"])
+    var color = d3.scaleOrdinal()
+        .domain(["case", "normal"])
+        .range(["blue", "red"]);
 
-          dimensions = [mostUpregulatedGeneName, mostDownregulatedGeneName]
+        var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
 
-          var y = {}
-            for (i in dimensions) {
-              name = dimensions[i]
-              y[name] = d3.scaleLinear()
-                .domain( [0,20] ) 
-                .range([height, 0])
-            }
-            // Build the X scale -> it find the best position for each Y axis
-            x = d3.scalePoint()
-              .range([0, width])
-              .domain(dimensions);
-              
+// Add "Age at Diagnosis" dimension to dimensions array
+var first_dims = ['Age at Diagnosis']
+var dimensions = first_dims.concat(geneselected);
 
-              function path(d) {
-              // Extract gene, expressions, and type from the structure
-              var expressionsUp = d.mostUpregulated.expressions;
-              var expressionsDown = d.mostDownregulated.expressions;
+    var y = {};
+    for (var i in dimensions) {
+        var name = dimensions[i];
+        y[name] = d3.scaleLinear()
+            .domain([0, 20])
+            .range([height, 0]);
+    }
+    // Extract age data from metadata
+    var ageData = metadata["Age at Diagnosis:ch1"];
 
-              // Return x and y coordinates using dimensions, x, and y functions
-              return d3.line()([
-                [x(mostUpregulatedGeneName), y[mostUpregulatedGeneName](expressionsUp)],
-                [x(mostDownregulatedGeneName), y[mostDownregulatedGeneName](expressionsDown)]
-              ]);
-            }
+    // Convert age data to numbers
+    ageData = ageData.map(function(age) {
+        return parseFloat(age);
+    });
+
+    // Determine the age domain
+    var ageDomain = d3.extent(ageData);
+
+    // Update the y-scale for the age dimension
+    y["Age at Diagnosis"] = d3.scaleLinear()
+        .domain([30, 90]) // Set the domain based on the age data
+        .range([height, 0]);
 
 
-            var lineTypes = structureCombinedData.mostUpregulated.type;
+    // Build the X scale -> it finds the best position for each Y axis
+    var x = d3.scalePoint()
+        .range([0, width])
+        .domain(dimensions);
 
-            svg
-              .selectAll("myPath")
-              .data(structureCombinedData.mostUpregulated.expressions) // Assuming both genes have the same number of expressions
-              .enter()
-              .append("path")
-              .attr("d", function (_, i) {
-                // For each iteration, create a line connecting the expressions of both genes at the same index
-                var dataPoint = {
-                  mostUpregulated: {
-                    gene: structureCombinedData.mostUpregulated.gene,
-                    expressions: structureCombinedData.mostUpregulated.expressions[i],
-                  },
-                  mostDownregulated: {
-                    gene: structureCombinedData.mostDownregulated.gene,
-                    expressions: structureCombinedData.mostDownregulated.expressions[i],
-                  }
-                };
-                return path(dataPoint);
-              })
-              .style("fill", "none")
-              .style("stroke", function (_, i) { return color(lineTypes[i]); })
-              .style("opacity", 0.5);
-            
-        // Draw the axis:
-        svg.selectAll("myAxis")
-          // For each dimension of the dataset I add a 'g' element:
-          .data(dimensions).enter()
-          .append("g")
-          // I translate this element to its right position on the x axis
-          .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
-          // And I build the axis with the call function
-          .each(function(d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
-          // Add axis title
-          .append("text")
-            .style("text-anchor", "middle")
-            .attr("y", -9)
-            .text(function(d) { return d; })
-            .style("fill", "black")
-  
+        console.log(metadata)
+
+
+  // Transpose the structureCombinedData
+  var transposedData = [];
+  geneselected.forEach(function(geneName) {
+      var geneData = structureCombinedData.find(d => d.gene === geneName);
+      geneData.expressions.forEach(function(expression, i) {
+          if (!transposedData[i]) transposedData[i] = { GSM: expression.GSM }; // Use GSM value from expression
+          transposedData[i][geneName] = expression.expression;
+          transposedData[i].type = expression.type; // Add the type property to each observation
+          // Find the index of the GSM in the metadata's geo_accession array
+          var gsmIndex = metadata.geo_accession.findIndex(item => item === expression.GSM);
+          if (gsmIndex !== -1) {
+              // If the GSM is found in metadata, insert the corresponding Age at Diagnosis
+              transposedData[i]['Age at Diagnosis'] = metadata['Age at Diagnosis:ch1'][gsmIndex];
+          }
+      });
+  });
+  console.log(transposedData);
+
+  svg.selectAll(".gsm-path")
+      .data(transposedData)
+      .enter()
+      .append("path")
+      .attr("class", "gsm-path")
+      .attr("d", function(d) {
+          var pathString = path(d);
+          return pathString;
+      })
+      .style("fill", "none")
+      .style("stroke", function(d) { return color(d.type); }) // Color based on type
+      .style("stroke-width", 1); // Example stroke width
+
+  function path(d) {
+      return d3.line()(dimensions.map(function(geneName) { return [x(geneName), y[geneName](d[geneName])]; }));
+  }
+  svg.selectAll(".gsm-path").each(function(data, i) {
+      console.log("Data bound to path " + (i + 1) + ":", data);
+  });
+
+
+
+    // Draw the axis:
+    svg.selectAll("myAxis")
+        .data(dimensions).enter()
+        .append("g")
+        .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
+        .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
+        .append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -9)
+        .text(function (d) { return d; })
+        .style("fill", "black");
 }
 
     function calculateAverageExpressions(dataArray) {
