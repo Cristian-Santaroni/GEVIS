@@ -1589,26 +1589,32 @@ var legendRect = legend.append("rect")
                 })
                 .on("click", function (d) {
                   var selectedElement = d3.select(this);
+                  var currentFill = selectedElement.style("fill");
+
+                  // Check if the element is already filled with grey
+                  if (currentFill === "grey" || d.gene==="SPP1" || d.gene === "AGER") {
+                      return; // If grey, do nothing
+                  }
                   
                   // Check if the element is already highlighted
                   var isHighlighted = selectedElement.style("fill") === "green";
 
                   if (isHighlighted) {
-                    console.log("sono verde")
+                      console.log("sono verde")
                       // If already highlighted, remove the highlighting
                       selectedElement.style("fill",d => {
-                    // Check if logFC is greater than or equal to the threshold
-                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
-                        return "red";
-                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
-                        return "blue";
-                    } else  {
-                        return "grey";
-                    }
+                      // Check if logFC is greater than or equal to the threshold
+                      if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
+                          return "red";
+                      } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
+                          return "blue";
+                      } else  {
+                          return "grey";
+                      }
 
-                  });
-                  selectedGeneData = selectedGeneData.filter(gene => gene !== d.gene);
-                  updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
+                    });
+                    selectedGeneData = selectedGeneData.filter(gene => gene !== d.gene);
+                    updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
                   } else {
                       // If not highlighted, apply the highlighting
                       selectedElement
