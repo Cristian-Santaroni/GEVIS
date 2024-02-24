@@ -58,24 +58,28 @@
 </head>
 <body>
   
-  <div class="flex">
+ 
+  <div class="flex"> <!-- div(1) che mette in colonna-->
 
-  <div class="flex-container">
-    <div>
+  
+  <div class="flex-container"><!--div(2) che mette in riga iqr e FC-->
+    <div> <!--div(3) bottoni IQR-->
       <label for="thresholdSlider">InterQuantile range:</label>
       <input type="range" id="thresholdSlider" min="0.1" max="0.99" step="0.01" value="0.1" style="width: 200px;">
       <span id="thresholdValue">0.1</span>
-    </div>
-    <div id="IQR"></div>
+    </div><!-- div(3)-->
+
+    <div id="IQR"></div><!--div(4) IQR-->
    
-  <div id="logFCHistogram"></div>
-    <div>
+  <div id="logFCHistogram"></div> <!-- div(5) FC-->
+
+    <div><!-- div(6) bottoni FC-->
       <label for="log_thresholdSlider">LogFC threshold:</label>
       <input type="range" id="log_thresholdSlider" min="1.1" max="10" step="0.01" value="1.1" style="width: 200px;">
       <span id="log_thresholdSliderValue">1.1</span>
-    </div>
+    </div><!--div(6)-->
   
-  </div>
+  </div><!--div(2)-->
 
 
   <div> 
@@ -89,17 +93,19 @@
     <option value="0.01">0.01</option>
      </select>
   </div> 
-   <div>
-  
-  </div>
 </div>
 </div>
-  </div>
+<div>
+<div id="style_scatter">
+  <div id="boxPlot"></div>
+</div>
+</div>
+  </div> <!-- div(1)-->
   
   
   <div id="parallelcoordinates"></div>
   
-  <div id="boxPlot"></div>
+  
   <div id="boxPlot1"></div>
   <div id="parallelCoordinates"></div>
   
@@ -246,13 +252,13 @@
     p = 1000;
     const margin = { top: 10, right: 20, bottom: 30, left: 130 };
 
-var svg = d3.select("#scatterPlot").append("svg")
+    var svg = d3.select("#scatterPlot").append("svg")
     .attr("width", width)
     .attr("height", height)
     .style("background", "none")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-var g = svg.selectAll("g")
+var gScatter = svg.selectAll("g")
     .data(d3.range(0, 2 * π, 2 * π / n))
     .enter().append("g")
     .attr("transform", function(d) {
@@ -260,21 +266,45 @@ var g = svg.selectAll("g")
             y = height * (0.35 * Math.sin(d) + 0.5);
         return "translate(" + [x, y] + ")rotate(" + d * 180 / π + ")";
     });
-var moons = g.append("path")
+var moonsScatter = gScatter.append("path")
     .attr("fill", "#808080");
 d3.timer(function(t) {
     var θ = 2 * π * (t % p / p);
-    moons.attr("d", function(d) { return moon((θ + d) % (2 * π)); });
+    moonsScatter.attr("d", function(d) { return moon((θ + d) % (2 * π)); });
 });
+
+const margin1 = { top: 10, right: 20, bottom: 30, left: 5 };
+var svg1 = d3.select("#boxPlot").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("background", "none")
+    .attr("transform", `translate(${margin1.left},${margin1.top})`);
+
+var gBoxPlot = svg1.selectAll("g")
+    .data(d3.range(0, 2 * π, 2 * π / n))
+    .enter().append("g")
+    .attr("transform", function(d) {
+        var x = width  * (0.35 * Math.cos(d) + 0.5),
+            y = height * (0.35 * Math.sin(d) + 0.5);
+        return "translate(" + [x, y] + ")rotate(" + d * 180 / π + ")";
+    });
+var moonsBoxPlot = gBoxPlot.append("path")
+    .attr("fill", "#808080");
+d3.timer(function(t) {
+    var θ = 2 * π * (t % p / p);
+    moonsBoxPlot.attr("d", function(d) { return moon((θ + d) % (2 * π)); });
+});
+
 function moon(θ) {
     var rx0 = θ < π ? r : -r,
         s0  = θ < π ? 0 : 1,
         rx1 = r * Math.cos(θ),
         s1  = θ < π/2 || (π <= θ && θ < 3*π/2) ? 0 : 1;
-    return "M" + [                  0,  r] +
+    return "M" + [0,  r] +
            "A" + [rx0, r, 0, 0, s0, 0, -r] +
            "A" + [rx1, r, 0, 0, s1, 0,  r];
 }
+
 
     // Read the contents of the .txt file
     Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json')])
@@ -745,7 +775,7 @@ function moon(θ) {
     // Create histogram using D3.js
     const svgWidth = 400;
     const svgHeight = 300;
-    const margin = { top: 40, right: 20, bottom: 30, left: 50 };
+    const margin = { top: 20, right: 20, bottom: 40, left: 50 };
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
@@ -825,10 +855,29 @@ function moon(θ) {
     svg.append("g")
         .call(d3.axisLeft(yScale));
 
+
+         // Add X axis label
+         svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .text("IQR value");
+
+            // Add Y axis label
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -margin.left + 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .text("Frequency");
+
+
     // Add title
     svg.append("text")
         .attr("x", width / 2)
-        .attr("y", -margin.top * 0.7)
+        .attr("y", -margin.top * 0.1)
         .attr("text-anchor", "middle")
         .style("font-size", "18px")
         .text("IQR Frequency distribution");
@@ -852,7 +901,7 @@ function moon(θ) {
     // Define histogram parameters
     const svgWidth = 500;
     const svgHeight = 300;
-    const margin = { top: 50, right: 20, bottom: 50, left: 50 };
+    const margin = { top: 30, right: 20, bottom: 30, left: 50 };
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
@@ -917,7 +966,7 @@ function moon(θ) {
     // Add title
     svg.append("text")
         .attr("x", width / 2)
-        .attr("y", -margin.top * 0.7)
+        .attr("y", -margin.top * 0.1)
         .attr("text-anchor", "middle")
         .style("font-size", "18px")
         .text("FC (logarithmic) frequency distribution");
@@ -982,8 +1031,8 @@ function moon(θ) {
 
 
             // Set up margin, width, and height
-        var margin = { top: 10, right: 120, bottom: 60, left: 60 };
-        var width = 800 - margin.left - margin.right;
+        var margin = { top: 10, right: 150, bottom: 40, left: 60 };
+        var width = 700 - margin.left - margin.right;
         var height = 500 - margin.top - margin.bottom;
 
         // Create SVG container
@@ -1005,8 +1054,7 @@ function moon(θ) {
             .range([height, 0])
             .nice()
 
-            
-
+          
         // Add X axis
         var xAxis = svg.append("g")
             .attr("transform", "translate(0," + height + ")")
@@ -1017,7 +1065,7 @@ function moon(θ) {
             .call(d3.axisLeft(yScale))
     
         // Customization
-        svg.selectAll(".tick line").attr("stroke", "#EBEBEB")
+        
         var clip = svg.append("defs").append("SVG:clipPath")
             .attr("id", "clip")
             .append("SVG:rect")
@@ -1418,7 +1466,7 @@ function moon(θ) {
 
     function updateBoxPlot(parsedLogFC,dataN,dataC){
 
-        var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
+      var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
       return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
        }, parsedLogFC[0]);
 
@@ -1516,8 +1564,8 @@ function moon(θ) {
     
 
     var margin = {top: 10, right: 30, bottom: 30, left: 40},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
+    width = 360 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
 
 
     var svg = d3.select("#boxPlot")
