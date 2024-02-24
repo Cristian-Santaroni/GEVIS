@@ -63,11 +63,14 @@
 
   
   <div class="flex-container"><!--div(2) che mette in riga iqr e FC-->
+    <div id="style_scatter">
     <div> <!--div(3) bottoni IQR-->
       <label for="thresholdSlider">InterQuantile range:</label>
       <input type="range" id="thresholdSlider" min="0.1" max="0.99" step="0.01" value="0.1" style="width: 200px;">
       <span id="thresholdValue">0.1</span>
     </div><!-- div(3)-->
+  
+
 
     <div id="IQR"></div><!--div(4) IQR-->
    
@@ -78,7 +81,7 @@
       <input type="range" id="log_thresholdSlider" min="1.1" max="10" step="0.01" value="1.1" style="width: 200px;">
       <span id="log_thresholdSliderValue">1.1</span>
     </div><!--div(6)-->
-  
+  </div>
   </div><!--div(2)-->
 
 
@@ -95,20 +98,24 @@
   </div> 
 </div>
 </div>
+
+
 <div>
 <div id="style_scatter">
   <div id="boxPlot"></div>
+  <!-- Initialize a select button -->
+<select id="selectButton" class="btn btn-secondary dropdown-toggle">
+  <option value="MostUp" selected>MostUp</option>
+  <option value="MostDown">MostdDown</option>
+</select>
 </div>
 </div>
+
+
   </div> <!-- div(1)-->
   
   
-  <div id="parallelcoordinates"></div>
-  
-  
-  <div id="boxPlot1"></div>
-  <div id="parallelCoordinates"></div>
-  
+ 
   
  
 
@@ -150,7 +157,15 @@
     let selectedGeneData=[];
     let old_p_adj
 
+    //info box plot
+    var sumstat1
     var scatter;
+    var sumstat
+    var geneNameUP
+    var geneNameDown
+    /////////
+    
+    
 
     function calculateLogFC(dataC, dataN) {
     const logFCData = [];
@@ -488,8 +503,8 @@ function moon(θ) {
 
       }
       // Update the gene count display
-      const geneCountDiv = document.getElementById('geneCount');
-      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${dataC_copy1.length}`;
+      // const geneCountDiv = document.getElementById('geneCount');
+      // geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${dataC_copy1.length}`;
 
       first_filter_number_genes = dataC_copy.length
 
@@ -497,6 +512,7 @@ function moon(θ) {
       parsedLogFC = parsedLogFC_origin
 
       
+      console.log(parsedLogFC_origin)
       updateLogFCHistogram(parsedLogFC_origin)
 
   
@@ -511,8 +527,8 @@ function moon(θ) {
                 return result;
             }, []);
 
-      const geneCountDiv2 = document.getElementById('geneCount2');
-      geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length - ind2.length}`;
+      // const geneCountDiv2 = document.getElementById('geneCount2');
+      // geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length - ind2.length}`;
 
     });
 
@@ -539,9 +555,9 @@ function moon(θ) {
         //genes = genes.filter((entry, index) => !ind.includes(index));
 
       }
-      // Update the gene count display
-      const geneCountDiv = document.getElementById('geneCount');
-      geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
+      // // Update the gene count display
+      // const geneCountDiv = document.getElementById('geneCount');
+      // geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
 
       first_filter_number_genes = data_copy.length
 
@@ -743,16 +759,16 @@ function moon(θ) {
             // Remove entries corresponding to ind from dataN
 
             // Remove entries corresponding to ind from dataN
-            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+            dataC_copy = dataC_copy1.filter((entry, index) => !ind.includes(index));
 
             // Remove entries corresponding to ind from dataN
-            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+            dataN_copy = dataN_copy1.filter((entry, index) => !ind.includes(index));
 
 
-            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+            data_copy = data_copy1.filter((entry, index) => !ind.includes(index));
 
             // Remove entries corresponding to ind from logFC
-            parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+            parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
 
             
             updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
@@ -765,8 +781,6 @@ function moon(θ) {
       })
     
   
-
-//});
 
     function updateHistogram(variation_data) {
     // Filter data based on the threshold
@@ -892,6 +906,78 @@ function moon(θ) {
     // Update the position of the threshold line
     thresholdLine.attr("x1", xScale(thr_prc))
         .attr("x2", xScale(thr_prc));
+
+
+    // Create a legend
+    var legend = svg.append("g")
+                .attr("transform", "translate(" + (width -150) + "," + 20 + ")");
+
+            // Add a filter for the shadow
+var defs = svg.append("defs");
+
+var filter = defs.append("filter")
+    .attr("id", "legendShadow")
+    .attr("height", "150%");
+
+filter.append("feGaussianBlur")
+    .attr("in", "SourceAlpha")
+    .attr("stdDeviation", 3)
+    .attr("result", "blur");
+
+filter.append("feOffset")
+    .attr("in", "blur")
+    .attr("dx", 3)
+    .attr("dy", 3)
+    .attr("result", "offsetBlur");
+
+var feMerge = filter.append("feMerge");
+
+feMerge.append("feMergeNode")
+    .attr("in", "offsetBlur");
+feMerge.append("feMergeNode")
+    .attr("in", "SourceGraphic");
+
+// Add a rectangle around the legend with shadow
+var legendRect = legend.append("rect")
+    .attr("x", 5)  // Adjusted x-coordinate to provide some padding
+    .attr("y", 5)  // Adjusted y-coordinate to provide some padding
+    .attr("width", 160)  // Adjusted width to encapsulate the legend content
+    .attr("height", 70)  // Adjusted height to encapsulate the legend content
+    .style("stroke", "black")  // Border color
+    .style("fill", "none")  // No fill for the rectangle
+    .style("filter", "url(#legendShadow)");  // Apply the drop shadow filter
+
+// Add Remaining genes
+legend.append("rect")
+    .attr("x", 10)
+    .attr("y", 10)
+    .attr("width", 10)
+    .attr("height", 10)
+    .style("fill", "steelblue");
+
+legend.append("text")
+    .attr("x", 30)
+    .attr("y", 18)
+    .text("Remaining genes")
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle");
+
+// Add Filtered genes
+legend.append("rect")
+    .attr("x", 10)
+    .attr("y", 35)
+    .attr("width", 10)
+    .attr("height", 10)
+    .style("fill", "grey");
+
+legend.append("text")
+    .attr("x", 30)
+    .attr("y", 45)
+    .text("Filtered genes")
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle");
+
+
 }
     
     function updateLogFCHistogram(logFCData) {
@@ -901,7 +987,7 @@ function moon(θ) {
     // Define histogram parameters
     const svgWidth = 500;
     const svgHeight = 300;
-    const margin = { top: 30, right: 20, bottom: 30, left: 50 };
+    const margin = { top: 30, right: 20, bottom: 40, left: 50 };
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
@@ -963,6 +1049,27 @@ function moon(θ) {
         .attr("text-anchor", "middle")
         .text("frequency");
 
+
+        
+         // Add X axis label
+         svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .text("Log fold change");
+
+            // Add Y axis label
+          svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -margin.left + 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .text("Frequency");
+
+
+
     // Add title
     svg.append("text")
         .attr("x", width / 2)
@@ -1010,6 +1117,78 @@ function moon(θ) {
         .attr("fill", "grey") // Color the portion of the overlay
         .attr("opacity", 1); // Set opacity for transparency
 
+
+    // Create a legend
+    var legend = svg.append("g")
+                .attr("transform", "translate(" + (width -150) + "," + 20 + ")");
+
+            // Add a filter for the shadow
+var defs = svg.append("defs");
+
+var filter = defs.append("filter")
+    .attr("id", "legendShadow")
+    .attr("height", "150%");
+
+filter.append("feGaussianBlur")
+    .attr("in", "SourceAlpha")
+    .attr("stdDeviation", 3)
+    .attr("result", "blur");
+
+filter.append("feOffset")
+    .attr("in", "blur")
+    .attr("dx", 3)
+    .attr("dy", 3)
+    .attr("result", "offsetBlur");
+
+var feMerge = filter.append("feMerge");
+
+feMerge.append("feMergeNode")
+    .attr("in", "offsetBlur");
+feMerge.append("feMergeNode")
+    .attr("in", "SourceGraphic");
+
+// Add a rectangle around the legend with shadow
+var legendRect = legend.append("rect")
+    .attr("x", 5)  // Adjusted x-coordinate to provide some padding
+    .attr("y", 5)  // Adjusted y-coordinate to provide some padding
+    .attr("width", 160)  // Adjusted width to encapsulate the legend content
+    .attr("height", 70)  // Adjusted height to encapsulate the legend content
+    .style("stroke", "black")  // Border color
+    .style("fill", "none")  // No fill for the rectangle
+    .style("filter", "url(#legendShadow)");  // Apply the drop shadow filter
+
+// Add Remaining genes
+legend.append("rect")
+    .attr("x", 10)
+    .attr("y", 10)
+    .attr("width", 10)
+    .attr("height", 10)
+    .style("fill", "orange");
+
+legend.append("text")
+    .attr("x", 30)
+    .attr("y", 18)
+    .text("Remaining genes")
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle");
+
+// Add Filtered genes
+legend.append("rect")
+    .attr("x", 10)
+    .attr("y", 35)
+    .attr("width", 10)
+    .attr("height", 10)
+    .style("fill", "grey");
+
+legend.append("text")
+    .attr("x", 30)
+    .attr("y", 45)
+    .text("Filtered genes")
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle");
+
+        
+
 }
 
     function updateScatterPlot(averageExpressionsN, averageExpressionsC, log_thr_fc, parsed, old_p_adj) {
@@ -1032,8 +1211,8 @@ function moon(θ) {
 
             // Set up margin, width, and height
         var margin = { top: 10, right: 150, bottom: 40, left: 60 };
-        var width = 700 - margin.left - margin.right;
-        var height = 500 - margin.top - margin.bottom;
+        var width = 1000 - margin.left - margin.right;
+        var height = 600 - margin.top - margin.bottom;
 
         // Create SVG container
         var svg = d3.select("#scatterPlot")
@@ -1100,7 +1279,6 @@ function moon(θ) {
         d3.select("#resetButton")
             .on("click", resetZoom);
 
-
             // Add X axis label
             svg.append("text")
                 .attr("x", width / 2)
@@ -1156,42 +1334,121 @@ function moon(θ) {
 
             
 
-            // Create a legend
-            var legend = svg.append("g")
-                .attr("transform", "translate(" + (width + 2) + "," + 20 + ")");
+            // // Create a legend
+            // var legend = svg.append("g")
+            //     .attr("transform", "translate(" + (width + 2) + "," + 20 + ")");
 
-            legend.append("circle")
+            // legend.append("circle")
+            //     .attr("cx", 10)
+            //     .attr("cy", 10)
+            //     .attr("r", 3)
+            //     .style("fill", "red");
+
+            // legend.append("text")
+            //     .attr("x", 20)
+            //     .attr("y", 10)
+            //     .text("Upregulated");
+
+            // legend.append("circle")
+            //     .attr("cx", 10)
+            //     .attr("cy", 30)
+            //     .attr("r", 3)
+            //     .style("fill", "blue");
+
+            // legend.append("text")
+            //     .attr("x", 20)
+            //     .attr("y", 30)
+            //     .text("Downregulated");
+
+            // legend.append("circle")
+            //     .attr("cx", 10)
+            //     .attr("cy", 50)
+            //     .attr("r", 3)
+            //     .style("fill", "grey");
+
+            // legend.append("text")
+            //     .attr("x", 20)
+            //     .attr("y", 50)
+            //     .text("Not Significant");
+
+
+
+            // Create a legend
+    var legend = svg.append("g")
+                .attr("transform", "translate(" + (width -80) + "," + (height-250) + ")");
+
+            // Add a filter for the shadow
+var defs = svg.append("defs");
+
+var filter = defs.append("filter")
+    .attr("id", "legendShadow")
+    .attr("height", "150%");
+
+filter.append("feGaussianBlur")
+    .attr("in", "SourceAlpha")
+    .attr("stdDeviation", 3)
+    .attr("result", "blur");
+
+filter.append("feOffset")
+    .attr("in", "blur")
+    .attr("dx", 3)
+    .attr("dy", 3)
+    .attr("result", "offsetBlur");
+
+var feMerge = filter.append("feMerge");
+
+feMerge.append("feMergeNode")
+    .attr("in", "offsetBlur");
+feMerge.append("feMergeNode")
+    .attr("in", "SourceGraphic");
+
+// Add a rectangle around the legend with shadow
+var legendRect = legend.append("rect")
+    .attr("x", 5)  // Adjusted x-coordinate to provide some padding
+    .attr("y", 5)  // Adjusted y-coordinate to provide some padding
+    .attr("width", 160)  // Adjusted width to encapsulate the legend content
+    .attr("height", 70)  // Adjusted height to encapsulate the legend content
+    .style("stroke", "black")  // Border color
+    .style("fill", "none")  // No fill for the rectangle
+    .style("filter", "url(#legendShadow)");  // Apply the drop shadow filter
+
+    legend.append("circle")
                 .attr("cx", 10)
-                .attr("cy", 10)
+                .attr("cy", 20)
                 .attr("r", 3)
                 .style("fill", "red");
 
-            legend.append("text")
-                .attr("x", 20)
-                .attr("y", 10)
-                .text("Upregulated");
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 20)
+        .text("Upregulated")
+        .attr("text-anchor", "left")
+        .style("alignment-baseline", "middle");
 
-            legend.append("circle")
+        legend.append("circle")
                 .attr("cx", 10)
-                .attr("cy", 30)
+                .attr("cy", 40)
                 .attr("r", 3)
                 .style("fill", "blue");
 
-            legend.append("text")
-                .attr("x", 20)
-                .attr("y", 30)
-                .text("Downregulated");
+      legend.append("text")
+          .attr("x", 20)
+          .attr("y", 40)
+          .text("Downregulated")
+          .attr("text-anchor", "left")
+          .style("alignment-baseline", "middle");
 
-            legend.append("circle")
+          legend.append("circle")
                 .attr("cx", 10)
-                .attr("cy", 50)
+                .attr("cy", 65)
                 .attr("r", 3)
                 .style("fill", "grey");
 
             legend.append("text")
                 .attr("x", 20)
-                .attr("y", 50)
+                .attr("y", 68)
                 .text("Not Significant");
+
 
             // Add circles to the scatter plot
             var tooltip = d3.select("#tooltip");
@@ -1471,7 +1728,7 @@ function moon(θ) {
        }, parsedLogFC[0]);
 
     //console.log(mostUpregulatedGene)
-    var geneName = mostUpregulatedGene.Gene;
+     geneNameUP = mostUpregulatedGene.Gene;
     
     // console.log(dataN)  
     // console.log(dataC)
@@ -1480,14 +1737,14 @@ function moon(θ) {
 
     //console.log(mostUpregulatedGene)
 
-    var geneDataN = dataN.filter(d => d.gene === geneName)
-    var geneDataC = dataC.filter(d => d.gene === geneName)
+    var geneDataN = dataN.filter(d => d.gene === geneNameUP)
+    var geneDataC = dataC.filter(d => d.gene === geneNameUP)
 
    //console.log()
 
     
 
-        function computeBoxPlotStatistics(data1) {
+    function computeBoxPlotStatistics(data1) {
           var expressionValues = data1.map(entry => entry.expression);
 
           // Sort the data for calculating quartiles
@@ -1546,7 +1803,7 @@ function moon(θ) {
     var boxPlotStatisticsC = computeBoxPlotStatistics(combinedData);
 
 
-    var sumstat = d3.nest()
+     sumstat = d3.nest()
     .key(function(d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
     .rollup(function(d) {
         q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
@@ -1560,9 +1817,18 @@ function moon(θ) {
     })
     .entries(combinedData);
 
-    
-    
+    // if{triggered}{
 
+    // var allGroup = ["MostUp", "MostDown"]
+
+    // d3.select("#selectButton")
+    //   .selectAll('myOptions')
+    //  	.data(allGroup)
+    //   .enter()
+    // 	.append('option')
+    //   .text(function (d) { return d; }) // text showed in the menu
+    //   .attr("value", function (d) { return d; }) 
+    // }
     var margin = {top: 10, right: 30, bottom: 30, left: 40},
     width = 360 - margin.left - margin.right,
     height = 300 - margin.top - margin.bottom;
@@ -1594,14 +1860,15 @@ function moon(θ) {
 
 
    // Add a title
-svg.append("text")
+var title = svg.append("text")
     .attr("x", width / 2)
     .attr("y", margin.top)
     .attr("text-anchor", "middle")
     .style("font-size", "18px")
-    .text("The Most Upregulated Gene "+ geneName);
+    .text("Gene "+ geneNameUP);
 
-   svg
+ 
+   var line1 =svg
     .selectAll("vertLines")
     .data(sumstat)
     .enter()
@@ -1615,7 +1882,7 @@ svg.append("text")
 
   // rectangle for the main box
   var boxWidth = 100
-  svg
+  var box1 = svg
     .selectAll("boxes")
     .data(sumstat)
     .enter()
@@ -1626,7 +1893,7 @@ svg.append("text")
         .attr("width", boxWidth )
         .attr("stroke", "black")
         .style("fill", "#69b3a2")
-    svg
+    var line2 =svg
     .selectAll("medianLines")
     .data(sumstat)
     .enter()
@@ -1638,19 +1905,88 @@ svg.append("text")
       .attr("stroke", "black")
       .style("width", 80)
 
-      var jitterWidth = 50
-    svg
-      .selectAll("indPoints")
-      .data(combinedData)
-      .enter()
-      .append("circle")
-        .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
-        .attr("cy", function(d){return(y(d.expression))})
-        .attr("r", 2)
-        .style("fill", "white")
-        .attr("stroke", "black")
+    //   var jitterWidth = 50
+    // svg
+    //   .selectAll("indPoints")
+    //   .data(combinedData)
+    //   .enter()
+    //   .append("circle")
+    //     .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
+    //     .attr("cy", function(d){return(y(d.expression))})
+    //     .attr("r", 2)
+    //     .style("fill", "white")
+    //     .attr("stroke", "black")
 
+        function update(selected) {
+          console.log(selected)
+          var selected1
+          if(selected == "MostUp")
+          {
+            selected1 = sumstat
+            genename= geneNameUP
+            genestring= "The Most Upregulated Gene "
+            console.log("sono mostup")
+          }else 
+          {
+             selected1= sumstat1
+             genename= geneNameDown
+             genestring= "The Most Downregulated Gene "
+          }
 
+          console.log(selected1)
+            line1
+            .data(selected1)
+            .transition()
+            .duration(1000)
+            .attr("x1", function(d){return(x(d.key))})
+            .attr("x2", function(d){return(x(d.key))})
+            .attr("y1", function(d){return(y(d.value.min))})
+            .attr("y2", function(d){return(y(d.value.max))})
+            .attr("stroke", "black")
+            .style("width", 40)
+
+            var boxWidth = 100
+            box1
+            .data(selected1)
+            .transition()
+            .duration(1000)
+          .attr("x", function(d){return(x(d.key)-boxWidth/2)})
+          .attr("y", function(d){return(y(d.value.q3))})
+          .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
+          .attr("width", boxWidth )
+          .attr("stroke", "black")
+          .style("fill", "#69b3a2")
+
+          line2
+            .data(selected1)
+            .transition()
+            .duration(1000)
+            .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
+            .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
+            .attr("y1", function(d){return(y(d.value.median))})
+            .attr("y2", function(d){return(y(d.value.median))})
+            .attr("stroke", "black")
+            .style("width", 80)
+
+            title
+            .transition()
+            .duration(1000)
+            .attr("x", width / 2)
+            .attr("y", margin.top)
+            .attr("text-anchor", "middle")
+            .style("font-size", "18px")
+            .text("Gene " + genename);
+          
+        }
+
+        // When the button is changed, run the updateChart function
+      d3.select("#selectButton").on("change", function(d) {
+        // recover the option that has been chosen
+        var selectedOption = d3.select(this).property("value")
+        // run the updateChart function with this selected option
+        update(selectedOption)
+    })
+      
 
   }
 
@@ -1660,12 +1996,12 @@ svg.append("text")
        }, parsedLogFC[0]);
 
     //console.log(mostUpregulatedGene)
-    var geneName = mostDownregulatedGene.Gene;
+    geneNameDown = mostDownregulatedGene.Gene;
     
     
 
-    var geneDataN = dataN.filter(d => d.gene === geneName)
-    var geneDataC = dataC.filter(d => d.gene === geneName)
+    var geneDataN = dataN.filter(d => d.gene === geneNameDown)
+    var geneDataC = dataC.filter(d => d.gene === geneNameDown)
 
     
 
@@ -1732,7 +2068,7 @@ svg.append("text")
     var boxPlotStatisticsC = computeBoxPlotStatistics(combinedData);
 
 
-    var sumstat = d3.nest()
+     sumstat1 = d3.nest()
     .key(function(d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
     .rollup(function(d) {
         q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
@@ -1803,12 +2139,12 @@ svg.append("text")
     .attr("y", margin.top)
     .attr("text-anchor", "middle")
     .style("font-size", "18px")
-    .text("The Most Downregulated Gene " + geneName);
+    .text("The Most Downregulated Gene " + geneNameDown);
 
 
    svg
     .selectAll("vertLines")
-    .data(sumstat)
+    .data(sumstat1)
     .enter()
     .append("line")
       .attr("x1", function(d){return(x(d.key))})
@@ -1822,7 +2158,7 @@ svg.append("text")
   var boxWidth = 100
   svg
     .selectAll("boxes")
-    .data(sumstat)
+    .data(sumstat1)
     .enter()
     .append("rect")
         .attr("x", function(d){return(x(d.key)-boxWidth/2)})
@@ -1834,7 +2170,7 @@ svg.append("text")
 
     svg
     .selectAll("medianLines")
-    .data(sumstat)
+    .data(sumstat1)
     .enter()
     .append("line")
       .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
