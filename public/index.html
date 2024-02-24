@@ -169,6 +169,14 @@ input.range2[type="range" i]::-webkit-slider-thumb {
      </select>
   </div> 
 
+  <div id ="checkbox" style="visibility: hidden;">
+<input type="checkbox" id="vehicle1" name="vehicle1" value="Age" checked>
+<label for="vehicle1"> Age</label>
+<input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker">
+<label for="vehicle2"> Smoker class</label>
+<input type="checkbox" id="vehicle3" name="vehicle3" value="Gender">
+<label for="vehicle3"> Gender</label>
+</div>
   <div id="parallelcoordinates"></div>
 </div>
 </div>
@@ -509,6 +517,7 @@ function moon(θ) {
           }
           return result;
         }, []);
+        
 
         if (ind.length > 0) {
 
@@ -551,9 +560,7 @@ function moon(θ) {
 
             updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy)
 
-
-
-
+            document.getElementById("checkbox").style.visibility = "visible";
                               }
 
       });
