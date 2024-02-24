@@ -249,7 +249,7 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     var geneNameDown
     /////////
 
-    let first_dims = ['Age at Diagnosis']
+    var first_dims = ['Age at Diagnosis']
     
     
 
@@ -1608,7 +1608,7 @@ var legendRect = legend.append("rect")
 
                   });
                   selectedGeneData = selectedGeneData.filter(gene => gene !== d.gene);
-                  updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy)
+                  updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
                   } else {
                       // If not highlighted, apply the highlighting
                       selectedElement
@@ -1620,7 +1620,7 @@ var legendRect = legend.append("rect")
                       console.log(selectedGeneData);
 
                       // Call a function to create parallel coordinates plot using selectedGeneData
-                      updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy)
+                      updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
                   }
                 });
 
@@ -2330,9 +2330,8 @@ svg.append("text")
 
         var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
 
-// Add "Age at Diagnosis" dimension to dimensions array
-var dimensions = first_dims.concat(geneselected);
-
+        dimensions = first_dims.concat(geneselected);
+        
     var y = {};
     for (var i in dimensions) {
         var name = dimensions[i];
@@ -2497,12 +2496,15 @@ function handleCheckboxChange() {
         // Remove 'Age at Diagnosis' dimension from dimensions array
         var index = first_dims.indexOf('Age at Diagnosis');
         if (index !== -1) {
-          first_dims.splice(index, 1);
+            first_dims.splice(index, 1);
+            if (first_dims===undefined){
+              first_dims=[]
+            }
         }
     }
 
     // Call updateParallel with the updated dimensions array
-    updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
+    updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
 }
 
 // Attach event listener to the checkbox
