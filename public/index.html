@@ -1037,7 +1037,7 @@ function moon(θ) {
     const thresholdLine = svg.append("line")
         .attr("y1", 0)
         .attr("y2", height)
-        .attr("stroke", "red")
+        .attr("stroke", "darkred")
         .attr("stroke-width", 2);
 
     // Update the position of the threshold line
@@ -1221,7 +1221,7 @@ legend.append("text")
         .attr("y1", 0)
         .attr("x2", xScale(-Math.log2(thr_fc)))
         .attr("y2", height)
-        .style("stroke", "red")
+        .style("stroke", "darkred")
         .style("stroke-width", "2");
 
     svg.append("line")
@@ -1229,7 +1229,7 @@ legend.append("text")
         .attr("y1", 0)
         .attr("x2", xScale(Math.log2(thr_fc)))
         .attr("y2", height)
-        .style("stroke", "red")
+        .style("stroke", "darkred")
         .style("stroke-width", "2");
 
     // Add overlay for colored portion
@@ -1512,7 +1512,7 @@ var legendRect = legend.append("rect")
                 .attr("cx", 10)
                 .attr("cy", 20)
                 .attr("r", 3)
-                .style("fill", "red");
+                .style("fill", "darkred");
 
     legend.append("text")
         .attr("x", 20)
@@ -1525,7 +1525,7 @@ var legendRect = legend.append("rect")
                 .attr("cx", 10)
                 .attr("cy", 40)
                 .attr("r", 3)
-                .style("fill", "blue");
+                .style("fill", "royalblue");
 
       legend.append("text")
           .attr("x", 20)
@@ -1572,9 +1572,9 @@ var legendRect = legend.append("rect")
                 .style("fill", d => {
                     // Check if logFC is greater than or equal to the threshold
                     if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
-                        return "red";
+                        return "darkred";
                     } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
-                        return "blue";
+                        return "royalblue";
                     } else  {
                         return "grey";
                     }
@@ -1622,9 +1622,9 @@ var legendRect = legend.append("rect")
                       selectedElement.style("fill",d => {
                       // Check if logFC is greater than or equal to the threshold
                       if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
-                          return "red";
+                          return "darkred";
                       } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
-                          return "blue";
+                          return "royalblue";
                       } else  {
                           return "grey";
                       }
@@ -1702,7 +1702,7 @@ var legendRect = legend.append("rect")
 
                   dimensions = ["Normal", "Case","logFC","pval_adj"]
           
-        var color=d3.scaleOrdinal().domain(["up","down"]).range(["red","blue"])
+        var color=d3.scaleOrdinal().domain(["up","down"]).range(["darkred","royalblue"])
 
 
           var highlight = function(d){
@@ -1807,9 +1807,9 @@ var legendRect = legend.append("rect")
              .style("fill", d => {
                     // Check if logFC is greater than or equal to the threshold
                     if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
-                        return "red";
+                        return "darkred";
                     } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
-                        return "blue";
+                        return "royalblue";
                     } else  {
                         return "grey";
                     }
@@ -2349,7 +2349,7 @@ svg.append("text")
 
     var color = d3.scaleOrdinal()
         .domain(["case", "normal"])
-        .range(["blue", "red"]);
+        .range(["royalblue", "darkred"]);
 
         var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
 
@@ -2368,6 +2368,7 @@ svg.append("text")
     }
     // Extract age data from metadata
     var ageData = metadata["Age at Diagnosis:ch1"];
+    var genderData = metadata["Gender:ch1"];
 
     // Convert age data to numbers
     ageData = ageData.map(function(age) {
@@ -2380,6 +2381,16 @@ svg.append("text")
     // Update the y-scale for the age dimension
     y["Age at Diagnosis"] = d3.scaleLinear()
         .domain([30, 90]) // Set the domain based on the age data
+        .range([height, 0]);
+
+    // Convert age data to numbers
+    genderData = genderData.map(function(age) {
+        return parseFloat(age);
+    });
+
+    // Update the y-scale for the age dimension
+    y["Gender"] = d3.scaleLinear()
+        .domain([0, 1]) // Set the domain based on the age data
         .range([height, 0]);
 
 
@@ -2405,7 +2416,7 @@ svg.append("text")
           if (gsmIndex !== -1) {
               // If the GSM is found in metadata, insert the corresponding Age at Diagnosis
               transposedData[i]['Age at Diagnosis'] = metadata['Age at Diagnosis:ch1'][gsmIndex];
-              
+              transposedData[i]['Gender'] = metadata['Gender:ch1'][gsmIndex];              
           }
       });
   });
@@ -2544,9 +2555,9 @@ svg.append("text")
                     .style("fill", d => {
                             // Check if logFC is greater than or equal to the threshold
                             if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
-                                return "red";
+                                return "darkred";
                             } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
-                                return "blue";
+                                return "royalblue";
                             } else  {
                                 return "grey";
                             }
@@ -2677,8 +2688,32 @@ function handleCheckboxChange() {
     updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
 }
 
+// Function to handle checkbox change event
+function handleCheckboxChangeGender() {
+    var checkbox = document.getElementById("vehicle3");
+    var isChecked = checkbox.checked;
+
+    if (isChecked) {
+        // Add 'Age at Diagnosis' dimension to dimensions array
+        first_dims.unshift('Gender');
+    } else {
+        // Remove 'Age at Diagnosis' dimension from dimensions array
+        var index = first_dims.indexOf('Gender');
+        if (index !== -1) {
+            first_dims.splice(index, 1);
+            if (first_dims===undefined){
+              first_dims=[]
+            }
+        }
+    }
+
+    // Call updateParallel with the updated dimensions array
+    updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
+}
+
 // Attach event listener to the checkbox
 document.getElementById("vehicle1").addEventListener("change", handleCheckboxChange);
+document.getElementById("vehicle3").addEventListener("change", handleCheckboxChangeGender);
 
 
   </script>
