@@ -568,8 +568,15 @@ function moon(θ) {
             selectedGeneData.push(mostUpregulatedGeneName)
             selectedGeneData.push(mostDownregulatedGeneName)
 
-
+            
             updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
+            scatter.selectAll("circle")
+             .filter(circleData => circleData.gene === mostUpregulatedGeneName || circleData.gene === mostDownregulatedGeneName)
+             .style("fill", d => {
+                    // Check if logFC is greater than or equal to the threshold
+                    return "green";
+                  });
+
 
             document.getElementById("checkbox").style.visibility = "visible";
                               }
