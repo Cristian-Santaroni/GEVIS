@@ -506,7 +506,46 @@ function moon(θ) {
                 .then(data => {
                   p_val_adj=data
                
+             // Calculate the quantile
+        log_thr_fc = Math.log2(1.1);  
+        console.log(log_thr_fc)
+        const ind = parsedLogFC_origin.reduce((result, entry, index) => {
             
+            if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+              result.push(index);
+              
+            }
+            return result;
+          }, []);
+
+          // console.log("parsed log before ",parsedLogFC.length)
+          // console.log("data copy beforeC ",dataC_copy.length)
+          // console.log("data copy beforeN ",dataN_copy.length)
+
+          // console.log("parsed log origin ",parsedLogFC_origin.length)
+          /////////////////////// 
+          
+          //DIMENSIONE DI PARSED E DATAC,DATAN SONO UGUALI , GIUSTAMENTE
+
+          //////////////////////
+          console.log(parsedLogFC_origin)
+          console.log(data_copy)
+          if (ind.length>0){
+
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy1.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy1.filter((entry, index) => !ind.includes(index));
+
+            data_copy = data_copy1.filter((entry, index) => !ind.includes(index));
+
+            parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index)); 
+          }
+
+          //////// DATI FILTRATI DAL PRIMO FOLD-CHANGE//////////////////
+          console.log(parsedLogFC)
+          console.log(data_copy)
             
             updateLogFCHistogram(parsedLogFC_origin)
             
@@ -583,6 +622,7 @@ function moon(θ) {
 
       });
     })
+      ///// DATI FILTRATI DAL PRIMO PVALUE, GIA' FILTRATI DAL PRIMO LOGFC, CHE ERANO GIA FILTRATI DA PRIMO IQR IN dataC_copy dataN_copy data_copy parsedLogFC ///////
 
             
                   // Calculate the quantile
@@ -652,17 +692,58 @@ function moon(θ) {
       console.log(parsedLogFC_origin)
       updateLogFCHistogram(parsedLogFC_origin)
 
-  
-      console.log(parsedLogFC_origin)
+      
+       // Calculate the quantile
+       log_thr_fc = Math.log2(thr_fc);  
+        console.log(log_thr_fc)
+        const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
+            
+            if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+              result.push(index);
+              
+            }
+            return result;
+          }, []);
 
-      log_thr_fc = Math.log2(thr_fc);  
-            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
+          // console.log("parsed log before ",parsedLogFC.length)
+          // console.log("data copy beforeC ",dataC_copy.length)
+          // console.log("data copy beforeN ",dataN_copy.length)
+
+          // console.log("parsed log origin ",parsedLogFC_origin.length)
+          /////////////////////// 
           
-                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-                  result.push(index);
-                }
-                return result;
-            }, []);
+          //DIMENSIONE DI PARSED E DATAC,DATAN SONO UGUALI , GIUSTAMENTE
+
+          //////////////////////
+
+          console.log(parsedLogFC_origin)
+          console.log(data_copy1)
+
+          if (ind2.length>0){
+            console.log("ind2")
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy1.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy1.filter((entry, index) => !ind.includes(index));
+
+            data_copy = data_copy1.filter((entry, index) => !ind.includes(index));
+
+            parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index)); 
+          }
+
+      console.log(parsedLogFC)
+      console.log(data_copy)
+
+      // log_thr_fc = Math.log2(thr_fc);  
+      //       const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
+          
+      //           if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
+      //             result.push(index);
+      //           }
+      //           return result;
+      //       }, []);
+            
 
       // const geneCountDiv2 = document.getElementById('geneCount2');
       // geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${parsedLogFC.length - ind2.length}`;
@@ -671,48 +752,66 @@ function moon(θ) {
 
     document.getElementById("thresholdSlider").addEventListener("change", function() {
 
-      const ind = variation_data_copy.reduce((result, entry, index) => {
-        
-        if (entry <= thr_prc) {
-          result.push(index);
-        }
-        return result;
-      }, []);
 
-      if (ind.length > 0) {
 
-        // Remove entries corresponding to ind from dataN
-       // data_copy = data_original.filter((entry, index) => !ind.includes(index));
+        var req = ocpu.call("hello", {
+              data: data_copy
+          }, function(session) {
+              var filteredDataURL = session.loc + "/R/.val/json";
+              console.log(session);
+              // Fetch the filtered data from the URL
+              fetch(filteredDataURL)
+                  .then(response => response.json())
+                  .then(data => {
+                    
+                    old_p_adj=data
+                    
+                    averageExpressions10C = calculateAverageLog10Expressions(dataC_copy1);
+                    averageExpressions10N = calculateAverageLog10Expressions(dataN_copy1);
 
-       // dataC_copy = dataC_original.filter((entry, index) => !ind.includes(index));
+                    updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc, parsedLogFC_origin,old_p_adj)
+                    updateParallel(selectedGeneData,data_copy1,dataC_copy1,dataN_copy1, first_dims)
 
-        // Remove entries corresponding to ind from data
-        //dataN_copy = dataN_original.filter((entry, index) => !ind.includes(index));
-        // Remove entries corresponding to ind from genes
-        //genes = genes.filter((entry, index) => !ind.includes(index));
-
-      }
-      // // Update the gene count display
-      // const geneCountDiv = document.getElementById('geneCount');
-      // geneCountDiv.innerHTML = `Initial number of genes: ${initial_num_genes}<br>Number of genes after filtering: ${data_copy.length}`;
-
-      first_filter_number_genes = data_copy.length
-
-      log_thr_fc = Math.log2(thr_fc);  
-            const ind2 = parsedLogFC_origin.reduce((result, entry, index) => {
+                    const ind = old_p_adj.reduce((result, entry, index) => {
           
-                if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-                  result.push(index);
-                }
-                return result;
-            }, []);
+          if (entry.pval_adj > threshold) {
+            result.push(index);
+          }
+          return result;
+        }, []);
 
+      
+        if (ind.length > 0) {
+
+            //console.log(parsedLogFC.length)
+
+            // Remove entries corresponding to ind from dataN
+
+            // Remove entries corresponding to ind from dataN
+            dataC_copy = dataC_copy1.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from dataN
+            dataN_copy = dataN_copy1.filter((entry, index) => !ind.includes(index));
+
+
+            data_copy = data_copy1.filter((entry, index) => !ind.includes(index));
+
+            // Remove entries corresponding to ind from logFC
+            parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+            
+          
+          }
+
+      });
+    })
+
+
+       
       // const geneCountDiv2 = document.getElementById('geneCount2');
       // geneCountDiv2.innerHTML = `First filtering number of genes: ${first_filter_number_genes}<br>Number of genes after filtering: ${data_copy.length - ind2.length}`;
 
-
-
     });
+
 
     document.getElementById("log_thresholdSlider").addEventListener("input", function() {
         // Update the threshold value on slider change
@@ -776,42 +875,7 @@ function moon(θ) {
 
     document.getElementById("log_thresholdSlider").addEventListener("change", function() {
 
-   
-        const ind = parsedLogFC_origin.reduce((result, entry, index) => {
-          
-          if (Math.abs(entry.logFC) < Math.log2(thr_fc)) {
-            result.push(index);
-            
-          }
-          return result;
-        }, []);
-        
-        //console.log("parsed log ",parsedLogFC.length)
-        //console.log("data copy beforeC ",dataC_copy.length)
-        //console.log("data copy beforeN",dataN_copy.length)
-        
-        
-        if (ind.length > 0) {
-
-          // Remove entries corresponding to ind from dataN
-
-          // // Remove entries corresponding to ind from dataN
-          // dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
-
-          // // Remove entries corresponding to ind from dataN
-          // dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
-
-          // data_copy = data_copy.filter((entry, index) => !ind.includes(index));
-
-          
-          // // Remove entries corresponding to ind from logFC
-          // parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
-          
-          //console.log(parsedLogFC.length)
-
-        }
-
-
+  
         var req = ocpu.call("hello", {
               data: data_copy
           }, function(session) {
@@ -822,6 +886,7 @@ function moon(θ) {
                   .then(response => response.json())
                   .then(data => {
                     old_p_adj=data
+                    updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,old_p_adj)
                     const ind = old_p_adj.reduce((result, entry, index) => {
           
           if (entry.pval_adj > threshold) {
@@ -829,6 +894,8 @@ function moon(θ) {
           }
           return result;
         }, []);
+
+      
 
         if (ind.length > 0) {
 
@@ -859,7 +926,7 @@ function moon(θ) {
     })
 
 
-        updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
+       
         //updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
         // console.log("parsed log ",parsedLogFC.length)
         // console.log("data copy beforeC ",dataC_copy.length)
@@ -1391,12 +1458,14 @@ legend.append("text")
             .attr("y", 0);
 
         // Create the scatter variable: where both the circles and the brush take place
+        svg.select("#scatter").selectAll("*").remove();
          scatter = svg.append('g')
+         .attr("id", "scatter")
             .attr("clip-path", "url(#clip)");
 
         // Set the zoom and Pan features
         var zoom = d3.zoom()
-            .scaleExtent([0.5, 20])
+            .scaleExtent([0.05, 20])
             .extent([[0, 0], [width, height]])
             .on("zoom", updateChart);
 
@@ -1451,7 +1520,7 @@ legend.append("text")
             //     .call(d3.axisLeft(yScale));
 
             // Create circles for each gene
-            var data = Object.keys(averageExpressionsN).map(function (gene) {
+            var data = Object.keys(averageExpressions10N).map(function (gene) {
                 // Find the corresponding logFC value from parsedLogFC_origin
                 var logFCObj = parsed.find(d => d.Gene === gene) || null;
                 var logFC = logFCObj ? logFCObj.logFC : null;
@@ -1466,7 +1535,7 @@ legend.append("text")
                 var pval_adjObj = old_p_adj.find(d => d.Gene === gene) || null;
                 var pval_adj = pval_adjObj ? pval_adjObj.pval_adj : null;
 
-                return { gene: gene, Normal: averageExpressionsN[gene], Case: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj, type: type };
+                return { gene: gene, Normal: averageExpressions10N[gene], Case: averageExpressions10C[gene], logFC: logFC, pval_adj: pval_adj, type: type };
             });
 
             // Create a legend
@@ -1549,6 +1618,7 @@ var legendRect = legend.append("rect")
             // Add circles to the scatter plot
             var tooltip = d3.select("#tooltip");
             //console.log(data)
+            svg.select("#scatter").selectAll("*").remove();
             scatter.selectAll("circle")
                 .data(data)
                 .enter().append("circle")
@@ -2296,7 +2366,7 @@ svg.append("text")
   }
 
     
-  function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
+    function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
     let structureCombinedData = [];
 
     geneselected.forEach(geneName => {
