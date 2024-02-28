@@ -2513,7 +2513,7 @@ svg.append("text")
   }
 
     
-    function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
+  function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
     let structureCombinedData = [];
 
     geneselected.forEach(geneName => {
@@ -2694,8 +2694,6 @@ y["Cigarette Smoking Status"] = d3.scaleOrdinal()
 
 
     // Draw the axis:
-// Draw the axis labels:
-    // Draw the axis:
     svg.selectAll("myAxis")
         .data(dimensions).enter()
         .append("g")
@@ -2713,26 +2711,6 @@ y["Cigarette Smoking Status"] = d3.scaleOrdinal()
         .on("start", dragstart)
         .on("drag", dragmove)
         .on("end", dragend);
-
-    // // Draw the axis:
-    // var axisGroups = svg.selectAll("myAxis")
-    //     .data(dimensions)
-    //     .enter()
-    //     .append("g")
-    //     .attr("class", "axis-group")
-    //     .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
-    //     .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
-    //     .call(drag) // Apply drag behavior to each axis group
-    //     .append("text")
-    //     .style("text-anchor", "middle")
-    //     .attr("y", -9)
-    //     .text(function (d) { return d; })
-    //     .style("fill", "black");
-
-    //     var drag = d3.drag()
-    //     .on("start", dragstart)
-    //     .on("drag", dragmove)
-    //     .on("end", dragend);
 
     // Draw the axis:
     var axisGroups = svg.selectAll("myAxis")
@@ -2766,89 +2744,87 @@ y["Cigarette Smoking Status"] = d3.scaleOrdinal()
     }
 
     function dragend(d) {
-    // Get the new positions of the axis groups
-    var newPositions = [];
-    svg.selectAll(".axis-group").each(function (d) {
-        var transform = d3.select(this).attr("transform");
-        var translateX = +transform.split("(")[1].split(")")[0];
-        console.log(translateX)
-        newPositions.push({ dimension: d, position: translateX });
-    });
+        // Get the new positions of the axis groups
+        var newPositions = [];
+        svg.selectAll(".axis-group").each(function (d) {
+            var transform = d3.select(this).attr("transform");
+            var translateX = +transform.split("(")[1].split(")")[0];
+            console.log(translateX)
+            newPositions.push({ dimension: d, position: translateX });
+        });
 
-    // Sort newPositions array based on position
-    newPositions.sort(function(a, b) {
-        return a.position - b.position;
-    });
+        // Sort newPositions array based on position
+        newPositions.sort(function(a, b) {
+            return a.position - b.position;
+        });
 
-    // Separate dimensions into geneselected, metadata (first_dims), and total ordering
-    var geneselectedOrder = [];
-    var metadataOrder = [];
-    totalOrder = [];
-    newPositions.forEach(function(d) {
-        if (geneselected.includes(d.dimension)) {
-            geneselectedOrder.push(d.dimension);
-        } else if (first_dims.includes(d.dimension)) {
-            metadataOrder.push(d.dimension);
-        }
-        totalOrder.push(d.dimension);
-    });
-
-    // Check if any dimension was dragged too far to the left and remove it from geneselectedOrder if it belongs to geneselected
-    var removedDimensions = [];
-    newPositions.forEach(function(d) {
-        if (d.position < -100 && geneselected.includes(d.dimension)) {
-            var index = geneselectedOrder.indexOf(d.dimension);
-            if (index !== -1) {
-                removedDimensions.push(geneselectedOrder.splice(index, 1)[0]);
-                        // Remove highlighting color in the scatter plot
-                scatter.selectAll("circle")
-                    .filter(circleData => circleData.gene === d.dimension)
-                    .style("fill", d => {
-                            // Check if logFC is greater than or equal to the threshold
-                            if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
-                                return "darkred";
-                            } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
-                                return "royalblue";
-                            } else  {
-                                return "grey";
-                            }
-                          });
+        // Separate dimensions into geneselected, metadata (first_dims), and total ordering
+        var geneselectedOrder = [];
+        var metadataOrder = [];
+        totalOrder = [];
+        newPositions.forEach(function(d) {
+            if (geneselected.includes(d.dimension)) {
+                geneselectedOrder.push(d.dimension);
+            } else if (first_dims.includes(d.dimension)) {
+                metadataOrder.push(d.dimension);
             }
-        }
-    });
+            totalOrder.push(d.dimension);
+        });
 
+        // Check if any dimension was dragged too far to the left and remove it from geneselectedOrder if it belongs to geneselected
+        var removedDimensions = [];
+        newPositions.forEach(function(d) {
+            if (d.position < -100 && geneselected.includes(d.dimension)) {
+                var index = geneselectedOrder.indexOf(d.dimension);
+                if (index !== -1) {
+                    removedDimensions.push(geneselectedOrder.splice(index, 1)[0]);
+                            // Remove highlighting color in the scatter plot
+                    scatter.selectAll("circle")
+                        .filter(circleData => circleData.gene === d.dimension)
+                        .style("fill", d => {
+                                // Check if logFC is greater than or equal to the threshold
+                                if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
+                                    return "darkred";
+                                } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
+                                    return "royalblue";
+                                } else  {
+                                    return "grey";
+                                }
+                              });
+                }
+            }
+        });
 
+        // Remove corresponding data from transposedData
+        transposedData = transposedData.filter(function(d) {
+            return !removedDimensions.includes(d.gene);
+        });
 
-    // Remove corresponding data from transposedData
-    transposedData = transposedData.filter(function(d) {
-        return !removedDimensions.includes(d.gene);
-    });
+        // Update totalOrder by removing removedDimensions
+        totalOrder = totalOrder.filter(function(d) {
+            return !removedDimensions.includes(d);
+        });
 
-    // Update totalOrder by removing removedDimensions
-    totalOrder = totalOrder.filter(function(d) {
-        return !removedDimensions.includes(d);
-    });
+        console.log("Geneselected order:", geneselectedOrder);
+        console.log("Metadata order:", metadataOrder);
+        console.log("Total order:", totalOrder);
+        console.log("Removed dimensions:", removedDimensions);
 
-    console.log("Geneselected order:", geneselectedOrder);
-    console.log("Metadata order:", metadataOrder);
-    console.log("Total order:", totalOrder);
-    console.log("Removed dimensions:", removedDimensions);
+        selectedGeneData = geneselectedOrder
 
-    selectedGeneData = geneselectedOrder
+        first_dims = metadataOrder
 
-    first_dims = metadataOrder
+        ordering = totalOrder
 
-    ordering = totalOrder
+        // Update dimensions with new order
 
-    // Update dimensions with new order
+        // Redraw the parallel coordinates plot
+        // Call updateParallel or relevant function here with updated dimensions
+        updateParallel(geneselectedOrder, data, dataC, dataN, metadataOrder, totalOrder);
+        updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC,old_p_adj)
+        d3.selectAll(".axis-label").classed("dragging", false);
 
-    // Redraw the parallel coordinates plot
-    // Call updateParallel or relevant function here with updated dimensions
-    updateParallel(geneselectedOrder, data, dataC, dataN, metadataOrder, totalOrder);
-    updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC,old_p_adj)
-    d3.selectAll(".axis-label").classed("dragging", false);
-
-}
+    }
     var newPositions = [];
     svg.selectAll(".axis-group").each(function (d) {
         var transform = d3.select(this).attr("transform");
@@ -2900,8 +2876,6 @@ y["Cigarette Smoking Status"] = d3.scaleOrdinal()
         }
     });
 
-
-
     // Remove corresponding data from transposedData
     transposedData = transposedData.filter(function(d) {
         return !removedDimensions.includes(d.gene);
@@ -2923,12 +2897,74 @@ y["Cigarette Smoking Status"] = d3.scaleOrdinal()
 
     ordering = totalOrder
 
+// Function to handle mouseover event
+function highlight(d) {
+    // Determine the value to highlight based on the selected variable
+    var selected_reg;
+    if (selectedVariable === "case") {
+        selected_reg = d.type;
+    } else if (selectedVariable === "Smoker") {
+        selected_reg = d['Cigarette Smoking Status'];
+    } else if (selectedVariable === "Gender") {
+        selected_reg = d['Gender'];
+    } else {
+        selected_reg = ""; // Set default value
+    }
 
+    // First, every group turns grey
+    d3.selectAll(".gsm-path")
+        .transition().duration(200)
+        .style("stroke", function(data) {
+            // Highlight only the selected category, reduce opacity for others
+            if (selectedVariable === "case") {
+                return data.type === selected_reg ? color(selected_reg) : "lightgrey";
+            } else if (selectedVariable === "Smoker") {
+                return data['Cigarette Smoking Status'] === selected_reg ? color(selected_reg) : "lightgrey";
+            } else if (selectedVariable === "Gender") {
+                return data['Gender'] === selected_reg ? color(selected_reg) : "lightgrey";
+            } else {
+                return "lightgrey"; // Default stroke color
+            }
+        })
+        .style("opacity", function(data) {
+            // Set opacity based on whether it's the selected category or not
+            if (selectedVariable === "case") {
+                return data.type === selected_reg ? "1" : "0.2";
+            } else if (selectedVariable === "Smoker") {
+                return data['Cigarette Smoking Status'] === selected_reg ? "1" : "0.2";
+            } else if (selectedVariable === "Gender") {
+                return data['Gender'] === selected_reg ? "1" : "0.2";
+            } else {
+                return "1"; // Default stroke color
+            }
+        });
+    }
 
+    // Function to handle mouseout event
+    function doNotHighlight() {
+        // Reset stroke color and opacity for all lines
+        d3.selectAll(".gsm-path")
+            .transition().duration(200)
+            .style("stroke", function(data) {
+                // Set stroke color based on the selected variable
+                if (selectedVariable === "case") {
+                    return color(data.type);
+                } else if (selectedVariable === "Smoker") {
+                    return color(data['Cigarette Smoking Status']);
+                } else if (selectedVariable === "Gender") {
+                    return color(data['Gender']);
+                } else {
+                    return "black"; // Default stroke color
+                }
+            })
+            .style("opacity", "1"); // Reset opacity to 1
+    }
 
+    // Bind mouseover and mouseleave events to all lines
+    svg.selectAll(".gsm-path")
+        .on("mouseover", highlight)
+        .on("mouseleave", doNotHighlight);
 
-        
-    
 }
 
     function calculateAverageExpressions(dataArray) {
