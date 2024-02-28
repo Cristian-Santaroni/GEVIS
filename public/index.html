@@ -2566,6 +2566,7 @@ svg.append("text")
     // Extract age data from metadata
     var ageData = metadata["Age at Diagnosis:ch1"];
     var genderData = metadata["Gender:ch1"];
+    var smokerData = metadata["Cigarette Smoking Status:ch1"];
 
     // Convert age data to numbers
     ageData = ageData.map(function(age) {
@@ -2588,6 +2589,16 @@ svg.append("text")
     // Update the y-scale for the age dimension
     y["Gender"] = d3.scaleLinear()
         .domain([0, 1]) // Set the domain based on the age data
+        .range([height, 0]);
+
+        smokerData = smokerData.map(function(age) {
+        return parseFloat(age);
+    });
+
+
+
+        y["Cigarette Smoking Status"] = d3.scaleLinear()
+        .domain([0, 2]) // Set the domain based on the age data
         .range([height, 0]);
 
 
@@ -2614,6 +2625,7 @@ svg.append("text")
               // If the GSM is found in metadata, insert the corresponding Age at Diagnosis
               transposedData[i]['Age at Diagnosis'] = metadata['Age at Diagnosis:ch1'][gsmIndex];
               transposedData[i]['Gender'] = metadata['Gender:ch1'][gsmIndex];              
+              transposedData[i]['Cigarette Smoking Status'] = metadata['Cigarette Smoking Status:ch1'][gsmIndex];              
           }
       });
   });
@@ -2909,9 +2921,33 @@ function handleCheckboxChangeGender() {
     updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
 }
 
+// Function to handle checkbox change event
+function handleCheckboxChangeCigarettes() {
+    var checkbox = document.getElementById("vehicle2");
+    var isChecked = checkbox.checked;
+
+    if (isChecked) {
+        // Add 'Age at Diagnosis' dimension to dimensions array
+        first_dims.unshift('Cigarette Smoking Status');
+    } else {
+        // Remove 'Age at Diagnosis' dimension from dimensions array
+        var index = first_dims.indexOf('Cigarette Smoking Status');
+        if (index !== -1) {
+            first_dims.splice(index, 1);
+            if (first_dims===undefined){
+              first_dims=[]
+            }
+        }
+    }
+
+    // Call updateParallel with the updated dimensions array
+    updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
+}
+
 // Attach event listener to the checkbox
 document.getElementById("vehicle1").addEventListener("change", handleCheckboxChange);
 document.getElementById("vehicle3").addEventListener("change", handleCheckboxChangeGender);
+document.getElementById("vehicle2").addEventListener("change", handleCheckboxChangeCigarettes);
 
 
   </script>
