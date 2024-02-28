@@ -204,8 +204,11 @@ input.range2[type="range" i]::-webkit-slider-thumb {
 <label for="vehicle2"> Smoker class</label>
 <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender">
 <label for="vehicle3"> Gender</label>
+
+<input type="checkbox" id="vehicle4" name="vehicle4" value="Stage">
+<label for="vehicle4"> Stage</label>
 </div>
-<div id="radiobox" style="visibility: visible;">
+<div id="radiobox" style="visibility: hidden;">
   <input type="radio" id="variable1" name="variable" value="case" checked>
   <label for="variable1">Case/Normal</label>
 
@@ -214,6 +217,9 @@ input.range2[type="range" i]::-webkit-slider-thumb {
 
   <input type="radio" id="variable3" name="variable" value="Gender">
   <label for="variable3">Gender</label>
+
+  <input type="radio" id="variable4" name="variable" value="Stage">
+  <label for="variable3">Stage</label>
 </div>
 
   <div id="parallelcoordinates"></div>
@@ -673,8 +679,9 @@ function moon(θ) {
               .classed('pulse',true);
 
 
-            document.getElementById("checkbox").style.visibility = "visible";
-                              }
+              document.getElementById("checkbox").style.visibility = "visible";
+              document.getElementById("radiobox").style.visibility = "visible";
+          }
 
       });
      
@@ -2580,6 +2587,10 @@ svg.append("text")
         color = d3.scaleOrdinal()
             .domain(["0", "1"])
             .range(["blue", "purple"]);
+    } else if (selectedVariable === "Stage") {
+        color = d3.scaleOrdinal()
+            .domain(["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"])
+            .range(["gray", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2"]);
     }
 
         var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
@@ -2602,6 +2613,7 @@ svg.append("text")
     var ageData = metadata["Age at Diagnosis:ch1"];
     var genderData = metadata["Gender:ch1"];
     var smokerData = metadata["Cigarette Smoking Status:ch1"];
+    var stageData = metadata["Stage:ch1"];
 
     // Convert age data to numbers
     ageData = ageData.map(function(age) {
@@ -2616,20 +2628,22 @@ svg.append("text")
         .domain([30, 90]) // Set the domain based on the age data
         .range([height, 0]);
 
-
     // Update the y-scale for the age dimension
     y["Gender"] = d3.scaleOrdinal()
         .domain(["Male", "Female"]) // Set the domain based on the age data
         .range([height, 0]);
 
+    // Update the y-scale for Cigarette Smoking Status
+    y["Cigarette Smoking Status"] = d3.scaleOrdinal()
+        .domain(["Never Smoked", "Former Smoker", "Current Smoker"])
+        .range([height, height / 2, 0])
 
+        var interval = height / 7;
 
+    y["Stage"] = d3.scaleOrdinal()
+        .domain(["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"])
+        .range([height, height - interval, height - 2 * interval, height - 3 * interval, height - 4 * interval, height - 5 * interval, height - 6 * interval, 0]);
 
-// Update the y-scale for Cigarette Smoking Status
-y["Cigarette Smoking Status"] = d3.scaleOrdinal()
-    .domain(["Never Smoked", "Former Smoker", "Current Smoker"])
-    .range([height, height / 2, 0])
-    
     
 
 
@@ -2657,6 +2671,7 @@ y["Cigarette Smoking Status"] = d3.scaleOrdinal()
               transposedData[i]['Age at Diagnosis'] = metadata['Age at Diagnosis:ch1'][gsmIndex];
               transposedData[i]['Gender'] = metadata['Gender:ch1'][gsmIndex];              
               transposedData[i]['Cigarette Smoking Status'] = metadata['Cigarette Smoking Status:ch1'][gsmIndex];              
+              transposedData[i]['Stage'] = metadata['Stage:ch1'][gsmIndex];              
           }
       });
   });
@@ -2679,8 +2694,8 @@ y["Cigarette Smoking Status"] = d3.scaleOrdinal()
             return color(d['Cigarette Smoking Status']);
         } else if (selectedVariable === "Gender") {
             return color(d['Gender']);
-        } else {
-            return "black"; // Default color if selected variable doesn't match any condition
+        } else if (selectedVariable === "Stage"){
+            return color(d['Stage']); 
         }
     })
     .style("stroke-width", 1); // Example stroke width
@@ -2907,8 +2922,8 @@ function highlight(d) {
         selected_reg = d['Cigarette Smoking Status'];
     } else if (selectedVariable === "Gender") {
         selected_reg = d['Gender'];
-    } else {
-        selected_reg = ""; // Set default value
+    } else if (selectedVariable === "Stage"){
+        selected_reg = d['Stage']; // Set default value
     }
 
     // First, every group turns grey
@@ -2922,8 +2937,8 @@ function highlight(d) {
                 return data['Cigarette Smoking Status'] === selected_reg ? color(selected_reg) : "lightgrey";
             } else if (selectedVariable === "Gender") {
                 return data['Gender'] === selected_reg ? color(selected_reg) : "lightgrey";
-            } else {
-                return "lightgrey"; // Default stroke color
+            } else if (selectedVariable === "Stage"){
+                return data['Stage'] === selected_reg ? color(selected_reg) : "lightgrey"; 
             }
         })
         .style("opacity", function(data) {
@@ -2934,8 +2949,8 @@ function highlight(d) {
                 return data['Cigarette Smoking Status'] === selected_reg ? "1" : "0.2";
             } else if (selectedVariable === "Gender") {
                 return data['Gender'] === selected_reg ? "1" : "0.2";
-            } else {
-                return "1"; // Default stroke color
+            } else if (selectedVariable === "Stage") {
+                return data['Stage'] === selected_reg ? "1" : "0.2";
             }
         });
     }
@@ -2953,8 +2968,8 @@ function highlight(d) {
                     return color(data['Cigarette Smoking Status']);
                 } else if (selectedVariable === "Gender") {
                     return color(data['Gender']);
-                } else {
-                    return "black"; // Default stroke color
+                } else if (selectedVariable === "Stage") {
+                    return color(data['Stage']);
                 }
             })
             .style("opacity", "1"); // Reset opacity to 1
@@ -3103,10 +3118,34 @@ function handleCheckboxChangeCigarettes() {
     updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
 }
 
+// Function to handle checkbox change event
+function handleCheckboxChangeStage() {
+    var checkbox = document.getElementById("vehicle4");
+    var isChecked = checkbox.checked;
+
+    if (isChecked) {
+        // Add 'Age at Diagnosis' dimension to dimensions array
+        first_dims.unshift('Stage');
+    } else {
+        // Remove 'Age at Diagnosis' dimension from dimensions array
+        var index = first_dims.indexOf('Stage');
+        if (index !== -1) {
+            first_dims.splice(index, 1);
+            if (first_dims===undefined){
+              first_dims=[]
+            }
+        }
+    }
+
+    // Call updateParallel with the updated dimensions array
+    updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
+}
+
 // Attach event listener to the checkbox
 document.getElementById("vehicle1").addEventListener("change", handleCheckboxChange);
 document.getElementById("vehicle3").addEventListener("change", handleCheckboxChangeGender);
 document.getElementById("vehicle2").addEventListener("change", handleCheckboxChangeCigarettes);
+document.getElementById("vehicle4").addEventListener("change", handleCheckboxChangeStage);
 
 
 var radioInputs = document.querySelectorAll('input[type="radio"]');
@@ -3126,7 +3165,12 @@ function updateColors(selectedVariable) {
         color = d3.scaleOrdinal()
             .domain(["0", "1"])
             .range(["blue", "purple"]);
+    } else if (selectedVariable === "Stage") {
+        color = d3.scaleOrdinal()
+            .domain(["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"])
+            .range(["gray", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2"]);
     }
+
     return color;
 }
 
