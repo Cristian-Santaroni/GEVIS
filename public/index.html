@@ -639,7 +639,7 @@ function moon(θ) {
 
             selectedGeneData.push(mostUpregulatedGeneName)
             selectedGeneData.push(mostDownregulatedGeneName)
-
+            
 
             
             updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
@@ -865,6 +865,7 @@ function moon(θ) {
             if (selectedGeneData == []){
               selectedGeneData.push(mostUpregulatedGeneName)
               selectedGeneData.push(mostDownregulatedGeneName)
+              
             }
             else{
                 // Filter out genes that are not present in dataC_copy or dataN_copy
@@ -1722,14 +1723,13 @@ legend.append("text")
                     }
                 })
                 .style("fill", d => {
-                 // console.log(greencircles)
-                 //console.log(greencircles.some(selected => selected === d.gene))
+                 
 
                     // Check if logFC is greater than or equal to the threshold
-                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && greencircles.some(selectedGene =>  selectedGene.gene === d.gene)){
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && selectedGeneData.some(selectedGene =>  selectedGene === d.gene)){
                       return "green";
                     }
-                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && greencircles.some(selectedGene =>  selectedGene.gene === d.gene)){
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && selectedGeneData.some(selectedGene =>  selectedGene === d.gene)){
                       return "green";
                     }
                     else if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
@@ -1743,10 +1743,10 @@ legend.append("text")
                 })
                 .classed('pulse',d =>{
                     // Check if logFC is greater than or equal to the threshold
-                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && greencircles.some(selectedGene =>  selectedGene.gene === d.gene)){
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && selectedGeneData.some(selectedGene =>  selectedGene === d.gene)){
                       return true;
                     }
-                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && greencircles.some(selectedGene =>  selectedGene.gene === d.gene)){
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && selectedGeneData.some(selectedGene =>  selectedGene === d.gene)){
                       return true;
                     }else{
                       return false;
@@ -1805,7 +1805,7 @@ legend.append("text")
                     })
                     .classed('pulse',false);
                     selectedGeneData = selectedGeneData.filter(gene => gene !== d.gene);
-                    greencircles = greencircles.filter(gene => gene !== d.gene)
+                    
                     updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
                     selectedElement.classList.remove('pulse');
                   } else {
@@ -1818,9 +1818,7 @@ legend.append("text")
 
                       // On click, filter data for the selected gene
                       selectedGeneData.push(d.gene);
-                      greencircles.push({ 
-                        gene: d.gene
-                      })
+                      
                       console.log(selectedGeneData);
 
                       // Call a function to create parallel coordinates plot using selectedGeneData
@@ -2789,6 +2787,7 @@ svg.append("text")
     // Redraw the parallel coordinates plot
     // Call updateParallel or relevant function here with updated dimensions
     updateParallel(geneselectedOrder, data, dataC, dataN, metadataOrder, totalOrder);
+    updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC,old_p_adj)
     d3.selectAll(".axis-label").classed("dragging", false);
 
 }
