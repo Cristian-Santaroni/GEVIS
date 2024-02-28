@@ -49,18 +49,19 @@
   }
 
   .flex-container > div {
-  margin-right: 20px; /* Add spacing between items */
+  margin-right: 0px; /* Add spacing between items */
   }
 
 
     body{
-      background-color: rgb(230, 220, 220);
+      background-color: black;
     }
 
     #style_scatter{
       border: 2px solid #ddd; /* Border color */
     border-radius: 8px; /* Border radius for rounded corners */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow effect */
+    background-color: rgb(54, 54, 54);
     }
 
 
@@ -125,7 +126,7 @@ input.range2[type="range" i]::-webkit-slider-thumb {
   height: var(--h);
   width: var(--w);
   background: var(--_c);
-  border-image: linear-gradient(90deg, var(--_c) 50%, steelblue 0) 0 1/calc(50% - var(--l)/2) 100vw/0 100vw;
+  border-image: linear-gradient(90deg, var(--_c) 50%, darkgreen 0) 0 1/calc(50% - var(--l)/2) 100vw/0 100vw;
   -webkit-appearance: none;
   appearance: none;
   transition: .3s;
@@ -180,6 +181,13 @@ input.range2[type="range" i]::-webkit-slider-thumb {
       
       <input type="range" id="log_thresholdSlider" class="range1" min="1.1" max="10" step="0.01" value="1.1" style="width: 200px;">
       <span id="log_thresholdSliderValue">1.1</span>
+      <div id="boxPlot"></div>
+        <!-- Initialize a select button -->
+        <select id="selectButton" class="btn btn-secondary dropdown-toggle">
+        <option value="MostUp" selected>MostUp</option>
+        <option value="MostDown">MostdDown</option>
+        </select>
+      
     </div><!--div(6)-->
   </div>
   </div><!--div(2)-->
@@ -197,44 +205,46 @@ input.range2[type="range" i]::-webkit-slider-thumb {
      </select>
   </div> 
 
-  <div id ="checkbox" style="visibility: hidden;">
-<input type="checkbox" id="vehicle1" name="vehicle1" value="Age" checked>
-<label for="vehicle1"> Age</label>
-<input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker">
-<label for="vehicle2"> Smoker class</label>
-<input type="checkbox" id="vehicle3" name="vehicle3" value="Gender">
-<label for="vehicle3"> Gender</label>
+  
 
-<input type="checkbox" id="vehicle4" name="vehicle4" value="Stage">
-<label for="vehicle4"> Stage</label>
-</div>
-<div id="radiobox" style="visibility: hidden;">
-  <input type="radio" id="variable1" name="variable" value="case" checked>
-  <label for="variable1">Case/Normal</label>
-
-  <input type="radio" id="variable2" name="variable" value="Smoker">
-  <label for="variable2">Smoker class</label>
-
-  <input type="radio" id="variable3" name="variable" value="Gender">
-  <label for="variable3">Gender</label>
-
-  <input type="radio" id="variable4" name="variable" value="Stage">
-  <label for="variable3">Stage</label>
-</div>
-
+ 
+<div id="style_scatter">
+    <div id ="checkbox" style="visibility: hidden;">
+        <input type="checkbox" id="vehicle1" name="vehicle1" value="Age" checked>
+        <label for="vehicle1"> Age</label>
+        <input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker">
+        <label for="vehicle2"> Smoker class</label>
+        <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender">
+        <label for="vehicle3"> Gender</label>
+        
+        <input type="checkbox" id="vehicle4" name="vehicle4" value="Stage">
+        <label for="vehicle4"> Stage</label>
+        </div>
+        <div id="radiobox" style="visibility: hidden;">
+          <input type="radio" id="variable1" name="variable" value="case" checked>
+          <label for="variable1">Case/Normal</label>
+        
+          <input type="radio" id="variable2" name="variable" value="Smoker">
+          <label for="variable2">Smoker class</label>
+        
+          <input type="radio" id="variable3" name="variable" value="Gender">
+          <label for="variable3">Gender</label>
+        
+          <input type="radio" id="variable4" name="variable" value="Stage">
+          <label for="variable3">Stage</label>
+        </div>
   <div id="parallelcoordinates"></div>
+</div>
 </div>
 </div>
 
 
 <div>
 <div id="style_scatter">
-  <div id="boxPlot"></div>
-  <!-- Initialize a select button -->
-<select id="selectButton" class="btn btn-secondary dropdown-toggle">
-  <option value="MostUp" selected>MostUp</option>
-  <option value="MostDown">MostdDown</option>
-</select>
+    <div>
+        <div id="pca"></div>
+        
+      </div>
 </div>
 </div>
 
@@ -295,7 +305,7 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     let combinedData = []
     let combinedData1 = []
 
-    
+    var json = []
     //info box plot
     var sumstat1
     var scatter;
@@ -669,6 +679,10 @@ function moon(θ) {
 
             
             updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
+
+
+
+
             scatter.selectAll("circle")
              .filter(circleData => circleData.gene === mostUpregulatedGeneName || circleData.gene === mostDownregulatedGeneName)
              .style("fill", d => {
@@ -683,7 +697,52 @@ function moon(θ) {
               document.getElementById("radiobox").style.visibility = "visible";
           }
 
+          var pc1Values = [];
+                  var pc2Values = [];
+                     var groupValues = [];
+            var req = ocpu.call("pca", {
+                    data: data_copy,
+                    dataN: dataN_copy,
+                    dataC: dataC_copy
+                }, function(session) {
+                    var filteredDataURL = session.loc + "/R/.val/json";
+                    //console.log(session);
+                    // Fetch the filtered data from the URL
+                    fetch(filteredDataURL)
+                        .then(response => response.json())
+                        .then(data => {
+                          json=data
+                          console.log(filteredDataURL)
+                          console.log(json)
+                                                
+                        var pc1Key = "PC1";
+                        var pc2Key = "PC2";
+                        var groupKey = "Group";
+
+                        // Arrays to store PC1 and PC2 values
+                        
+
+                        // Iterate over each object in the JSON array
+                        json.forEach(function (obj) {
+                          // Push PC1, PC2, and Group values to the arrays
+                          pc1Values.push(obj[pc1Key]);
+                          pc2Values.push(obj[pc2Key]);
+                          groupValues.push(obj[groupKey]);
+                      });
+                        console.log(pc1Values)
+
+                        pca(pc1Values, pc2Values, groupValues);
+
+
+                        })
+
+              
+
+
+                              
+                })
       });
+
      
     })
       ///// DATI FILTRATI DAL PRIMO PVALUE, GIA' FILTRATI DAL PRIMO LOGFC, CHE ERANO GIA FILTRATI DA PRIMO IQR IN dataC_copy dataN_copy data_copy parsedLogFC ///////
@@ -874,6 +933,7 @@ function moon(θ) {
             updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
             updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
 
+
             var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
 
             var mostUpregulatedGene = sortedLogFC[0];
@@ -913,8 +973,9 @@ function moon(θ) {
                     return "green";
                     
                   });
-          
+  
           }
+          
 
       });
     })
@@ -1094,7 +1155,100 @@ function moon(θ) {
 
       })
     
-  
+    // //   document.getElementById('pca').addEventListener('click', function () {
+    // //     var pc1Values = [];
+    // //     var pc2Values = [];
+    // //     var groupValues = [];
+    // //   var req = ocpu.call("pca", {
+    // //                 data: data_copy,
+    // //                 dataN: dataN_copy,
+    // //                 dataC: dataC_copy
+    // //             }, function(session) {
+    // //                 var filteredDataURL = session.loc + "/R/.val/json";
+    // //                 //console.log(session);
+    // //                 // Fetch the filtered data from the URL
+    // //                 fetch(filteredDataURL)
+    // //                     .then(response => response.json())
+    // //                     .then(data => {
+    // //                       json=data
+    // //                       console.log(filteredDataURL)
+    // //                       console.log(json)
+                                                
+    // //                     var pc1Key = "PC1";
+    // //                     var pc2Key = "PC2";
+    // //                     var groupKey = "Group";
+
+    // //                     // Arrays to store PC1 and PC2 values
+                        
+
+    // //                     // Iterate over each object in the JSON array
+    // //                     json.forEach(function (obj) {
+    // //                       // Push PC1, PC2, and Group values to the arrays
+    // //                       pc1Values.push(obj[pc1Key]);
+    // //                       pc2Values.push(obj[pc2Key]);
+    // //                       groupValues.push(obj[groupKey]);
+    // //                   });
+    // //                     console.log(pc1Values)
+
+    // //                     pca(pc1Values, pc2Values, groupValues);
+
+
+    // //                     })
+
+              
+
+
+                              
+    //             })
+
+
+    //   })
+
+
+    function pca(pc1Values, pc2Values, groupValues) {
+    var margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    var width = 530 - margin.left - margin.right;
+    var height = 400 - margin.top - margin.bottom;
+
+    // Create x and y scales
+    var xScale = d3.scaleLinear()
+        .domain(d3.extent(pc1Values))
+        .range([0, width]);
+
+    var yScale = d3.scaleLinear()
+        .domain(d3.extent(pc2Values))
+        .range([height, 0]);
+
+    // Create SVG container
+    var svg = d3.select("#pca")
+        .html("")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Add circles for each data point
+    svg.selectAll("circle")
+        .data(pc1Values)
+        .enter().append("circle")
+        .attr("cx", function(d, i) { return xScale(pc1Values[i]); })
+        .attr("cy", function(d, i) { return yScale(pc2Values[i]); })
+        .attr("r", 5) // Adjust the radius as needed
+        .style("fill", function(d, i) {
+            // Set different colors based on groups
+            return groupValues[i] === "case" ? "steelblue" : "orange";
+        });
+
+    // Add x-axis
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale));
+
+    // Add y-axis
+    svg.append("g")
+        .call(d3.axisLeft(yScale));
+}
 
     function updateHistogram(variation_data) {
     // Filter data based on the threshold
@@ -1145,7 +1299,7 @@ function moon(θ) {
             if (xScale(d.x1) < thresholdPosition) {
                 return "grey"; // Set the color to grey if d.x1 is less than the threshold
             } else {
-                return "blue"; // Set the original bar color
+                return "darkgreen"; // Set the original bar color
             }
         });
 
@@ -1267,7 +1421,7 @@ legend.append("rect")
     .attr("y", 10)
     .attr("width", 10)
     .attr("height", 10)
-    .style("fill", "steelblue");
+    .style("fill", "darkgreen");
 
 legend.append("text")
     .attr("x", 30)
@@ -1524,7 +1678,7 @@ legend.append("text")
 
 
             // Set up margin, width, and height
-        var margin = { top: 10, right: 150, bottom: 40, left: 60 };
+        var margin = { top: 10, right: 100, bottom: 40, left: 60 };
         var width = 1000 - margin.left - margin.right;
         var height = 600 - margin.top - margin.bottom;
 
@@ -1548,14 +1702,15 @@ legend.append("text")
             .nice()
 
           
-        // Add X axis
-        var xAxis = svg.append("g")
+            var xAxis = svg.append("g")
             .attr("transform", "translate(0," + height + ")")
             .call(d3.axisBottom(xScale))
+           
 
         // Add Y axis
         var yAxis = svg.append("g")
             .call(d3.axisLeft(yScale))
+            
     
         // Customization
         
@@ -2139,8 +2294,8 @@ legend.append("text")
     //   .text(function (d) { return d; }) // text showed in the menu
     //   .attr("value", function (d) { return d; }) 
     // }
-    var margin = {top: 10, right: 30, bottom: 30, left: 40},
-    width = 360 - margin.left - margin.right,
+    var margin = {top: 10, right: 30, bottom: 30, left: 50},
+    width = 500 - margin.left - margin.right,
     height = 300 - margin.top - margin.bottom;
 
 
@@ -2560,7 +2715,7 @@ svg.append("text")
     // set the dimensions and margins of the graph
     var margin = { top: 30, right: 50, bottom: 10, left: 50 },
         width = 1000 - margin.left - margin.right,
-        height = 350 - margin.top - margin.bottom;
+        height = 300 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
     var svg = d3.select("#parallelcoordinates")
