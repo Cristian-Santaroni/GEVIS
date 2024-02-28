@@ -205,6 +205,17 @@ input.range2[type="range" i]::-webkit-slider-thumb {
 <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender">
 <label for="vehicle3"> Gender</label>
 </div>
+<div id="radiobox" style="visibility: visible;">
+  <input type="radio" id="variable1" name="variable" value="case" checked>
+  <label for="variable1">Case/Normal</label>
+
+  <input type="radio" id="variable2" name="variable" value="Smoker">
+  <label for="variable2">Smoker class</label>
+
+  <input type="radio" id="variable3" name="variable" value="Gender">
+  <label for="variable3">Gender</label>
+</div>
+
   <div id="parallelcoordinates"></div>
 </div>
 </div>
@@ -231,7 +242,12 @@ input.range2[type="range" i]::-webkit-slider-thumb {
 
 
   <script>
-    ocpu.seturl("//localhost/ocpu/lib/GEVIS/R")
+    try {
+        ocpu.seturl("//localhost/ocpu/lib/GEVIS/R");
+    } catch (error) {
+        // If an error occurs (e.g., ocpu is not defined), reload the page
+        window.location.reload();
+    }
     let variation_data;
     let variation_data_copy;
     let initial_num_genes;
@@ -267,7 +283,8 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     let selectedGeneData=[];
     let greencircles = []
     let old_p_adj
-
+    let transposedData = [];
+    let ordering
     let metadata;
     let combinedData = []
     let combinedData1 = []
@@ -282,6 +299,9 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     /////////
 
     var first_dims = ['Age at Diagnosis']
+
+
+    var color_by = 'case'
     
     
 
@@ -2543,10 +2563,24 @@ svg.append("text")
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+    var selectedVariable = document.querySelector('input[name="variable"]:checked').value;
 
-    var color = d3.scaleOrdinal()
-        .domain(["case", "normal"])
-        .range(["royalblue", "darkred"]);
+
+    var color;
+    if (selectedVariable === "case") {
+        color = d3.scaleOrdinal()
+            .domain(["case", "normal"])
+            .range(["lightblue", "darkblue"]);
+    } else if (selectedVariable === "Smoker") {
+        color = d3.scaleOrdinal()
+            .domain(["0", "1", "2"])
+            .range(["orange", "brown", "yellow"]);
+    } else if (selectedVariable === "Gender") {
+        color = d3.scaleOrdinal()
+            .domain(["0", "1"])
+            .range(["blue", "purple"]);
+    }
 
         var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
 
@@ -2554,6 +2588,7 @@ svg.append("text")
           dimensions = totalOrder
         } else {
           dimensions = first_dims.concat(geneselected);
+          
         }
         
     var y = {};
@@ -2581,25 +2616,21 @@ svg.append("text")
         .domain([30, 90]) // Set the domain based on the age data
         .range([height, 0]);
 
-    // Convert age data to numbers
-    genderData = genderData.map(function(age) {
-        return parseFloat(age);
-    });
 
     // Update the y-scale for the age dimension
-    y["Gender"] = d3.scaleLinear()
-        .domain([0, 1]) // Set the domain based on the age data
+    y["Gender"] = d3.scaleOrdinal()
+        .domain(["Male", "Female"]) // Set the domain based on the age data
         .range([height, 0]);
 
-        smokerData = smokerData.map(function(age) {
-        return parseFloat(age);
-    });
 
 
 
-        y["Cigarette Smoking Status"] = d3.scaleLinear()
-        .domain([0, 2]) // Set the domain based on the age data
-        .range([height, 0]);
+// Update the y-scale for Cigarette Smoking Status
+y["Cigarette Smoking Status"] = d3.scaleOrdinal()
+    .domain(["Never Smoked", "Former Smoker", "Current Smoker"])
+    .range([height, height / 2, 0])
+    
+    
 
 
     // Build the X scale -> it finds the best position for each Y axis
@@ -2612,7 +2643,7 @@ svg.append("text")
 
 
   // Transpose the structureCombinedData
-  var transposedData = [];
+  transposedData = [];
   geneselected.forEach(function(geneName) {
       var geneData = structureCombinedData.find(d => d.gene === geneName);
       geneData.expressions.forEach(function(expression, i) {
@@ -2632,17 +2663,27 @@ svg.append("text")
   //console.log(transposedData);
 
   svg.selectAll(".gsm-path")
-      .data(transposedData)
-      .enter()
-      .append("path")
-      .attr("class", "gsm-path")
-      .attr("d", function(d) {
-          var pathString = path(d);
-          return pathString;
-      })
-      .style("fill", "none")
-      .style("stroke", function(d) { return color(d.type); }) // Color based on type
-      .style("stroke-width", 1); // Example stroke width
+    .data(transposedData)
+    .enter()
+    .append("path")
+    .attr("class", "gsm-path")
+    .attr("d", function(d) {
+        var pathString = path(d);
+        return pathString;
+    })
+    .style("fill", "none")
+    .style("stroke", function(d) {
+        if (selectedVariable === "case") {
+            return color(d.type);
+        } else if (selectedVariable === "Smoker") {
+            return color(d['Cigarette Smoking Status']);
+        } else if (selectedVariable === "Gender") {
+            return color(d['Gender']);
+        } else {
+            return "black"; // Default color if selected variable doesn't match any condition
+        }
+    })
+    .style("stroke-width", 1); // Example stroke width
 
   function path(d) {
       return d3.line()(dimensions.map(function(geneName) { return [x(geneName), y[geneName](d[geneName])]; }));
@@ -2650,7 +2691,6 @@ svg.append("text")
   svg.selectAll(".gsm-path").each(function(data, i) {
       //console.log("Data bound to path " + (i + 1) + ":", data);
   });
-
 
 
     // Draw the axis:
@@ -2666,6 +2706,8 @@ svg.append("text")
         .attr("y", -9)
         .text(function (d) { return d; })
         .style("fill", "black");
+
+    
     // Define drag behavior
     var drag = d3.drag()
         .on("start", dragstart)
@@ -2741,7 +2783,7 @@ svg.append("text")
     // Separate dimensions into geneselected, metadata (first_dims), and total ordering
     var geneselectedOrder = [];
     var metadataOrder = [];
-    var totalOrder = [];
+    totalOrder = [];
     newPositions.forEach(function(d) {
         if (geneselected.includes(d.dimension)) {
             geneselectedOrder.push(d.dimension);
@@ -2794,6 +2836,10 @@ svg.append("text")
 
     selectedGeneData = geneselectedOrder
 
+    first_dims = metadataOrder
+
+    ordering = totalOrder
+
     // Update dimensions with new order
 
     // Redraw the parallel coordinates plot
@@ -2803,6 +2849,83 @@ svg.append("text")
     d3.selectAll(".axis-label").classed("dragging", false);
 
 }
+    var newPositions = [];
+    svg.selectAll(".axis-group").each(function (d) {
+        var transform = d3.select(this).attr("transform");
+        var translateX = +transform.split("(")[1].split(")")[0];
+        console.log(translateX)
+        newPositions.push({ dimension: d, position: translateX });
+    });
+    console.log(newPositions)
+
+    // Sort newPositions array based on position
+    newPositions.sort(function(a, b) {
+        return a.position - b.position;
+    });
+
+    // Separate dimensions into geneselected, metadata (first_dims), and total ordering
+    var geneselectedOrder = [];
+    var metadataOrder = [];
+    totalOrder = [];
+    newPositions.forEach(function(d) {
+        if (geneselected.includes(d.dimension)) {
+            geneselectedOrder.push(d.dimension);
+        } else if (first_dims.includes(d.dimension)) {
+            metadataOrder.push(d.dimension);
+        }
+        totalOrder.push(d.dimension);
+    });
+
+    // Check if any dimension was dragged too far to the left and remove it from geneselectedOrder if it belongs to geneselected
+    var removedDimensions = [];
+    newPositions.forEach(function(d) {
+        if (d.position < -100 && geneselected.includes(d.dimension)) {
+            var index = geneselectedOrder.indexOf(d.dimension);
+            if (index !== -1) {
+                removedDimensions.push(geneselectedOrder.splice(index, 1)[0]);
+                        // Remove highlighting color in the scatter plot
+                scatter.selectAll("circle")
+                    .filter(circleData => circleData.gene === d.dimension)
+                    .style("fill", d => {
+                            // Check if logFC is greater than or equal to the threshold
+                            if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
+                                return "darkred";
+                            } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
+                                return "royalblue";
+                            } else  {
+                                return "grey";
+                            }
+                          });
+            }
+        }
+    });
+
+
+
+    // Remove corresponding data from transposedData
+    transposedData = transposedData.filter(function(d) {
+        return !removedDimensions.includes(d.gene);
+    });
+
+    // Update totalOrder by removing removedDimensions
+    totalOrder = totalOrder.filter(function(d) {
+        return !removedDimensions.includes(d);
+    });
+
+    console.log("Geneselected order:", geneselectedOrder);
+    console.log("Metadata order:", metadataOrder);
+    console.log("Total order:", totalOrder);
+    console.log("Removed dimensions:", removedDimensions);
+
+    selectedGeneData = geneselectedOrder
+
+    first_dims = metadataOrder
+
+    ordering = totalOrder
+
+
+
+
 
         
     
@@ -2948,6 +3071,41 @@ function handleCheckboxChangeCigarettes() {
 document.getElementById("vehicle1").addEventListener("change", handleCheckboxChange);
 document.getElementById("vehicle3").addEventListener("change", handleCheckboxChangeGender);
 document.getElementById("vehicle2").addEventListener("change", handleCheckboxChangeCigarettes);
+
+
+var radioInputs = document.querySelectorAll('input[type="radio"]');
+
+// Define a function to update colors
+function updateColors(selectedVariable) {
+    var color;
+    if (selectedVariable === "case") {
+        color = d3.scaleOrdinal()
+            .domain(["case", "normal"])
+            .range(["lightblue", "darkblue"]);
+    } else if (selectedVariable === "Smoker") {
+        color = d3.scaleOrdinal()
+            .domain(["0", "1", "2"])
+            .range(["orange", "brown", "yellow"]);
+    } else if (selectedVariable === "Gender") {
+        color = d3.scaleOrdinal()
+            .domain(["0", "1"])
+            .range(["blue", "purple"]);
+    }
+    return color;
+}
+
+// Call the updateColors function when a radio box is selected
+radioInputs.forEach(function(input) {
+    input.addEventListener('change', function() {
+      console.log(this.value)
+        var selectedVariable = this.value;
+        console.log("Geneselected order in radio:", selectedGeneData);
+        console.log("Metadata order in radio:", first_dims);
+        console.log("Total order in radio:", ordering);
+
+        updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
+    });
+});
 
 
   </script>
