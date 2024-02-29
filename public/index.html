@@ -18,7 +18,11 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 
-  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-color/3.0.0/d3-color.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-interpolate/1.5.0/d3-interpolate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-scale/3.2.2/d3-scale.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-scale-chromatic/1.6.0/d3-scale-chromatic.min.js"></script>
+
   <style>
     .axis-label {
     cursor: pointer; /* Cursor style when hovering over the axis label */
@@ -157,15 +161,15 @@ input.range2[type="range" i]::-webkit-slider-thumb {
 
 @keyframes pulseRedAnimation {
   0% {
-    stroke: red; /* Initial color */
+    stroke: aqua; /* Initial color */
     stroke-width: 2; /* Initial stroke width */
   }
   50% {
-    stroke: darkred; /* Color during the pulse */
-    stroke-width: 4; /* Increased stroke width during the pulse */
+    stroke: rgb(198, 255, 255); /* Color during the pulse */
+    stroke-width: 3; /* Increased stroke width during the pulse */
   }
   100% {
-    stroke: red; /* Back to initial color */
+    stroke: aqua; /* Back to initial color */
     stroke-width: 2; /* Back to initial stroke width */
   }
 }
@@ -324,6 +328,7 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     let metadata;
     let combinedData = []
     let combinedData1 = []
+    let gsmList=[]
 
     var json = []
     //info box plot
@@ -338,6 +343,8 @@ input.range2[type="range" i]::-webkit-slider-thumb {
 
 
     var color_by = 'case'
+    let pca_data = []
+
     
     
 
@@ -751,7 +758,7 @@ function moon(θ) {
                       });
                        // console.log(pc1Values)
 
-                       var pca_data = [];
+                       pca_data = [];
 
                       // Iterate over each object in the JSON array
                       json.forEach(function(obj) {
@@ -1053,7 +1060,7 @@ function moon(θ) {
                       });
                        // console.log(pc1Values)
 
-                       var pca_data = [];
+                       pca_data = [];
 
                       // Iterate over each object in the JSON array
                       json.forEach(function(obj) {
@@ -1255,7 +1262,7 @@ function moon(θ) {
                       });
                        // console.log(pc1Values)
 
-                       var pca_data = [];
+                       pca_data = [];
 
                       // Iterate over each object in the JSON array
                       json.forEach(function(obj) {
@@ -1359,8 +1366,6 @@ function moon(θ) {
 
       })
     
-    let gsmList=[]
-
 
 
 
@@ -1370,7 +1375,6 @@ function moon(θ) {
     groupValues = []
     smokerValues = []
     stageValues = []
-    gsmList = []; // List to store selected GSM values
 
     // Iterate over the newData array
     pca_data.forEach(function(obj) {
@@ -1441,6 +1445,14 @@ function moon(θ) {
             } else if (d.stage === "IV"){
                 return "darkred";
             }
+        })
+        .attr("stroke", function(d) {
+            // Set stroke color based on presence in gsmList
+            return gsmList.includes(d.GSM) ? "black" : null;
+        })
+        .attr("stroke-width", function(d) {
+            // Set stroke width based on presence in gsmList
+            return gsmList.includes(d.GSM) ? 2 : null;
         })
         .on("click", function(d) {
         // On click, select the circle and add the GSM value to the list
@@ -3103,19 +3115,19 @@ svg.append("text")
     if (selectedVariable === "case") {
         color = d3.scaleOrdinal()
             .domain(["case", "normal"])
-            .range(["lightblue", "darkblue"]);
+            .range(["#0d0887", "#fddb6d"]);
     } else if (selectedVariable === "Smoker") {
         color = d3.scaleOrdinal()
             .domain(["0", "1", "2"])
-            .range(["orange", "brown", "yellow"]);
+            .range(["#fddb6d", "#bd3786", "#0d0887"]);
     } else if (selectedVariable === "Gender") {
         color = d3.scaleOrdinal()
             .domain(["0", "1"])
-            .range(["blue", "purple"]);
+            .range(["#fddb6d", "#0d0887"]);
     } else if (selectedVariable === "Stage") {
         color = d3.scaleOrdinal()
             .domain(["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"])
-            .range(["gray", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2"]);
+            .range(["#fddb6d", "#ed7953", "#d8576b", "#bd3786", "#9c179e", "#7201a8", "#46039f", "#0d0887"]);
     }
 
         var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
@@ -3226,6 +3238,27 @@ var gsmPaths = svg.selectAll(".gsm-path")
             return color(d['Stage']); 
         } 
     })
+
+    gsmPaths.on("click", function(d) {
+    var clickedGSM = d.GSM; // Get the GSM value of the clicked path
+
+    // Check if the clicked GSM is already in gsmList
+    var index = gsmList.indexOf(clickedGSM);
+    if (index === -1) {
+        // If not in the list, add it
+        gsmList.push(clickedGSM);
+    } else {
+        // If already in the list, remove it
+        gsmList.splice(index, 1);
+    }
+
+    // Update the class of the clicked path based on its presence in gsmList
+    d3.select(this)
+        .classed("pulse-red", gsmList.includes(clickedGSM));
+    pca(pca_data)
+    console.log("GSM List:", gsmList);
+});
+
   function path(d) {
       return d3.line()(dimensions.map(function(geneName) { return [x(geneName), y[geneName](d[geneName])]; }));
   }
