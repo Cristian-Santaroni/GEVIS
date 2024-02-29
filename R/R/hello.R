@@ -1,3 +1,6 @@
+library(factoextra)
+library(FactoMineR)
+library(dplyr)
 hello <- function(data) {
   # Save the column of genes before removing the last column
   genes <- data[, ncol(data)]
@@ -24,56 +27,64 @@ hello <- function(data) {
   return(result)
 }
 
-pca <- function(data,dataC,dataN){
+pca <- function(data, dataC, dataN) {
+  library(FactoMineR)
+  library(factoextra)
+  library(dplyr)
+
+  data1 <- as.data.frame.list(data)
+
+  # Move the last column to the first position
+  data1 <- data1[, c(ncol(data1), 1:(ncol(data1)-1))]
+
+  # Set the first column as row names
+  rownames(data1) <- data1[, 1]
+
+  # Remove the first column (it's now the row names)
+  data1 <- data1[, -1]
+
+  # Print the updated data frame
+  #print(data1)
+
+
 
 
   gsmC <- colnames(dataC)
-
-  # Extract GSM headers from dataN
   gsmN <- colnames(dataN)
 
 
-  # Convert gsmC to a vector
-  gsmC_vector <- unlist(gsmC)
+  # Convert GSM headers to vectors and remove the last element
+  gsmC_vector <- head(unlist(gsmC), -1)
+  gsmN_vector <- head(unlist(gsmN), -1)
 
-  # Convert gsmN to a vector
-  gsmN_vector <- unlist(gsmN)
 
-  # Remove the last element from gsmC_vector
-  gsmC_vector <- head(gsmC_vector, -1)
-
-  # Remove the last element from gsmN_vector
-  gsmN_vector <- head(gsmN_vector, -1)
-
-  data <- t(data[,c(gsmC_vector, gsmN_vector)])
-
+  # Combine data from case and normal samples
+  data1 <- t(data1[, c(gsmC_vector, gsmN_vector)])
+  # Create groups vector
   groups <- c(rep("case", length(gsmC_vector)), rep("normal", length(gsmN_vector)))
-  pca <- prcomp(data, center = T, scale. = T, retx = T)
-  ################################################
-  # 3. Compute score and score plot
-  # (scores = the coordinates of old data (observations) in the new systems, that are the PCs)
 
-  # pca$x = t(data)*pca$rotation
+  # Perform PCA
+  pca <- prcomp(data1, center = TRUE, scale. = TRUE, retx = TRUE)
+
+  # Compute scores
   scores <- pca$x
+
   # Convert scores to a data frame
   scores_df <- as.data.frame(scores)
-
-  # Add a column for groups
   scores_df$Group <- groups
 
+  # Get PCA variable contributions
+  scores_var <- get_pca_var(pca)$contrib
+  colnames(scores_var) <- paste0('PC', seq(1, ncol(scores_var)))
 
-  return(scores_df)
+  # Sort by PC1 contribution
+  scores_var <- scores_var[order(scores_var[,"PC1"], decreasing = TRUE), ]
+  scores_var= as.data.frame(scores_var)
+  # Get gene names
+  gene_names <- rownames(scores_var)
+  print(gene_names)
 
-
-  #extracted = t(extracted)
-
-
-  #groups <- c(rep("case", length(dataC)), rep("normal", length(dataN)))
-  #pca <- prcomp(extracted, center = T, scale. = T, retx = T)
-  #scores <- pca$x
-
-
-
-
-
+  # Return a list containing scores_df and scores_var
+  return(list(scores_df = scores_df, scores_var = scores_var))
 }
+
