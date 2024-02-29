@@ -3367,7 +3367,8 @@ var gsmPaths = svg.selectAll(".gsm-path")
         // Check if any dimension was dragged too far to the left and remove it from geneselectedOrder if it belongs to geneselected
         var removedDimensions = [];
         newPositions.forEach(function(d) {
-            if (d.position < -100 && geneselected.includes(d.dimension)) {
+          console.log(d.position)
+            if ((d.position < -100 || d.position > 1000) && geneselected.includes(d.dimension)) {
                 var index = geneselectedOrder.indexOf(d.dimension);
                 if (index !== -1) {
                     removedDimensions.push(geneselectedOrder.splice(index, 1)[0]);
