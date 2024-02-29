@@ -793,7 +793,9 @@ function moon(θ) {
                           // Push the new object to the newData array
                           pca_data.push(newObj);
 
-                          heatmap_data= []
+                          
+                      });
+                      heatmap_data= []
                     json.scores_var.forEach(function (obj) {
                           // Push PC1, PC2, and Group values to the arrays
                           var gene = obj._row
@@ -815,8 +817,6 @@ function moon(θ) {
                           };
                           heatmap_data.push(newObj);
                         })
-                      });
-
                       // Display the newData array
                       //console.log(pca_data);
 
@@ -1020,7 +1020,7 @@ function moon(θ) {
             parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
 
             console.log("geni passati a box dal IQR slider", parsedLogFC.length)
-            updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+            updateBoxPlot(last_box,parsedLogFC,dataN_copy,dataC_copy)
             updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
 
 
@@ -1117,14 +1117,39 @@ function moon(θ) {
 
                           // Push the new object to the newData array
                           pca_data.push(newObj);
+                          
                       });
+
+                      
+                      heatmap_data= []
+                    json.scores_var.forEach(function (obj) {
+                          // Push PC1, PC2, and Group values to the arrays
+                          var gene = obj._row
+                          var pc1 = obj.PC1
+                          var pc2 = obj.PC2
+                          var pc3 = obj.PC3
+                          var pc4 = obj.PC4
+                          var pc5 = obj.PC5
+                          var pc6 = obj.PC6
+
+                          var newObj = {
+                              gene: gene,
+                              pc1: pc1,
+                              pc2: pc2,
+                              pc3: pc3,
+                              pc4: pc4,
+                              pc5: pc5,
+                              pc6: pc6
+                          };
+                          heatmap_data.push(newObj);
+                        })
 
                       // Display the newData array
                       console.log(pca_data);
 
 
                         pca(pca_data);
-
+                        heatmap(heatmap_data)
 
                         })
 
@@ -1245,7 +1270,7 @@ function moon(θ) {
                         parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
                         
                         
-                        updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+                        updateBoxPlot(last_box,parsedLogFC,dataN_copy,dataC_copy)
                         updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
                         
                         selectedGeneData = selectedGeneData.filter(function(gene) {
@@ -1323,11 +1348,31 @@ function moon(θ) {
 
                       // Display the newData array
                       console.log(pca_data);
+                      heatmap_data= []
+                    json.scores_var.forEach(function (obj) {
+                          // Push PC1, PC2, and Group values to the arrays
+                          var gene = obj._row
+                          var pc1 = obj.PC1
+                          var pc2 = obj.PC2
+                          var pc3 = obj.PC3
+                          var pc4 = obj.PC4
+                          var pc5 = obj.PC5
+                          var pc6 = obj.PC6
 
+                          var newObj = {
+                              gene: gene,
+                              pc1: pc1,
+                              pc2: pc2,
+                              pc3: pc3,
+                              pc4: pc4,
+                              pc5: pc5,
+                              pc6: pc6
+                          };
+                          heatmap_data.push(newObj);
+                        })
 
                         pca(pca_data);
-
-
+                        heatmap(heatmap_data)
                         })
                     })
 
@@ -1389,7 +1434,7 @@ function moon(θ) {
             parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index));
 
             
-            updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+            updateBoxPlot(last_box,parsedLogFC,dataN_copy,dataC_copy)
             updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
                               
           
@@ -1520,6 +1565,14 @@ function moon(θ) {
 
 yAxis.selectAll("text")
     .style("fill", "white");
+
+    svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 15 )
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("Principal Component Analysis")
+                .style("fill", "white");
 
 
     // Add X axis label
@@ -2156,7 +2209,7 @@ legend.append("text")
             svg.append("text")
                 .attr("transform", "rotate(-90)")
                 .attr("x", -height / 2)
-                .attr("y", -margin.left + 10)
+                .attr("y", -margin.left + 20)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
                 .text("Expression (Case)")
@@ -2201,7 +2254,7 @@ legend.append("text")
 
             // Create a legend
     var legend = svg.append("g")
-                .attr("transform", "translate(" + (width -80) + "," + (height-250) + ")");
+            .attr("transform", "translate(" + (width -80) + "," + (height-250) + ")");
 
             // Add a filter for the shadow
             var defs = svg.append("defs");
@@ -3014,108 +3067,6 @@ jitterUpdate.exit().remove();
     })
 
 
-      
-
-
-        // function update(selected) {
-        //   console.log(selected)
-        //   var selected1
-        //   if(selected == "MostUp")
-        //   {
-        //     selected1 = sumstat
-        //     genename= geneNameUP
-        //     genestring= "The Most Upregulated Gene "
-        //     console.log("sono mostup")
-        //     combined=combinedData
-        //   }else 
-        //   {
-        //      selected1= sumstat1
-        //      genename= geneNameDown
-        //      genestring= "The Most Downregulated Gene "
-        //      combined=combinedData1
-        //   }
-
-        //   console.log(selected1)
-        //     line1
-        //     .data(selected1)
-        //     .transition()
-        //     .duration(1000)
-        //     .attr("x1", function(d){return(x(d.key))})
-        //     .attr("x2", function(d){return(x(d.key))})
-        //     .attr("y1", function(d){return(y(d.value.min))})
-        //     .attr("y2", function(d){return(y(d.value.max))})
-        //     .attr("stroke", "black")
-        //     .style("width", 40)
-
-        //     var boxWidth = 100
-        //     box1
-        //     .data(selected1)
-        //     .transition()
-        //     .duration(1000)
-        //   .attr("x", function(d){return(x(d.key)-boxWidth/2)})
-        //   .attr("y", function(d){return(y(d.value.q3))})
-        //   .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
-        //   .attr("width", boxWidth )
-        //   .attr("stroke", "black")
-        //   .style("fill", function(d){
-        //     if(d.key === "case"){
-        //         return "#a05853"
-        //     }
-        //     else{
-        //         return "#118e91"
-        //     }
-        // })
-
-        //   line2
-        //     .data(selected1)
-        //     .transition()
-        //     .duration(1000)
-        //     .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
-        //     .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
-        //     .attr("y1", function(d){return(y(d.value.median))})
-        //     .attr("y2", function(d){return(y(d.value.median))})
-        //     .attr("stroke", "black")
-        //     .style("width", 80)
-
-        //     title
-        //     .transition()
-        //     .duration(1000)
-        //     .attr("x", width / 2)
-        //     .attr("y", margin.top)
-        //     .attr("text-anchor", "middle")
-        //     .style("font-size", "18px")
-        //     .text("Gene " + genename);
-
-        //     var jitterWidth = 50
-        //     jitter
-        //     .data(combined)
-        //     .transition()
-        //     .duration(1000)
-        //     .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
-        //     .attr("cy", function(d){return(y(d.expression))})
-        //     .attr("r", 2)
-        //     .style("fill", "white")
-        //     .attr("stroke", "black")
-
-
-          
-        // }
-
-        // When the button is changed, run the updateChart function
-
-    // if(!first_box){
-    //     var selectedOption = d3.select("#selectButton").property("value")
-    //     console.log(selectedOption)
-    //     if(selectedOption == "MostUp"){
-    //         first_box = true
-    //     }
-    //     else{
-    //         first_box = false
-    //     }
-    //     // run the updateChart function with this selected option
-    //     return update(selectedOption)
-    //   }  
-      
 
   }
   
@@ -3308,7 +3259,7 @@ svg.append("text")
   }
 
     
-  function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
+    function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
     let structureCombinedData = [];
 
     geneselected.forEach(geneName => {
@@ -3840,8 +3791,8 @@ svg.selectAll(".gsm-path")
 
 }
 
-function heatmap(heatmap_data) {
-var heatmap_data_subset = heatmap_data.slice(0, 6);
+    function heatmap(heatmap_data) {
+var heatmap_data_subset = heatmap_data.slice(0, 10);
 console.log(heatmap_data_subset)
 // Labels of row and columns -> unique identifier of the column called 'group' and 'variable'
 var myGroups = heatmap_data_subset.map(d => d.gene);
@@ -3850,10 +3801,11 @@ var myVars = Object.keys(heatmap_data_subset[0]).filter(d => d !== "gene");
  
 var margin = { top: 80, right: 25, bottom: 30, left: 80 },
   width = 450 - margin.left - margin.right,
-  height = 450 - margin.top - margin.bottom;
+  height = 550 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
 var svg = d3.select("#heatmap")
+    .html("")
   .append("svg")
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
@@ -3887,6 +3839,13 @@ svg.append("g")
   .call(d3.axisLeft(y).tickSize(0))
   .select(".domain").remove()
 
+  svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", -5)
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("Heatmap")
+                .style("fill", "white");
 // Build color scale
 var myColor = d3.scaleSequential()
   .interpolator(d3.interpolateInferno)
