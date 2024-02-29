@@ -41,6 +41,8 @@
   display: flex;
   flex-direction: row;
   max-width: space-between;
+  height: 100%;
+  width:100%
   
   }
   .flex-container {
@@ -57,6 +59,8 @@
 
     body{
       background-color: black;
+      height: 100%;
+      width: 100%;
     }
 
     #style_scatter{
@@ -206,8 +210,8 @@ input.range2[type="range" i]::-webkit-slider-thumb {
       <div id="boxPlot"></div>
         <!-- Initialize a select button -->
         <select id="selectButton" class="btn btn-secondary dropdown-toggle">
-        <option value="MostUp" selected>MostUp</option>
-        <option value="MostDown">MostdDown</option>
+        <option value="SPP1" selected>MostUp</option>
+        <option value="AGER">MostdDown</option>
         </select>
       
     </div><!--div(6)-->
@@ -332,11 +336,12 @@ input.range2[type="range" i]::-webkit-slider-thumb {
 
     var json = []
     //info box plot
-    var sumstat1
+    let sumstat1
     var scatter;
-    var sumstat
+    let sumstat
     var geneNameUP
     var geneNameDown
+    let first_box = true
     /////////
 
     var first_dims = ['Age at Diagnosis']
@@ -680,8 +685,8 @@ function moon(θ) {
             updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin1,old_p_adj)
 
             console.log("Promise: al box gli passo parsedlogFC",parsedLogFC.length)
-            updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
-            updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
+            
+           // updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
 
 
             var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
@@ -706,7 +711,8 @@ function moon(θ) {
 
             
             updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
-
+            
+            updateBoxPlot(mostUpregulatedGeneName,parsedLogFC,dataN_copy,dataC_copy)
 
 
 
@@ -1560,6 +1566,13 @@ function brushended() {
     
     // Update parallel plot or any other function with the updated GSM list
     updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
+
+    
+    updateBoxPlot("SPP1",parsedLogFC,dataN_copy,dataC_copy)
+    
+    
+    
+
 }
 
 
@@ -2413,267 +2426,114 @@ legend.append("text")
 
         
 }
+   
+    function updateBoxPlot(genename,parsedLogFC,dataN,dataC){
+ 
+      var transition = false
 
-    function createParallelCoordinates(selectedGeneData) {
-     // var dataArray = Object.values(selectedGeneData);
-      //console.log(dataArray[0]);
-      console.log([selectedGeneData]);
+      if(genename !== document.getElementById("selectButton").value ){
+        combinedData=[]
+        transition = true
+        geneNameUP = genename;
+    
+    
+        var geneDataN = dataN.filter(d => d.gene === geneNameUP)
+        var geneDataC = dataC.filter(d => d.gene === geneNameUP)
 
-        var margin = {top: 30, right: 50, bottom: 10, left: 50},
-        width = 460 - margin.left - margin.right,
-        height = 400 - margin.top - margin.bottom;
+    
 
-      // append the svg object to the body of the page
-          var svg = d3.select("#parallelcoordinates")
-          .html("")
-          .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-            .attr("transform",
-                  "translate(" + margin.left + "," + margin.top + ")");
-
-
-                  dimensions = ["Normal", "Case","logFC","pval_adj"]
-          
-        var color=d3.scaleOrdinal().domain(["up","down"]).range(["darkred","royalblue"])
-
-
-          var highlight = function(d){
-
-            selected_reg= d.type
-
-            // first every group turns grey
-            d3.selectAll(".line")
-            .transition().duration(200)
-            .style("stroke", "lightgrey")
-            .style("opacity", "0.2")
-
-            // Second the hovered specie takes its color
-            d3.selectAll("." + selected_reg)
-            .transition().duration(200)
-            .style("stroke", color(selected_reg))
-            .style("opacity", "1")
-
-          }
-
-            // Unhighlight
-          var doNotHighlight = function(d){
-            d3.selectAll(".line")
-              .transition().duration(200).delay(1000)
-              .style("stroke", function(d){ return( color(d.type))} )
-              .style("opacity", "1")
-          }
-
-        var y = {}
-        for (i in dimensions) {
-          name = dimensions[i]
-          y[name] = d3.scaleLinear()
-            .domain( [-8,8] ) // --> Same axis range for each group
-            // --> different axis range for each group --> .domain( [d3.extent(data, function(d) { return +d[name]; })] )
-            .range([height, 0])
-        }
-          // Build the X scale -> it find the best position for each Y axis
-        var x = d3.scalePoint()
-          .range([0, width])
-          .domain(dimensions)
-
-
-          function path(d) {
-            console.log(d)
-            return d3.line()(dimensions.map(function(p,i) { 
-              return [  x(p), y[p](d[p])   ];}));
-        }
-
-        if(selectedGeneData && selectedGeneData.length > 0){
-          console.log(selectedGeneData.length)
-        selectedGeneData.forEach(element => {
-          svg
-        .selectAll("myPath")
-        .data(element) // Use the entire array directly
-        .enter()
-        .append("path")
-        .attr("class", function (d) { return "line " + d.type } )
-        .style("fill", "none" )
-        .style("stroke", function(d){ return( color(d.type))} )
-        .style("opacity", 0.5)
-        .on("mouseover", highlight)
-        .on("mouseleave", doNotHighlight )
-        .attr("d", path)
-        .on("click", onLineClick); // Add click event to new lines
-    });
-  }
-
-  
-
-
-        // Draw the axis:
-        svg.selectAll("myAxis")
-          // For each dimension of the dataset I add a 'g' element:
-          .data(dimensions).enter()
-          .append("g")
-          .attr("class", "axis")
-          // I translate this element to its right position on the x axis
-          .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
-          // And I build the axis with the call function
-          .each(function(d) { d3.select(this).call(d3.axisLeft().ticks(5).scale(y[d])); })
-          // Add axis title
-          .append("text")
-            .style("text-anchor", "middle")
-            .attr("y", -9)
-            .text(function(d) { return d; })
-            .style("fill", "black")
-
-        function onLineClick(d) {
-        // Remove the clicked gene from selectedGeneData
-        //selectedGeneData = selectedGeneData.filter(gene => gene.gene !== d.gene);
-        for (let i = 0; i < selectedGeneData.length; i++) {
-          selectedGeneData[i] = selectedGeneData[i].filter(gene => gene.gene !== d.gene);
-      }
-      //console.log(selectedGeneData)
-        // Remove the line from the parallel coordinates plot
-        svg.selectAll(".line." + d.type)
-            .remove();
-
-        // Remove highlighting color in the scatter plot
-         scatter.selectAll("circle")
-             .filter(circleData => circleData.gene === d.gene)
-             .style("fill", d => {
-                    // Check if logFC is greater than or equal to the threshold
-                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold ) {
-                        return "darkred";
-                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
-                        return "royalblue";
-                    } else  {
-                        return "grey";
-                    }
-                  });
-                  
-
-        // Update parallel coordinates plot
-        createParallelCoordinates(selectedGeneData);
-    }
+        // Extract GSM values for each gene
+        var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
+        var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
 
         
+        function computeBoxPlotStatistics(data1) {
+            var expressionValues = data1.map(entry => entry.expression);
+
+            // Sort the data for calculating quartiles
+            expressionValues.sort((a, b) => a - b);
+
+            // Calculate quartiles and median
+            var q1 = d3.quantile(expressionValues, 0.25);
+            var q3 = d3.quantile(expressionValues, 0.75);
+            var median = d3.median(expressionValues);
+
+            // Calculate interquartile range (IQR)
+            var iqr = q3 - q1;
+
+
+            var min = q1 - 1.5 * iqr
+            var max = q3 + 1.5 * iqr
+
+            return {
+                q1: q1,
+                median: median,
+                q3: q3,
+                iqr: iqr,
+                min: min,
+                max: max
+            };
+        }
+        
+        let expressionValuesC
+        geneDataC.forEach(entry => {
+            expressionValuesC = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+            })
+
+            //console.log(expressionValuesC)
+            
+        let expressionValuesN
+        geneDataN.forEach(entry => {
+            expressionValuesN = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+            })
+    // Assuming you have expressionValuesC and expressionValuesN
+
+        // Create a new array to store the combined data
+        //combinedData;
+
+        // Iterate over expressionValuesC and add objects to combinedData with type 'case'
+        expressionValuesC.forEach((expression,i) => {
+            combinedData.push({ GSM: gsmValuesC[i], expression: expression, type: 'case' });
+        });
+
+        // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
+        expressionValuesN.forEach((expression,i) => {
+            combinedData.push({GSM: gsmValuesN[i], expression: expression, type: 'normal' });
+        });
+
+        console.log(combinedData)
+
+        var boxPlotStatisticsC = computeBoxPlotStatistics(combinedData);
+
+
+        sumstat = d3.nest()
+        .key(function(d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
+        .rollup(function(d) {
+            q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
+            median = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.5);
+            q3 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.75);
+            interQuantileRange = q3 - q1;
+            min = q1 - 1.5 * interQuantileRange;
+            max = q3 + 1.5 * interQuantileRange;
+
+            return { q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max };
+        })
+        .entries(combinedData);
+      }
+      else{
+
       }
 
-    function updateBoxPlot(parsedLogFC,dataN,dataC){
-      var currentState = "MostUp";
-      document.getElementById("selectButton").value = currentState;
-      combinedData=[]
-      var mostUpregulatedGene = parsedLogFC.reduce((maxGene, currentGene) => {
-      return currentGene.logFC > maxGene.logFC ? currentGene : maxGene;
-       }, parsedLogFC[0]);
-
-    //console.log(mostUpregulatedGene)
-     geneNameUP = mostUpregulatedGene.Gene;
-    
-    // console.log(dataN)  
-    // console.log(dataC)
-    // console.log(parsedLogFC)
-
-
-    //console.log(mostUpregulatedGene)
-
-    var geneDataN = dataN.filter(d => d.gene === geneNameUP)
-    var geneDataC = dataC.filter(d => d.gene === geneNameUP)
-
-   //console.log()
-
-    
-
-    function computeBoxPlotStatistics(data1) {
-          var expressionValues = data1.map(entry => entry.expression);
-
-          // Sort the data for calculating quartiles
-          expressionValues.sort((a, b) => a - b);
-
-          // Calculate quartiles and median
-          var q1 = d3.quantile(expressionValues, 0.25);
-          var q3 = d3.quantile(expressionValues, 0.75);
-          var median = d3.median(expressionValues);
-
-          // Calculate interquartile range (IQR)
-          var iqr = q3 - q1;
-
-
-          var min = q1 - 1.5 * iqr
-          var max = q3 + 1.5 * iqr
-
-        return {
-            q1: q1,
-            median: median,
-            q3: q3,
-            iqr: iqr,
-            min: min,
-            max: max
-        };
-    }
-    
-    let expressionValuesC
-      geneDataC.forEach(entry => {
-          expressionValuesC = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-        })
-
-        //console.log(expressionValuesC)
-          
-      let expressionValuesN
-      geneDataN.forEach(entry => {
-          expressionValuesN = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-        })
-// Assuming you have expressionValuesC and expressionValuesN
-
-    // Create a new array to store the combined data
-     //combinedData;
-
-    // Iterate over expressionValuesC and add objects to combinedData with type 'case'
-    expressionValuesC.forEach(expression => {
-        combinedData.push({ expression: expression, type: 'case' });
-    });
-
-    // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
-    expressionValuesN.forEach(expression => {
-        combinedData.push({ expression: expression, type: 'normal' });
-    });
-    console.log(combinedData)
-    var boxPlotStatisticsC = computeBoxPlotStatistics(combinedData);
-
-
-     sumstat = d3.nest()
-    .key(function(d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
-    .rollup(function(d) {
-        q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
-        median = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.5);
-        q3 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.75);
-        interQuantileRange = q3 - q1;
-        min = q1 - 1.5 * interQuantileRange;
-        max = q3 + 1.5 * interQuantileRange;
-
-        return { q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max };
-    })
-    .entries(combinedData);
-
-    // if{triggered}{
-
-    // var allGroup = ["MostUp", "MostDown"]
-
-    // d3.select("#selectButton")
-    //   .selectAll('myOptions')
-    //  	.data(allGroup)
-    //   .enter()
-    // 	.append('option')
-    //   .text(function (d) { return d; }) // text showed in the menu
-    //   .attr("value", function (d) { return d; }) 
-    // }
+      
     var margin = {top: 10, right: 30, bottom: 30, left: 50},
     width = 500 - margin.left - margin.right,
     height = 300 - margin.top - margin.bottom;
 
 
     var svg = d3.select("#boxPlot")
-    .html("")  // Clear previous content
+      .html("")  // Clear previous content
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
@@ -2714,7 +2574,12 @@ var title = svg.append("text")
     .style("font-size", "18px")
     .text("Gene "+ geneNameUP)
     .style("fill", "white");
- 
+
+    svg.selectAll("vertLines")
+            .data(sumstat)
+            .transition()
+            .duration(1000)
+    
    var line1 =svg
     .selectAll("vertLines")
     .data(sumstat)
@@ -2727,6 +2592,7 @@ var title = svg.append("text")
       .attr("stroke", "black")
       .style("width", 40)
 
+     
   // rectangle for the main box
   var boxWidth = 100
   var box1 = svg
@@ -2734,12 +2600,21 @@ var title = svg.append("text")
     .data(sumstat)
     .enter()
     .append("rect")
+    .transition()
+    .duration(800)
         .attr("x", function(d){return(x(d.key)-boxWidth/2)})
         .attr("y", function(d){return(y(d.value.q3))})
         .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
         .attr("width", boxWidth )
         .attr("stroke", "black")
-        .style("fill", "#69b3a2")
+        .style("fill", function(d){
+            if(d.key === "case"){
+                return "#a05853"
+            }
+            else{
+                return "#118e91"
+            }
+        })
     var line2 =svg
     .selectAll("medianLines")
     .data(sumstat)
@@ -2758,11 +2633,37 @@ var title = svg.append("text")
       .data(combinedData)
       .enter()
       .append("circle")
+        .attr("class", function(d) {
+            // Add the pulse-red class if the GSM is in the gsmList
+            return gsmList.includes(d.GSM) ? "indPoints pulse-red" : "indPoints";
+        })
         .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
         .attr("cy", function(d){return(y(d.expression))})
         .attr("r", 2)
         .style("fill", "white")
-        .attr("stroke", "black")
+        .attr("stroke", function (d){
+
+            return gsmList.includes(d.GSM) ? "black" : "black";
+
+        })
+        .attr("stroke-width", function(d) {
+            // Set stroke width based on presence in gsmList
+            return gsmList.includes(d.GSM) ? 2 : 1;
+        })
+        .on("click", function(d) {
+        // On click, select the circle and add the GSM value to the list
+        var selectedGSM = d.GSM; // Assuming GSM is a property in the object
+        console.log("Selected GSM:", selectedGSM);
+        gsmList.push(selectedGSM);
+        console.log("GSM List:", gsmList);
+        d3.select(this).classed("pulse-red", gsmList.includes(selectedGSM));
+        d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
+        updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy,first_dims,ordering)
+        pca(pca_data)
+        
+
+    });
+
 
         function update(selected) {
           console.log(selected)
@@ -2804,7 +2705,14 @@ var title = svg.append("text")
           .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
           .attr("width", boxWidth )
           .attr("stroke", "black")
-          .style("fill", "#69b3a2")
+          .style("fill", function(d){
+            if(d.key === "case"){
+                return "#a05853"
+            }
+            else{
+                return "#118e91"
+            }
+        })
 
           line2
             .data(selected1)
@@ -2843,16 +2751,40 @@ var title = svg.append("text")
 
         // When the button is changed, run the updateChart function
       d3.select("#selectButton").on("change", function(d) {
+
         // recover the option that has been chosen
         var selectedOption = d3.select(this).property("value")
-        // run the updateChart function with this selected option
-        update(selectedOption)
+        console.log(selectedOption)
+        // if(selectedOption == "MostUp"){
+        //     first_box = true
+        // }
+        // else{
+        //     first_box = false
+        // }
+        // // run the updateChart function with this selected option
+         update(selectedOption)
     })
+
+    // if(!first_box){
+    //     var selectedOption = d3.select("#selectButton").property("value")
+    //     console.log(selectedOption)
+    //     if(selectedOption == "MostUp"){
+    //         first_box = true
+    //     }
+    //     else{
+    //         first_box = false
+    //     }
+    //     // run the updateChart function with this selected option
+    //     return update(selectedOption)
+    //   }  
       
 
   }
+  
 
     function updateBoxPlot1(parsedLogFC,dataN,dataC){
+
+
       combinedData1=[]
     var mostDownregulatedGene = parsedLogFC.reduce((minGene, currentGene) => {
       return currentGene.logFC < minGene.logFC ? currentGene : minGene;
@@ -2866,7 +2798,10 @@ var title = svg.append("text")
     var geneDataN = dataN.filter(d => d.gene === geneNameDown)
     var geneDataC = dataC.filter(d => d.gene === geneNameDown)
 
-    
+    // Extract GSM values for each gene
+    var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
+    var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
+
 
     //  console.log(geneDataC)  
     //  console.log(geneDataC)
@@ -2914,13 +2849,13 @@ var title = svg.append("text")
      //
 
     // Iterate over expressionValuesC and add objects to combinedData with type 'case'
-    expressionValuesC.forEach(expression => {
-        combinedData1.push({ expression: expression, type: 'case' });
+    expressionValuesC.forEach((expression,i) => {
+        combinedData1.push({ GSM: gsmValuesC[i], expression: expression, type: 'case' });
     });
 
     // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
-    expressionValuesN.forEach(expression => {
-        combinedData1.push({ expression: expression, type: 'normal' });
+    expressionValuesN.forEach((expression,i) => {
+        combinedData1.push({ GSM: gsmValuesN[i], expression: expression, type: 'normal' });
     });
 
 // Now combinedData has the desired structure
@@ -3256,6 +3191,17 @@ var gsmPaths = svg.selectAll(".gsm-path")
     d3.select(this)
         .classed("pulse-red", gsmList.includes(clickedGSM));
     pca(pca_data)
+
+    if(first_box){
+        updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
+
+    }
+    else{
+        updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
+    }
+    
+
+
     console.log("GSM List:", gsmList);
 });
 
