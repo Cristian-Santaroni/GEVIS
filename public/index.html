@@ -714,10 +714,10 @@ function moon(θ) {
               document.getElementById("checkbox").style.visibility = "visible";
               document.getElementById("radiobox").style.visibility = "visible";
           }
-
-          var pc1Values = [];
-                  var pc2Values = [];
-                     var groupValues = [];
+                console.log(dataN_copy.length)
+                    var pc1Values = [];
+                    var pc2Values = [];
+                    var groupValues = [];
             var req = ocpu.call("pca", {
                     data: data_copy,
                     dataN: dataN_copy,
@@ -1016,6 +1016,83 @@ function moon(θ) {
 
             
             updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
+            
+            var pc1Values = [];
+                    var pc2Values = [];
+                    var groupValues = [];
+            var req = ocpu.call("pca", {
+                    data: data_copy,
+                    dataN: dataN_copy,
+                    dataC: dataC_copy
+                }, function(session) {
+                    var filteredDataURL = session.loc + "/R/.val/json";
+                    //console.log(session);
+                    // Fetch the filtered data from the URL
+                    fetch(filteredDataURL)
+                        .then(response => response.json())
+                        .then(data => {
+                          json=data
+                          console.log(filteredDataURL)
+                          console.log(json)
+                                                
+                        var pc1Key = "PC1";
+                        var pc2Key = "PC2";
+                        var groupKey = "Group";
+
+                        // Arrays to store PC1 and PC2 values
+                        
+                          
+                        // Iterate over each object in the JSON array
+                        json.forEach(function (obj) {
+                          // Push PC1, PC2, and Group values to the arrays
+                          pc1Values.push(obj[pc1Key]);
+                          pc2Values.push(obj[pc2Key]);
+                          groupValues.push(obj[groupKey]);
+                      });
+                       // console.log(pc1Values)
+
+                       var pca_data = [];
+
+                      // Iterate over each object in the JSON array
+                      json.forEach(function(obj) {
+                          // Retrieve additional data from metadata based on _row
+                          var gsm = obj._row;
+                          var group = obj.Group;
+
+                          // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                          var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                          var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                          var pc1 = obj.PC1;
+                          var pc2 = obj.PC2;
+
+                          // Create an object with the required fields
+                          var newObj = {
+                              GSM: gsm,
+                              group: group,
+                              smokerclass: smokerclass,
+                              stage: stage,
+                              pc1: pc1,
+                              pc2: pc2
+                          };
+
+                          // Push the new object to the newData array
+                          pca_data.push(newObj);
+                      });
+
+                      // Display the newData array
+                      console.log(pca_data);
+
+
+                        pca(pca_data);
+
+
+                        })
+
+              
+
+
+                              
+                })
             scatter.selectAll("circle")
              .filter(circleData => circleData.gene === mostUpregulatedGeneName || circleData.gene === mostDownregulatedGeneName)
              .style("fill", d => {
@@ -1117,12 +1194,12 @@ function moon(θ) {
                         // Remove entries corresponding to ind from dataN
 
                         // Remove entries corresponding to ind from dataN
-                        dataC_copy = dataC_copy1.filter((entry, index) => !ind.includes(index));
+                        dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
 
                         // Remove entries corresponding to ind from dataN
-                        dataN_copy = dataN_copy1.filter((entry, index) => !ind.includes(index));
+                        dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
 
-                        data_copy = data_copy1.filter((entry, index) => !ind.includes(index));
+                        data_copy = data_copy.filter((entry, index) => !ind.includes(index));
 
                         // Remove entries corresponding to ind from logFC
                         parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
@@ -1139,10 +1216,85 @@ function moon(θ) {
 
                         console.log(selectedGeneData)
 
-                        updateParallel(selectedGeneData, data_copy,dataC_copy,dataN_copy, first_dims)                   
-
+                        updateParallel(selectedGeneData, data_copy,dataC_copy,dataN_copy, first_dims) 
                         
+                        console.log(dataN_copy.length)
+                    //   var pc1Values = [];
+                    // var pc2Values = [];
+                    // var groupValues = [];
+            var req = ocpu.call("pca", {
+                    data: data_copy,
+                    dataN: dataN_copy,
+                    dataC: dataC_copy
+                }, function(session) {
+                    var filteredDataURL = session.loc + "/R/.val/json";
+                    //console.log(session);
+                    // Fetch the filtered data from the URL
+                    fetch(filteredDataURL)
+                        .then(response => response.json())
+                        .then(data => {
+                          json=data
+                          console.log(filteredDataURL)
+                          console.log(json)
+                                                
+                        var pc1Key = "PC1";
+                        var pc2Key = "PC2";
+                        var groupKey = "Group";
+
+                        // Arrays to store PC1 and PC2 values
+                        
+                          
+                        // Iterate over each object in the JSON array
+                        json.forEach(function (obj) {
+                          // Push PC1, PC2, and Group values to the arrays
+                          pc1Values.push(obj[pc1Key]);
+                          pc2Values.push(obj[pc2Key]);
+                          groupValues.push(obj[groupKey]);
+                      });
+                       // console.log(pc1Values)
+
+                       var pca_data = [];
+
+                      // Iterate over each object in the JSON array
+                      json.forEach(function(obj) {
+                          // Retrieve additional data from metadata based on _row
+                          var gsm = obj._row;
+                          var group = obj.Group;
+
+                          // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                          var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                          var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                          var pc1 = obj.PC1;
+                          var pc2 = obj.PC2;
+
+                          // Create an object with the required fields
+                          var newObj = {
+                              GSM: gsm,
+                              group: group,
+                              smokerclass: smokerclass,
+                              stage: stage,
+                              pc1: pc1,
+                              pc2: pc2
+                          };
+
+                          // Push the new object to the newData array
+                          pca_data.push(newObj);
+                      });
+
+                      // Display the newData array
+                      console.log(pca_data);
+
+
+                        pca(pca_data);
+
+
+                        })
+                    })
+
+
                       }
+                   
+
 
                   });
                 })
@@ -1205,60 +1357,12 @@ function moon(θ) {
 
       })
     
-    // //   document.getElementById('pca').addEventListener('click', function () {
-    // //     var pc1Values = [];
-    // //     var pc2Values = [];
-    // //     var groupValues = [];
-    // //   var req = ocpu.call("pca", {
-    // //                 data: data_copy,
-    // //                 dataN: dataN_copy,
-    // //                 dataC: dataC_copy
-    // //             }, function(session) {
-    // //                 var filteredDataURL = session.loc + "/R/.val/json";
-    // //                 //console.log(session);
-    // //                 // Fetch the filtered data from the URL
-    // //                 fetch(filteredDataURL)
-    // //                     .then(response => response.json())
-    // //                     .then(data => {
-    // //                       json=data
-    // //                       console.log(filteredDataURL)
-    // //                       console.log(json)
-                                                
-    // //                     var pc1Key = "PC1";
-    // //                     var pc2Key = "PC2";
-    // //                     var groupKey = "Group";
-
-    // //                     // Arrays to store PC1 and PC2 values
-                        
-
-    // //                     // Iterate over each object in the JSON array
-    // //                     json.forEach(function (obj) {
-    // //                       // Push PC1, PC2, and Group values to the arrays
-    // //                       pc1Values.push(obj[pc1Key]);
-    // //                       pc2Values.push(obj[pc2Key]);
-    // //                       groupValues.push(obj[groupKey]);
-    // //                   });
-    // //                     console.log(pc1Values)
-
-    // //                     pca(pc1Values, pc2Values, groupValues);
-
-
-    // //                     })
-
-              
-
-
-                              
-    //             })
-
-
-    //   })
     let gsmList=[]
 
 
 
 
-function pca(pca_data) {
+    function pca(pca_data) {
     pc1Values = []
     pc2Values = []
     groupValues = []
@@ -1414,6 +1518,7 @@ function brushended() {
 
 
 }
+    
     function updateHistogram(variation_data) {
     // Filter data based on the threshold
     const filteredData = variation_data.filter(variation => variation >= thr_prc);
