@@ -47,7 +47,7 @@
   }
 
   .flex-container > div {
-  margin-right: 0px; /* Add spacing between items */
+  margin-right: 3.2px; /* Add spacing between items */
   }
 
 
@@ -56,8 +56,8 @@
     }
 
     #style_scatter{
-      border: 2px solid #ddd; /* Border color */
-    border-radius: 8px; /* Border radius for rounded corners */
+    border: 2px solid #ddd; /* Border color */
+    /* Border radius for rounded corners */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow effect */
     background-color: rgb(54, 54, 54);
     }
@@ -216,7 +216,7 @@ input.range2[type="range" i]::-webkit-slider-thumb {
      <div id="style_scatter">
     <div id="scatterPlot"></div>
     <button id="resetButton" class="btn btn-secondary">Reset Zoom</button> 
-    <label for="thresholdSelect">Select Threshold:</label>
+    <label for="thresholdSelect"> <p style="color: #ddd;">Select Threshold:</p></label>
      <select id="thresholdSelect" class="btn btn-secondary dropdown-toggle">
       <option value="0.05" selected>0.05</option>
     <option value="0.01">0.01</option>
@@ -227,30 +227,32 @@ input.range2[type="range" i]::-webkit-slider-thumb {
 
  
 <div id="style_scatter">
+    <div class="flex">
     <div id ="checkbox" style="visibility: hidden;">
         <input type="checkbox" id="vehicle1" name="vehicle1" value="Age" checked>
-        <label for="vehicle1"> Age</label>
+        <label for="vehicle1" style="color: #ddd;"> Age</label>
         <input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker">
-        <label for="vehicle2"> Smoker class</label>
+        <label for="vehicle2" style="color: #ddd;"> Smoker class</label>
         <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender">
-        <label for="vehicle3"> Gender</label>
+        <label for="vehicle3" style="color: #ddd;"> Gender</label>
         
         <input type="checkbox" id="vehicle4" name="vehicle4" value="Stage">
-        <label for="vehicle4"> Stage</label>
+        <label for="vehicle4" style="color: #ddd;"> Stage</label>
         </div>
-        <div id="radiobox" style="visibility: hidden;">
+        <div id="radiobox" style="visibility: hidden; margin-left: 20%;">
           <input type="radio" id="variable1" name="variable" value="case" checked>
-          <label for="variable1">Case/Normal</label>
+          <label for="variable1" style="color: #ddd;">Case/Normal</label>
         
           <input type="radio" id="variable2" name="variable" value="Smoker">
-          <label for="variable2">Smoker class</label>
+          <label for="variable2" style="color: #ddd;">Smoker class</label>
         
           <input type="radio" id="variable3" name="variable" value="Gender">
-          <label for="variable3">Gender</label>
+          <label for="variable3" style="color: #ddd;">Gender</label>
         
           <input type="radio" id="variable4" name="variable" value="Stage">
-          <label for="variable3">Stage</label>
+          <label for="variable3" style="color: #ddd;">Stage</label>
         </div>
+    </div>
   <div id="parallelcoordinates"></div>
 </div>
 </div>
@@ -1390,7 +1392,7 @@ function moon(θ) {
         //console.log("PC1:", pc1Value, ", PC2:", pc2Value, ", Group:", groupValue);
     });
 
-    var margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    var margin = { top: 20, right: 20, bottom: 50, left: 50 };
     var width = 530 - margin.left - margin.right;
     var height = 400 - margin.top - margin.bottom;
 
@@ -1456,13 +1458,45 @@ function moon(θ) {
     });
 
     // Add x-axis
-    svg.append("g")
+    var xAxis =svg.append("g")
         .attr("transform", "translate(0," + height + ")")
         .call(d3.axisBottom(xScale));
 
+        xAxis.selectAll("line, path")
+            .style("stroke", "white");
+
+        xAxis.selectAll("text")
+            .style("fill", "white");
+
     // Add y-axis
-    svg.append("g")
+  var yAxis =  svg.append("g")
         .call(d3.axisLeft(yScale));
+    
+        yAxis.selectAll("line, path")
+    .style("stroke", "white");
+
+yAxis.selectAll("text")
+    .style("fill", "white");
+
+
+    // Add X axis label
+    svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill","white")
+                .text("PC1");
+
+            // Add Y axis label
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -margin.left + 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill","white")
+                .text("PC2");
     
     // Define brush function
 var brush = d3.brush()
@@ -1598,13 +1632,25 @@ function brushended() {
         .attr("opacity", 1); // Set opacity for transparency
 
     // Add x-axis
-    svg.append("g")
+        var xAxis = svg.append("g")
         .attr("transform", `translate(0,${height})`)
         .call(d3.axisBottom(xScale));
 
+            xAxis.selectAll("line, path")
+            .style("stroke", "white");
+
+             xAxis.selectAll("text")
+            .style("fill", "white");
+
     // Add y-axis
-    svg.append("g")
-        .call(d3.axisLeft(yScale));
+    var yAxis=  svg.append("g")
+            .call(d3.axisLeft(yScale));
+
+        yAxis.selectAll("line, path")
+            .style("stroke", "white");
+
+             yAxis.selectAll("text")
+            .style("fill", "white");
 
 
          // Add X axis label
@@ -1613,6 +1659,7 @@ function brushended() {
                 .attr("y", height + margin.bottom - 10)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
+                .style("fill","white")
                 .text("IQR value");
 
             // Add Y axis label
@@ -1622,6 +1669,7 @@ function brushended() {
                 .attr("y", -margin.left + 10)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
+                .style("fill","white")
                 .text("Frequency");
 
 
@@ -1631,6 +1679,7 @@ function brushended() {
         .attr("y", -margin.top * 0.1)
         .attr("text-anchor", "middle")
         .style("font-size", "18px")
+        .style("fill","white")
         .text("IQR Frequency distribution");
 
     // Add a red line indicating the threshold
@@ -1697,6 +1746,7 @@ legend.append("text")
     .attr("y", 18)
     .text("Remaining genes")
     .attr("text-anchor", "left")
+    .style("fill","white")
     .style("alignment-baseline", "middle");
 
 // Add Filtered genes
@@ -1712,6 +1762,7 @@ legend.append("text")
     .attr("y", 45)
     .text("Filtered genes")
     .attr("text-anchor", "left")
+    .style("fill","white")
     .style("alignment-baseline", "middle");
 
 
@@ -1767,43 +1818,54 @@ legend.append("text")
         .attr("fill", "orange");
 
     // Add x-axis
-    svg.append("g")
+  var xAxis =  svg.append("g")
         .attr("transform", `translate(0,${height})`)
         .call(d3.axisBottom(xScale))
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", margin.bottom * 0.8)
-        .attr("text-anchor", "middle")
-        .text("logFC");
+        xAxis.selectAll("line, path")
+            .style("stroke", "white");
+             xAxis.selectAll("text")
+            .style("fill", "white");
+        // .append("text")
+        // .attr("x", width / 2)
+        // .attr("y", margin.bottom * 0.8)
+        // .attr("text-anchor", "middle")
+        // .text("logFC");
+
 
     // Add y-axis
-    svg.append("g")
+  var yAxis =   svg.append("g")
         .call(d3.axisLeft(yScale))
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", -margin.left * 0.7)
-        .attr("x", -height / 2)
-        .attr("text-anchor", "middle")
-        .text("frequency");
+        // .append("text")
+        // .attr("transform", "rotate(-90)")
+        // .attr("y", -margin.left * 0.7)
+        // .attr("x", -height / 2)
+        // .attr("text-anchor", "middle")
+        // .text("frequency");
 
+        yAxis.selectAll("line, path")
+            .style("stroke", "white");
 
+             yAxis.selectAll("text")
+            .style("fill", "white");
         
-         // Add X axis label
-         svg.append("text")
-                .attr("x", width / 2)
-                .attr("y", height + margin.bottom - 10)
-                .attr("text-anchor", "middle")
-                .style("font-size", "14px")
-                .text("Log fold change");
+        // Add X axis label
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height + margin.bottom - 10)
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+            .style("fill","white")
+            .text("Log fold change");
 
-            // Add Y axis label
-          svg.append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("x", -height / 2)
-                .attr("y", -margin.left + 10)
-                .attr("text-anchor", "middle")
-                .style("font-size", "14px")
-                .text("Frequency");
+        // Add Y axis label
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", -margin.left + 10)
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+            .style("fill","white")
+            .text("Frequency");
 
 
 
@@ -1813,6 +1875,7 @@ legend.append("text")
         .attr("y", -margin.top * 0.1)
         .attr("text-anchor", "middle")
         .style("font-size", "18px")
+        .style("fill","white")
         .text("FC (logarithmic) frequency distribution");
 
     // Add ablines
@@ -1907,6 +1970,7 @@ legend.append("text")
     .attr("y", 18)
     .text("Remaining genes")
     .attr("text-anchor", "left")
+    .style("fill","white")
     .style("alignment-baseline", "middle");
 
 // Add Filtered genes
@@ -1922,6 +1986,7 @@ legend.append("text")
     .attr("y", 45)
     .text("Filtered genes")
     .attr("text-anchor", "left")
+    .style("fill","white")
     .style("alignment-baseline", "middle");
 
         
@@ -1975,11 +2040,20 @@ legend.append("text")
             .attr("transform", "translate(0," + height + ")")
             .call(d3.axisBottom(xScale))
            
+                        xAxis.selectAll("line, path")
+                .style("stroke", "white");
 
+            xAxis.selectAll("text")
+                .style("fill", "white");
         // Add Y axis
         var yAxis = svg.append("g")
             .call(d3.axisLeft(yScale))
             
+            yAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            yAxis.selectAll("text")
+                .style("fill", "white");
     
         // Customization
         
@@ -2025,7 +2099,8 @@ legend.append("text")
                 .attr("y", height + margin.bottom - 10)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
-                .text("Expression (Normal)");
+                .text("Expression (Normal)")
+                .style("fill", "white");
 
             // Add Y axis label
             svg.append("text")
@@ -2034,7 +2109,8 @@ legend.append("text")
                 .attr("y", -margin.left + 10)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
-                .text("Expression (Case)");
+                .text("Expression (Case)")
+                .style("fill", "white");
 
             // Add title
             svg.append("text")
@@ -2042,7 +2118,8 @@ legend.append("text")
                 .attr("y", 15 )
                 .attr("text-anchor", "middle")
                 .style("font-size", "18px")
-                .text("Scatterplot");
+                .text("Scatterplot")
+                .style("fill", "white");
 
             // // Add X axis
             // svg.append("g")
@@ -2122,7 +2199,8 @@ legend.append("text")
                   .attr("y", 20)
                   .text("Upregulated")
                   .attr("text-anchor", "left")
-                  .style("alignment-baseline", "middle");
+                  .style("alignment-baseline", "middle")
+                  .style("fill", "white");
 
                   legend.append("circle")
                           .attr("cx", 10)
@@ -2135,7 +2213,8 @@ legend.append("text")
                     .attr("y", 40)
                     .text("Downregulated")
                     .attr("text-anchor", "left")
-                    .style("alignment-baseline", "middle");
+                    .style("alignment-baseline", "middle")
+                    .style("fill", "white");
 
                     legend.append("circle")
                           .attr("cx", 10)
@@ -2146,7 +2225,8 @@ legend.append("text")
                       legend.append("text")
                           .attr("x", 20)
                           .attr("y", 68)
-                          .text("Not Significant");
+                          .text("Not Significant")
+                          .style("fill", "white");
 
 
             // Add circles to the scatter plot
@@ -2286,6 +2366,18 @@ legend.append("text")
             xAxis.call(d3.axisBottom(newX));
             yAxis.call(d3.axisLeft(newY));
             
+            xAxis.selectAll("line, path")
+            .style("stroke", "white");
+
+            xAxis.selectAll("text")
+            .style("fill", "white");
+
+            yAxis.selectAll("line, path")
+            .style("stroke", "white");
+
+            yAxis.selectAll("text")
+            .style("fill", "white");
+
             // update circle position
             scatter
                 .selectAll("circle")
@@ -2583,15 +2675,24 @@ legend.append("text")
     .paddingInner(1)
     .paddingOuter(.5)
     
-  svg.append("g")
+ var xAxis=  svg.append("g")
     .attr("transform", "translate(0," + height + ")")
     .call(d3.axisBottom(x))
+    xAxis.selectAll("line, path")
+    .style("stroke", "white");
+    xAxis.selectAll("text")
+    .style("fill", "white");
 
     var y = d3.scaleLinear()
     .domain([0,boxPlotStatisticsC.max])
     .range([height, 0])
-   svg.append("g").call(d3.axisLeft(y))
+  var yAxis= svg.append("g").call(d3.axisLeft(y))
 
+  yAxis.selectAll("line, path")
+    .style("stroke", "white");
+
+yAxis.selectAll("text")
+    .style("fill", "white");
 
    // Add a title
 var title = svg.append("text")
@@ -2599,8 +2700,8 @@ var title = svg.append("text")
     .attr("y", margin.top)
     .attr("text-anchor", "middle")
     .style("font-size", "18px")
-    .text("Gene "+ geneNameUP);
-
+    .text("Gene "+ geneNameUP)
+    .style("fill", "white");
  
    var line1 =svg
     .selectAll("vertLines")
@@ -2984,7 +3085,7 @@ svg.append("text")
     // set the dimensions and margins of the graph
     var margin = { top: 30, right: 50, bottom: 10, left: 50 },
         width = 1000 - margin.left - margin.right,
-        height = 300 - margin.top - margin.bottom;
+        height = 320 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
     var svg = d3.select("#parallelcoordinates")
@@ -3142,7 +3243,7 @@ var gsmPaths = svg.selectAll(".gsm-path")
 
 
     // Draw the axis:
-    svg.selectAll("myAxis")
+  var axis =   svg.selectAll("myAxis")
         .data(dimensions).enter()
         .append("g")
         .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
@@ -3151,7 +3252,11 @@ var gsmPaths = svg.selectAll(".gsm-path")
         .style("text-anchor", "middle")
         .attr("y", -9)
         .text(function (d) { return d; })
-        .style("fill", "black");
+        .style("fill", "white");
+
+        axis.select(".domain")
+             .attr("stroke", "white");
+
 
     
     // Define drag behavior
@@ -3174,7 +3279,14 @@ var gsmPaths = svg.selectAll(".gsm-path")
         .style("text-anchor", "middle")
         .attr("y", -9)
         .text(function (d) { return d; })
-        .style("fill", "black");
+        .style("fill", "white");
+
+        axisGroups.select(".domain")
+             .attr("stroke", "white");
+
+
+
+        
 
     // Drag start function
     function dragstart(d) {
