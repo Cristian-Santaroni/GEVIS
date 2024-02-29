@@ -1568,7 +1568,7 @@ function brushended() {
     updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
 
     
-    updateBoxPlot("SPP1",parsedLogFC,dataN_copy,dataC_copy)
+    updateBoxPlot(last_box,parsedLogFC,dataN_copy,dataC_copy)
     
     
     
@@ -2426,81 +2426,310 @@ legend.append("text")
 
         
 }
-   
+
+let last_box = ""
+
     function updateBoxPlot(genename,parsedLogFC,dataN,dataC){
  
-      var transition = false
+    if (combinedData.length==0){
+      last_box = genename
+      geneNameUP = genename;
 
-      if(genename !== document.getElementById("selectButton").value ){
+
+      var geneDataN = dataN.filter(d => d.gene === geneNameUP)
+      var geneDataC = dataC.filter(d => d.gene === geneNameUP)
+
+
+
+      // Extract GSM values for each gene
+      var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
+      var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
+
+
+      function computeBoxPlotStatistics(data1) {
+      var expressionValues = data1.map(entry => entry.expression);
+
+      // Sort the data for calculating quartiles
+      expressionValues.sort((a, b) => a - b);
+
+      // Calculate quartiles and median
+      var q1 = d3.quantile(expressionValues, 0.25);
+      var q3 = d3.quantile(expressionValues, 0.75);
+      var median = d3.median(expressionValues);
+
+      // Calculate interquartile range (IQR)
+      var iqr = q3 - q1;
+
+
+      var min = q1 - 1.5 * iqr
+      var max = q3 + 1.5 * iqr
+
+      return {
+      q1: q1,
+      median: median,
+      q3: q3,
+      iqr: iqr,
+      min: min,
+      max: max
+      };
+      }
+
+      let expressionValuesC
+      geneDataC.forEach(entry => {
+      expressionValuesC = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+      })
+
+      //console.log(expressionValuesC)
+
+      let expressionValuesN
+      geneDataN.forEach(entry => {
+      expressionValuesN = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+
+      })
+      // Assuming you have expressionValuesC and expressionValuesN
+
+      // Create a new array to store the combined data
+      //combinedData;
+
+      // Iterate over expressionValuesC and add objects to combinedData with type 'case'
+      expressionValuesC.forEach((expression,i) => {
+      combinedData.push({ GSM: gsmValuesC[i], expression: expression, type: 'case' });
+      });
+
+      // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
+      expressionValuesN.forEach((expression,i) => {
+      combinedData.push({GSM: gsmValuesN[i], expression: expression, type: 'normal' });
+      });
+
+      console.log(combinedData)
+
+      var boxPlotStatisticsC = computeBoxPlotStatistics(combinedData);
+
+
+      sumstat = d3.nest()
+      .key(function(d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
+      .rollup(function(d) {
+      q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
+      median = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.5);
+      q3 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.75);
+      interQuantileRange = q3 - q1;
+      min = q1 - 1.5 * interQuantileRange;
+      max = q3 + 1.5 * interQuantileRange;
+
+      return { q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max };
+      })
+      .entries(combinedData);
+
+      var margin = {top: 10, right: 30, bottom: 30, left: 50},
+          width = 500 - margin.left - margin.right,
+          height = 300 - margin.top - margin.bottom;
+
+
+      var svg = d3.select("#boxPlot")
+        .html("")  // Clear previous content
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+      var x = d3.scaleBand()
+      .range([ 0, width ])
+      .domain(["normal", "case"])
+      .paddingInner(1)
+      .paddingOuter(.5)
+          
+      var xAxis=  svg.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x))
+          xAxis.selectAll("line, path")
+          .style("stroke", "white");
+          xAxis.selectAll("text")
+          .style("fill", "white");
+
+          var y = d3.scaleLinear()
+          .domain([0,boxPlotStatisticsC.max])
+          .range([height, 0])
+        var yAxis= svg.append("g").call(d3.axisLeft(y))
+
+        yAxis.selectAll("line, path")
+          .style("stroke", "white");
+
+      yAxis.selectAll("text")
+          .style("fill", "white");
+
+        // Add a title
+      var title = svg.append("text")
+          .attr("class", "title")
+          .attr("x", width / 2)
+          .attr("y", margin.top)
+          .attr("text-anchor", "middle")
+          .style("font-size", "18px")
+          .text("Gene "+ geneNameUP)
+          .style("fill", "white");
+
+          svg.selectAll(".vertLines")
+                  .data(sumstat)
+                  .transition()
+                  .duration(1000)
+          
+        var line1 =svg
+          .selectAll(".vertLines")
+          .data(sumstat)
+          .enter()
+          .append("line")
+            .attr("class", "vertLines")
+            .attr("x1", function(d){return(x(d.key))})
+            .attr("x2", function(d){return(x(d.key))})
+            .attr("y1", function(d){return(y(d.value.min))})
+            .attr("y2", function(d){return(y(d.value.max))})
+            .attr("stroke", "black")
+            .style("width", 40)
+
+          
+        // rectangle for the main box
+        var boxWidth = 100
+        var box1 = svg
+          .selectAll(".boxes")
+          .data(sumstat)
+          .enter()
+          .append("rect")
+            .attr("class", "boxes")
+              .attr("x", function(d){return(x(d.key)-boxWidth/2)})
+              .attr("y", function(d){return(y(d.value.q3))})
+              .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
+              .attr("width", boxWidth )
+              .attr("stroke", "black")
+              .style("fill", function(d){
+                  if(d.key === "case"){
+                      return "#a05853"
+                  }
+                  else{
+                      return "#118e91"
+                  }
+              })
+          var line2 =svg
+          .selectAll(".medianLines")
+          .data(sumstat)
+          .enter()
+          .append("line")
+            .attr("class", "medianLines")
+            .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
+            .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
+            .attr("y1", function(d){return(y(d.value.median))})
+            .attr("y2", function(d){return(y(d.value.median))})
+            .attr("stroke", "black")
+            .style("width", 80)
+
+          var jitterWidth = 50
+          var jitter = svg
+            .selectAll(".indPoints")
+            .data(combinedData)
+            .enter()
+            .append("circle")
+              .attr("class", function(d) {
+                  // Add the pulse-red class if the GSM is in the gsmList
+                  return gsmList.includes(d.GSM) ? "indPoints pulse-red" : "indPoints";
+              })
+              .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
+              .attr("cy", function(d){return(y(d.expression))})
+              .attr("r", 2)
+              .style("fill", "white")
+              .attr("stroke", function (d){
+
+                  return gsmList.includes(d.GSM) ? "black" : "black";
+
+              })
+              .attr("stroke-width", function(d) {
+                  // Set stroke width based on presence in gsmList
+                  return gsmList.includes(d.GSM) ? 2 : 1;
+              })
+              .on("click", function(d) {
+              // On click, select the circle and add the GSM value to the list
+              var selectedGSM = d.GSM; // Assuming GSM is a property in the object
+              console.log("Selected GSM:", selectedGSM);
+              gsmList.push(selectedGSM);
+              console.log("GSM List:", gsmList);
+              d3.select(this).classed("pulse-red", gsmList.includes(selectedGSM));
+              d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
+              updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy,first_dims,ordering)
+              pca(pca_data)
+              
+
+          });
+
+    } else {
+
+      if (genename !== last_box){
+        last_box=genename
         combinedData=[]
-        transition = true
         geneNameUP = genename;
-    
-    
+
+
         var geneDataN = dataN.filter(d => d.gene === geneNameUP)
         var geneDataC = dataC.filter(d => d.gene === geneNameUP)
 
-    
+
 
         // Extract GSM values for each gene
         var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
         var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
 
-        
+
         function computeBoxPlotStatistics(data1) {
-            var expressionValues = data1.map(entry => entry.expression);
+        var expressionValues = data1.map(entry => entry.expression);
 
-            // Sort the data for calculating quartiles
-            expressionValues.sort((a, b) => a - b);
+        // Sort the data for calculating quartiles
+        expressionValues.sort((a, b) => a - b);
 
-            // Calculate quartiles and median
-            var q1 = d3.quantile(expressionValues, 0.25);
-            var q3 = d3.quantile(expressionValues, 0.75);
-            var median = d3.median(expressionValues);
+        // Calculate quartiles and median
+        var q1 = d3.quantile(expressionValues, 0.25);
+        var q3 = d3.quantile(expressionValues, 0.75);
+        var median = d3.median(expressionValues);
 
-            // Calculate interquartile range (IQR)
-            var iqr = q3 - q1;
+        // Calculate interquartile range (IQR)
+        var iqr = q3 - q1;
 
 
-            var min = q1 - 1.5 * iqr
-            var max = q3 + 1.5 * iqr
+        var min = q1 - 1.5 * iqr
+        var max = q3 + 1.5 * iqr
 
-            return {
-                q1: q1,
-                median: median,
-                q3: q3,
-                iqr: iqr,
-                min: min,
-                max: max
-            };
+        return {
+        q1: q1,
+        median: median,
+        q3: q3,
+        iqr: iqr,
+        min: min,
+        max: max
+        };
         }
-        
+
         let expressionValuesC
         geneDataC.forEach(entry => {
-            expressionValuesC = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+          expressionValuesC = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+        })
 
-            })
+        //console.log(expressionValuesC)
 
-            //console.log(expressionValuesC)
-            
         let expressionValuesN
         geneDataN.forEach(entry => {
-            expressionValuesN = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-            })
-    // Assuming you have expressionValuesC and expressionValuesN
+          expressionValuesN = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
+        })
+        // Assuming you have expressionValuesC and expressionValuesN
 
         // Create a new array to store the combined data
         //combinedData;
 
         // Iterate over expressionValuesC and add objects to combinedData with type 'case'
         expressionValuesC.forEach((expression,i) => {
-            combinedData.push({ GSM: gsmValuesC[i], expression: expression, type: 'case' });
+        combinedData.push({ GSM: gsmValuesC[i], expression: expression, type: 'case' });
         });
 
         // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
         expressionValuesN.forEach((expression,i) => {
-            combinedData.push({GSM: gsmValuesN[i], expression: expression, type: 'normal' });
+        combinedData.push({GSM: gsmValuesN[i], expression: expression, type: 'normal' });
         });
 
         console.log(combinedData)
@@ -2511,259 +2740,343 @@ legend.append("text")
         sumstat = d3.nest()
         .key(function(d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
         .rollup(function(d) {
-            q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
-            median = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.5);
-            q3 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.75);
-            interQuantileRange = q3 - q1;
-            min = q1 - 1.5 * interQuantileRange;
-            max = q3 + 1.5 * interQuantileRange;
+        q1 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.25);
+        median = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.5);
+        q3 = d3.quantile(d.map(function(g) { return g.expression; }).sort(d3.ascending), 0.75);
+        interQuantileRange = q3 - q1;
+        min = q1 - 1.5 * interQuantileRange;
+        max = q3 + 1.5 * interQuantileRange;
 
-            return { q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max };
+        return { q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max };
         })
         .entries(combinedData);
-      }
-      else{
-
-      }
-
-      
-    var margin = {top: 10, right: 30, bottom: 30, left: 50},
-    width = 500 - margin.left - margin.right,
-    height = 300 - margin.top - margin.bottom;
+        var margin = {top: 10, right: 30, bottom: 30, left: 50},
+          width = 500 - margin.left - margin.right,
+          height = 300 - margin.top - margin.bottom;
 
 
-    var svg = d3.select("#boxPlot")
-      .html("")  // Clear previous content
-      .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
-   
+    // Select the SVG element
+    var svg = d3.select("#boxPlot").select("svg").select("g");
+
     var x = d3.scaleBand()
-    .range([ 0, width ])
-    .domain(["normal", "case"])
-    .paddingInner(1)
-    .paddingOuter(.5)
-    
- var xAxis=  svg.append("g")
-    .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(x))
-    xAxis.selectAll("line, path")
-    .style("stroke", "white");
-    xAxis.selectAll("text")
-    .style("fill", "white");
+      .range([ 0, width ])
+      .domain(["normal", "case"])
+      .paddingInner(1)
+      .paddingOuter(.5)
+          
+          var y = d3.scaleLinear()
+          .domain([0,boxPlotStatisticsC.max])
+          .range([height, 0])
 
-    var y = d3.scaleLinear()
-    .domain([0,boxPlotStatisticsC.max])
-    .range([height, 0])
-  var yAxis= svg.append("g").call(d3.axisLeft(y))
+      // Select the existing title element
+      var title = svg.select(".title");
 
-  yAxis.selectAll("line, path")
-    .style("stroke", "white");
+      // Update the title text and transition its position
+      title.text("Gene " + geneNameUP)
+          .transition()
+          .duration(1000)
+          .attr("x", width / 2)
+          .attr("y", margin.top);
 
-yAxis.selectAll("text")
-    .style("fill", "white");
+    var line1 = svg.selectAll(".vertLines")
+      .data(sumstat);
 
-   // Add a title
-var title = svg.append("text")
-    .attr("x", width / 2)
-    .attr("y", margin.top)
-    .attr("text-anchor", "middle")
-    .style("font-size", "18px")
-    .text("Gene "+ geneNameUP)
-    .style("fill", "white");
+    // Remove old lines
+    line1.exit().remove();
 
-    svg.selectAll("vertLines")
-            .data(sumstat)
+    // Update existing lines
+    line1.transition()
+        .duration(1000)
+        .attr("x1", function(d) { return x(d.key); })
+        .attr("x2", function(d) { return x(d.key); })
+        .attr("y1", function(d) { return y(d.value.min); })
+        .attr("y2", function(d) { return y(d.value.max); })
+        .attr("stroke", "black")
+        .style("width", 40);
+
+    // Append new lines
+    line1.enter()
+        .append("line")
+        .attr("class", "vertLines")
+        .attr("x1", function(d) { return x(d.key); })
+        .attr("x2", function(d) { return x(d.key); })
+        .attr("y1", function(d) { return y(d.value.min); })
+        .attr("y2", function(d) { return y(d.value.max); })
+        .attr("stroke", "black")
+        .style("width", 40);
+
+    boxWidth=100
+
+    // Define the initial position and size of the boxes
+    var box1 = svg.selectAll(".boxes")
+        .data(sumstat);
+
+    // Remove old boxes
+    box1.exit().remove();
+
+    // Update existing boxes
+    box1.transition()
+        .duration(1000)
+        .attr("x", function(d) {
+            return x(d.key) - boxWidth / 2;
+        })
+        .attr("y", function(d) {
+            return y(d.value.q3);
+        })
+        .attr("height", function(d) {
+            return y(d.value.q1) - y(d.value.q3);
+        })
+        .attr("width", boxWidth) // Keep width constant
+        .style("fill", function(d) {
+            return d.key === "case" ? "#a05853" : "#118e91";
+        });
+
+    // Append new boxes and smoothly transition them to their new positions
+    box1.enter()
+        .append("rect")
+        .attr("class", "boxes")
+        .attr("stroke", "black")
+        .style("fill", function(d) {
+            return d.key === "case" ? "#a05853" : "#118e91";
+        })
+        .attr("x", function(d) { return x(d.key) - boxWidth / 2; }) // Set initial position
+        .attr("y", function(d) { return y(d.value.q3); }) // Set initial position
+        .attr("height", 0) // Set initial height to 0
+        .attr("width", boxWidth) // Keep width constant
+        .transition() // Transition to new position and size
+        .duration(1000)
+        .attr("y", function(d) { return y(d.value.q3); }) // Transition to new y position
+        .attr("height", function(d) { return y(d.value.q1) - y(d.value.q3); }); // Transition to new height
+
+    // Select existing median lines and smoothly update them
+    var medianLines = svg.selectAll(".medianLines")
+        .data(sumstat);
+
+    // Remove old median lines
+    medianLines.exit().remove();
+
+    // Update existing median lines
+    medianLines.transition()
+        .duration(1000)
+        .attr("x1", function(d) { return x(d.key) - boxWidth / 2; })
+        .attr("x2", function(d) { return x(d.key) + boxWidth / 2; })
+        .attr("y1", function(d) { return y(d.value.median); })
+        .attr("y2", function(d) { return y(d.value.median); });
+
+    // Append new median lines
+    medianLines.enter()
+        .append("line")
+        .attr("class", "medianLines")
+        .attr("stroke", "black")
+        .style("width", 80)
+        .attr("x1", function(d) { return x(d.key) - boxWidth / 2; })
+        .attr("x2", function(d) { return x(d.key) + boxWidth / 2; })
+        .attr("y1", function(d) { return y(d.value.median); })
+        .attr("y2", function(d) { return y(d.value.median); });
+
+    // Select the existing title or append a new one if it doesn't exist
+    var title = svg.selectAll(".title")
+        .data([0]); // Use dummy data to ensure only one title is selected or appended
+
+    // Update existing title text
+    title.text("Gene " + geneNameUP);
+
+    // Append new title if it doesn't exist
+    title.enter()
+        .append("text")
+        .attr("class", "title")
+        .attr("x", width / 2)
+        .attr("y", margin.top)
+        .attr("text-anchor", "middle")
+        .style("font-size", "18px")
+        .style("fill", "white")
+        .text("Gene " + geneNameUP);
+
+    // Smoothly transition the title position
+    title.transition()
+        .duration(1000)
+        .attr("x", width / 2)
+        .attr("y", margin.top);
+
+        // Update jitter points
+        var jitterWidth = 50;
+        var jitter = svg.selectAll(".indPoints")
+            .data(combinedData);
+
+        jitter.enter()
+            .append("circle")
+            .attr("class", ".indPoints")
+            .attr("stroke", "black")
+            .style("fill", "white")
+            .attr("r", 2)
+            .merge(jitter)
             .transition()
             .duration(1000)
-    
-   var line1 =svg
-    .selectAll("vertLines")
-    .data(sumstat)
-    .enter()
-    .append("line")
-      .attr("x1", function(d){return(x(d.key))})
-      .attr("x2", function(d){return(x(d.key))})
-      .attr("y1", function(d){return(y(d.value.min))})
-      .attr("y2", function(d){return(y(d.value.max))})
-      .attr("stroke", "black")
-      .style("width", 40)
+            .attr("cx", function(d) { console.log("circle"); return x(d.type) - jitterWidth / 2 + Math.random() * jitterWidth; })
+            .attr("cy", function(d) { return y(d.expression); });
 
-     
-  // rectangle for the main box
-  var boxWidth = 100
-  var box1 = svg
-    .selectAll("boxes")
-    .data(sumstat)
-    .enter()
-    .append("rect")
-    .transition()
-    .duration(800)
-        .attr("x", function(d){return(x(d.key)-boxWidth/2)})
-        .attr("y", function(d){return(y(d.value.q3))})
-        .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
-        .attr("width", boxWidth )
-        .attr("stroke", "black")
-        .style("fill", function(d){
-            if(d.key === "case"){
-                return "#a05853"
-            }
-            else{
-                return "#118e91"
-            }
-        })
-    var line2 =svg
-    .selectAll("medianLines")
-    .data(sumstat)
-    .enter()
-    .append("line")
-      .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
-      .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
-      .attr("y1", function(d){return(y(d.value.median))})
-      .attr("y2", function(d){return(y(d.value.median))})
-      .attr("stroke", "black")
-      .style("width", 80)
+            jitter.exit().remove();
 
-    var jitterWidth = 50
-    var jitter = svg
-      .selectAll("indPoints")
-      .data(combinedData)
-      .enter()
-      .append("circle")
-        .attr("class", function(d) {
-            // Add the pulse-red class if the GSM is in the gsmList
-            return gsmList.includes(d.GSM) ? "indPoints pulse-red" : "indPoints";
-        })
-        .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
-        .attr("cy", function(d){return(y(d.expression))})
-        .attr("r", 2)
-        .style("fill", "white")
-        .attr("stroke", function (d){
+      } else {
 
-            return gsmList.includes(d.GSM) ? "black" : "black";
+        console.log("Sono update box, gene ricevuto " + genename)
 
-        })
-        .attr("stroke-width", function(d) {
-            // Set stroke width based on presence in gsmList
-            return gsmList.includes(d.GSM) ? 2 : 1;
-        })
-        .on("click", function(d) {
-        // On click, select the circle and add the GSM value to the list
-        var selectedGSM = d.GSM; // Assuming GSM is a property in the object
-        console.log("Selected GSM:", selectedGSM);
-        gsmList.push(selectedGSM);
-        console.log("GSM List:", gsmList);
-        d3.select(this).classed("pulse-red", gsmList.includes(selectedGSM));
-        d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
-        updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy,first_dims,ordering)
-        pca(pca_data)
-        
+                // Select the SVG element
+        var svg = d3.select("#boxPlot").select("svg").select("g");
 
+
+        var jitterWidth = 50
+// Define the update selection for the jitter circles
+var jitterUpdate = svg.selectAll(".indPoints")
+    .data(combinedData);
+
+// Update the class, stroke, and stroke width based on the GSM list
+jitterUpdate.attr("class", function(d) {
+        // console.log(gsmList.includes(d.GSM));
+        if (gsmList.includes(d.GSM)) {
+            // this.parentNode.appendChild(this); // Append to the parent node to bring it to the front
+        }
+        return gsmList.includes(d.GSM) ? "indPoints pulse-red" : "indPoints";
+    })
+    .attr("stroke", function(d) {
+        return gsmList.includes(d.GSM) ? "black" : "black";
+    })
+    .attr("stroke-width", function(d) {
+        return gsmList.includes(d.GSM) ? 3 : 1;
+    })
+    .on("click", function(d) {
+        var selectedGSM = d.GSM;
+        var isSelected = gsmList.includes(selectedGSM);
+        // console.log(isSelected);
+
+        // Toggle selection state
+        if (!isSelected) {
+            gsmList.push(selectedGSM);
+        } else {
+            gsmList = gsmList.filter(gsm => gsm !== selectedGSM);
+        }
+
+        // Update class, stroke, and stroke-width
+        d3.select(this)
+            .classed("pulse-red", !isSelected)
+            .attr("stroke", isSelected ? "black" : "black")
+            .attr("stroke-width", isSelected ? 1 : 2);
+
+        // Call necessary update functions
+        updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
+        pca(pca_data);
     });
 
+// Enter selection: No need to append new circles, as we're only updating existing ones
 
-        function update(selected) {
-          console.log(selected)
-          var selected1
-          if(selected == "MostUp")
-          {
-            selected1 = sumstat
-            genename= geneNameUP
-            genestring= "The Most Upregulated Gene "
-            console.log("sono mostup")
-            combined=combinedData
-          }else 
-          {
-             selected1= sumstat1
-             genename= geneNameDown
-             genestring= "The Most Downregulated Gene "
-             combined=combinedData1
-          }
+// Remove old circles
+jitterUpdate.exit().remove();
+      }
+    }
+    d3.select("#selectButton").on("change", function(d) {
 
-          console.log(selected1)
-            line1
-            .data(selected1)
-            .transition()
-            .duration(1000)
-            .attr("x1", function(d){return(x(d.key))})
-            .attr("x2", function(d){return(x(d.key))})
-            .attr("y1", function(d){return(y(d.value.min))})
-            .attr("y2", function(d){return(y(d.value.max))})
-            .attr("stroke", "black")
-            .style("width", 40)
+    // recover the option that has been chosen
+    var selectedOption = d3.select(this).property("value")
+    console.log(selectedOption)
+    // if(selectedOption == "MostUp"){
+    //     first_box = true
+    // }
+    // else{
+    //     first_box = false
+    // }
+    // // run the updateChart function with this selected option
+    updateBoxPlot(selectedOption, parsedLogFC, dataN, dataC)
+    })
 
-            var boxWidth = 100
-            box1
-            .data(selected1)
-            .transition()
-            .duration(1000)
-          .attr("x", function(d){return(x(d.key)-boxWidth/2)})
-          .attr("y", function(d){return(y(d.value.q3))})
-          .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
-          .attr("width", boxWidth )
-          .attr("stroke", "black")
-          .style("fill", function(d){
-            if(d.key === "case"){
-                return "#a05853"
-            }
-            else{
-                return "#118e91"
-            }
-        })
 
-          line2
-            .data(selected1)
-            .transition()
-            .duration(1000)
-            .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
-            .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
-            .attr("y1", function(d){return(y(d.value.median))})
-            .attr("y2", function(d){return(y(d.value.median))})
-            .attr("stroke", "black")
-            .style("width", 80)
+      
 
-            title
-            .transition()
-            .duration(1000)
-            .attr("x", width / 2)
-            .attr("y", margin.top)
-            .attr("text-anchor", "middle")
-            .style("font-size", "18px")
-            .text("Gene " + genename);
 
-            var jitterWidth = 50
-            jitter
-            .data(combined)
-            .transition()
-            .duration(1000)
-            .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
-            .attr("cy", function(d){return(y(d.expression))})
-            .attr("r", 2)
-            .style("fill", "white")
-            .attr("stroke", "black")
+        // function update(selected) {
+        //   console.log(selected)
+        //   var selected1
+        //   if(selected == "MostUp")
+        //   {
+        //     selected1 = sumstat
+        //     genename= geneNameUP
+        //     genestring= "The Most Upregulated Gene "
+        //     console.log("sono mostup")
+        //     combined=combinedData
+        //   }else 
+        //   {
+        //      selected1= sumstat1
+        //      genename= geneNameDown
+        //      genestring= "The Most Downregulated Gene "
+        //      combined=combinedData1
+        //   }
+
+        //   console.log(selected1)
+        //     line1
+        //     .data(selected1)
+        //     .transition()
+        //     .duration(1000)
+        //     .attr("x1", function(d){return(x(d.key))})
+        //     .attr("x2", function(d){return(x(d.key))})
+        //     .attr("y1", function(d){return(y(d.value.min))})
+        //     .attr("y2", function(d){return(y(d.value.max))})
+        //     .attr("stroke", "black")
+        //     .style("width", 40)
+
+        //     var boxWidth = 100
+        //     box1
+        //     .data(selected1)
+        //     .transition()
+        //     .duration(1000)
+        //   .attr("x", function(d){return(x(d.key)-boxWidth/2)})
+        //   .attr("y", function(d){return(y(d.value.q3))})
+        //   .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
+        //   .attr("width", boxWidth )
+        //   .attr("stroke", "black")
+        //   .style("fill", function(d){
+        //     if(d.key === "case"){
+        //         return "#a05853"
+        //     }
+        //     else{
+        //         return "#118e91"
+        //     }
+        // })
+
+        //   line2
+        //     .data(selected1)
+        //     .transition()
+        //     .duration(1000)
+        //     .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
+        //     .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
+        //     .attr("y1", function(d){return(y(d.value.median))})
+        //     .attr("y2", function(d){return(y(d.value.median))})
+        //     .attr("stroke", "black")
+        //     .style("width", 80)
+
+        //     title
+        //     .transition()
+        //     .duration(1000)
+        //     .attr("x", width / 2)
+        //     .attr("y", margin.top)
+        //     .attr("text-anchor", "middle")
+        //     .style("font-size", "18px")
+        //     .text("Gene " + genename);
+
+        //     var jitterWidth = 50
+        //     jitter
+        //     .data(combined)
+        //     .transition()
+        //     .duration(1000)
+        //     .attr("cx", function(d){return(x(d.type) - jitterWidth/2 + Math.random()*jitterWidth )})
+        //     .attr("cy", function(d){return(y(d.expression))})
+        //     .attr("r", 2)
+        //     .style("fill", "white")
+        //     .attr("stroke", "black")
 
 
           
-        }
+        // }
 
         // When the button is changed, run the updateChart function
-      d3.select("#selectButton").on("change", function(d) {
-
-        // recover the option that has been chosen
-        var selectedOption = d3.select(this).property("value")
-        console.log(selectedOption)
-        // if(selectedOption == "MostUp"){
-        //     first_box = true
-        // }
-        // else{
-        //     first_box = false
-        // }
-        // // run the updateChart function with this selected option
-         update(selectedOption)
-    })
 
     // if(!first_box){
     //     var selectedOption = d3.select("#selectButton").property("value")
@@ -2980,7 +3293,7 @@ svg.append("text")
 
     var jitterWidth = 50
     svg
-      .selectAll("indPoints")
+      .selectAll(".indPoints")
       .data(combinedData1)
       .enter()
       .append("circle")
@@ -3192,13 +3505,7 @@ var gsmPaths = svg.selectAll(".gsm-path")
         .classed("pulse-red", gsmList.includes(clickedGSM));
     pca(pca_data)
 
-    if(first_box){
-        updateBoxPlot(parsedLogFC,dataN_copy,dataC_copy)
-
-    }
-    else{
-        updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
-    }
+    updateBoxPlot(last_box, parsedLogFC,dataN_copy,dataC_copy)
     
 
 
