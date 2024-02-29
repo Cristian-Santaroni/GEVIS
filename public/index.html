@@ -3275,51 +3275,61 @@ var gsmPaths = svg.selectAll(".gsm-path")
   });
 
 
-    // Draw the axis:
-  var axis =   svg.selectAll("myAxis")
-        .data(dimensions).enter()
-        .append("g")
-        .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
-        .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
-        .append("text")
-        .style("text-anchor", "middle")
-        .attr("y", -9)
-        .text(function (d) { return d; })
-        .style("fill", "white");
+// Draw the axis:
+var axis = svg.selectAll("myAxis")
+    .data(dimensions)
+    .enter()
+    .append("g")
+    .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
+    .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); });
 
-        axis.select(".domain")
-             .attr("stroke", "white");
+axis.append("text")
+    .style("text-anchor", "middle")
+    .attr("y", -9)
+    .text(function (d) { return d; })
+    .style("fill", "white");
 
+axis.selectAll(".domain")
+    .attr("stroke", "white");
 
-    
-    // Define drag behavior
-    var drag = d3.drag()
-        .on("start", dragstart)
-        .on("drag", dragmove)
-        .on("end", dragend);
-
-    // Draw the axis:
-    var axisGroups = svg.selectAll("myAxis")
-        .data(dimensions)
-        .enter()
-        .append("g")
-        .attr("class", "axis-group")
-        .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
-        .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
-        .call(drag) // Apply drag behavior to each axis group
-        .append("text")
-        .attr("class", "dragging") // Add the axis-label class
-        .style("text-anchor", "middle")
-        .attr("y", -9)
-        .text(function (d) { return d; })
-        .style("fill", "white");
-
-        axisGroups.select(".domain")
-             .attr("stroke", "white");
+axis.selectAll(".tick text")
+    .style("fill", "white");
+    axis.selectAll(".tick line")
+    .attr("stroke", "white");
 
 
+// Define drag behavior
+var drag = d3.drag()
+    .on("start", dragstart)
+    .on("drag", dragmove)
+    .on("end", dragend);
 
-        
+// Draw the axis:
+var axisGroups = svg.selectAll("myAxis")
+    .data(dimensions)
+    .enter()
+    .append("g")
+    .attr("class", "axis-group")
+    .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
+    .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
+    .call(drag); // Apply drag behavior to each axis group;
+
+axisGroups.append("text")
+    .attr("class", "dragging") // Add the axis-label class
+    .style("text-anchor", "middle")
+    .attr("y", -9)
+    .text(function (d) { return d; })
+    .style("fill", "white");
+
+axisGroups.selectAll(".domain")
+    .attr("stroke", "white");
+
+axisGroups.selectAll(".tick text")
+    .style("fill", "white");
+    axisGroups.selectAll(".tick line")
+    .attr("stroke", "white");
+
+
 
     // Drag start function
     function dragstart(d) {
