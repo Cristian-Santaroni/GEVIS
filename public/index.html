@@ -1304,6 +1304,7 @@ function moon(θ) {
                         updateParallel(selectedGeneData, data_copy,dataC_copy,dataN_copy, first_dims) 
                         
                         console.log(dataN_copy.length)
+                      }
                     //   var pc1Values = [];
                     // var pc2Values = [];
                     // var groupValues = [];
@@ -1397,7 +1398,6 @@ function moon(θ) {
                     })
 
 
-                      }
                    
 
 
@@ -3841,7 +3841,7 @@ axisGroups.selectAll(".tick text")
         // Redraw the parallel coordinates plot
         // Call updateParallel or relevant function here with updated dimensions
         updateParallel(geneselectedOrder, data, dataC, dataN, metadataOrder, totalOrder);
-        updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC,old_p_adj)
+        updateScatterPlot(averageExpressions10N,averageExpressions10C,log_thr_fc,parsedLogFC_origin,old_p_adj)
         d3.selectAll(".axis-label").classed("dragging", false);
 
     }
