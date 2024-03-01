@@ -4091,11 +4091,14 @@ svg.selectAll(".gsm-path")
 
             var mouseleave = function (d) {
             tooltip
-                .style("opacity", 0);
+                .style("opacity", 0)
+                .style("pointer-events", "none"); // Disable pointer events for the tooltip
+
                 if(d3.select(this).style("stroke")=== "yellow"){
 
                     d3.select(this).style("stroke", "none")
                 .style("opacity", 0.8)
+                
                 }
             
                 
@@ -4118,7 +4121,7 @@ svg.selectAll(".gsm-path")
             .style("opacity", 0.8)
             .on("mouseover", mouseover)
             .on("mousemove", mousemove)
-            .on("mouseleave", mouseleave)
+            .on("mouseout", mouseleave)
             .on("click", function (d) {
         var selectedElement = d3.select(this);
 
