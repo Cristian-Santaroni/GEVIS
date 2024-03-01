@@ -2751,7 +2751,7 @@ let last_box = ""
           var y = d3.scaleLinear()
           .domain([0,boxPlotStatisticsC.max])
           .range([height, 0])
-          
+
       var yAxisGroup = svg.append("g")
           .attr("class", "y-axis") // Assign a class to the group element
           .call(d3.axisLeft(y));
@@ -2847,7 +2847,7 @@ let last_box = ""
               })
               .attr("stroke-width", function(d) {
                   // Set stroke width based on presence in gsmList
-                  return gsmList.includes(d.GSM) ? 2 : 1;
+                  return gsmList.includes(d.GSM) ? 3 : 1;
               })
               .on("click", function(d) {
               // On click, select the circle and add the GSM value to the list
@@ -2856,7 +2856,7 @@ let last_box = ""
               gsmList.push(selectedGSM);
               console.log("GSM List:", gsmList);
               d3.select(this).classed("pulse-red", gsmList.includes(selectedGSM));
-              d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
+              d3.select(this).attr("stroke", "black").attr("stroke-width", 4);
               updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy,first_dims,ordering)
               pca(pca_data)
               
@@ -2972,7 +2972,7 @@ let last_box = ""
         .range([height, 0])
 
       // Update y scale based on the new maximum expression value
-      y.domain([0, boxPlotStatisticsC.max]);
+      y.domain([0, boxPlotStatisticsC.max+5]);
 
       // Update y-axis
       svg.select(".y-axis")
