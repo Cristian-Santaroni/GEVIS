@@ -2539,9 +2539,19 @@ legend.append("text")
                     })
                     .classed('pulse',false);
                     selectedGeneData = selectedGeneData.filter(gene => gene !== d.gene);
+
+                    // Find and remove the corresponding option from the select element
+                    var select = document.getElementById("selectButton");
+                    var options = select.options;
+
+                    for (var i = 0; i < options.length; i++) {
+                        if (!selectedGeneData.includes(options[i].value)) {
+                            select.removeChild(options[i]);
+                            break; // Exit the loop once the option is removed
+                        }
+                    }
                     
                     updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
-                    selectedElement.classList.remove('pulse');
                   } else {
                       // If not highlighted, apply the highlighting
                       selectedElement
@@ -2553,7 +2563,18 @@ legend.append("text")
                       // On click, filter data for the selected gene
                       selectedGeneData.push(d.gene);
                       
-                      console.log(selectedGeneData);
+                      // Get the select element
+                      var select = document.getElementById("selectButton");
+
+                      // Add new options for the genes in selectedGeneData that are not already in the select element
+                      selectedGeneData.forEach(function(gene) {
+                          if (!Array.from(select.options).some(option => option.value === gene)) {
+                              var option = document.createElement("option");
+                              option.value = gene;
+                              option.text = gene;
+                              select.appendChild(option);
+                          }
+                      });
 
                       // Call a function to create parallel coordinates plot using selectedGeneData
                       updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
@@ -3723,6 +3744,19 @@ axisGroups.selectAll(".tick text")
 
         selectedGeneData = geneselectedOrder
 
+        selectedGeneData = geneselectedOrder
+        // Find and remove the corresponding option from the select element
+        var select = document.getElementById("selectButton");
+        var options = select.options;
+
+        for (var i = 0; i < options.length; i++) {
+            if (removedDimensions[0] === options[i].value) {
+                select.removeChild(options[i]);
+                break; // Exit the loop once the option is removed
+            }
+        }
+
+
         first_dims = metadataOrder
 
         ordering = totalOrder
@@ -3803,6 +3837,7 @@ axisGroups.selectAll(".tick text")
     console.log("Removed dimensions:", removedDimensions);
 
     selectedGeneData = geneselectedOrder
+    
 
     first_dims = metadataOrder
 
