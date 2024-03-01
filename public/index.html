@@ -371,6 +371,7 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     var color_by = 'case'
     let pca_data = []
     let heatmap_data= []
+    let square;
     
     
 
@@ -1951,7 +1952,7 @@ var legendRect = legend.append("rect")
     .attr("y", 5)  // Adjusted y-coordinate to provide some padding
     .attr("width", 160)  // Adjusted width to encapsulate the legend content
     .attr("height", 70)  // Adjusted height to encapsulate the legend content
-    .style("stroke", "black")  // Border color
+    .style("stroke", "white")  // Border color
     .style("fill", "none")  // No fill for the rectangle
     .style("filter", "url(#legendShadow)");  // Apply the drop shadow filter
 
@@ -2175,7 +2176,7 @@ var legendRect = legend.append("rect")
     .attr("y", 5)  // Adjusted y-coordinate to provide some padding
     .attr("width", 160)  // Adjusted width to encapsulate the legend content
     .attr("height", 70)  // Adjusted height to encapsulate the legend content
-    .style("stroke", "black")  // Border color
+    .style("stroke", "white")  // Border color
     .style("fill", "none")  // No fill for the rectangle
     .style("filter", "url(#legendShadow)");  // Apply the drop shadow filter
 
@@ -2406,7 +2407,7 @@ legend.append("text")
                 .attr("y", 5)  // Adjusted y-coordinate to provide some padding
                 .attr("width", 160)  // Adjusted width to encapsulate the legend content
                 .attr("height", 70)  // Adjusted height to encapsulate the legend content
-                .style("stroke", "black")  // Border color
+                .style("stroke", "white")  // Border color
                 .style("fill", "none")  // No fill for the rectangle
                 .style("filter", "url(#legendShadow)");  // Apply the drop shadow filter
 
@@ -2580,7 +2581,7 @@ legend.append("text")
 
                     })
                     .classed('pulse',false)
-                    .classed("pulse1", true);
+                    .classed("pulse1", false);
                     selectedGeneData = selectedGeneData.filter(gene => gene !== d.gene);
 
                     // Find and remove the corresponding option from the select element
@@ -2601,8 +2602,17 @@ legend.append("text")
                           .style("fill", "green")
                           .style("stroke-width", 2)
                           .classed('pulse',true)
-                          .attr("data-initial-fill","green")    
-                
+                          .classed('pulse1',false)
+                          //.attr("data-initial-fill","green")    
+                          // Find the corresponding scatterplot circle and toggle its selection
+
+
+                        var correspondingSquare = square
+                                .filter(function (squaredata) {
+                                    return squaredata.gene === d.gene;
+                                });
+                        console.log(correspondingSquare)
+                        correspondingSquare.style("stroke","none")
 
                       // On click, filter data for the selected gene
                       selectedGeneData.push(d.gene);
@@ -4012,10 +4022,6 @@ svg.selectAll(".gsm-path")
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-
-
-            
-
             // Build X scales and axis:
             var x = d3.scaleBand()
             .range([0, width])
@@ -4070,7 +4076,7 @@ svg.selectAll(".gsm-path")
 
             if(d3.select(this).style("stroke")=== "none"){
                 d3.select(this)
-                .style("stroke", "black")
+                .style("stroke", "yellow")
                 .style("opacity", 1);
             }
             
@@ -4086,7 +4092,7 @@ svg.selectAll(".gsm-path")
             var mouseleave = function (d) {
             tooltip
                 .style("opacity", 0);
-                if(d3.select(this).style("stroke")=== "black"){
+                if(d3.select(this).style("stroke")=== "yellow"){
 
                     d3.select(this).style("stroke", "none")
                 .style("opacity", 0.8)
@@ -4096,7 +4102,7 @@ svg.selectAll(".gsm-path")
             };
 
             // add the squares
-            svg.selectAll()
+          square = svg.selectAll()
             .data(heatmap_data_subset.flatMap(d => myVars.map(v => ({ gene: d.gene, variable: v, value: d[v] }))))
             .enter()
             .append("rect")
