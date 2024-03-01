@@ -4024,13 +4024,13 @@ svg.selectAll(".gsm-path")
             svg.append("g")
             .style("font-size", 15)
             .style("stroke","white")
-            .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x).tickSize(0))
+            .attr("transform", "translate(0,0)")
+            .call(d3.axisTop(x).tickSize(0))
             .select(".domain").remove();
 
             // Build Y scales and axis:
             var y = d3.scaleBand()
-            .range([height, 0])
+            .range([0,height])
             .domain(myGroups)
             .padding(0.05);
             svg.append("g")
@@ -4041,7 +4041,7 @@ svg.selectAll(".gsm-path")
 
             svg.append("text")
                             .attr("x", width / 2)
-                            .attr("y", -5)
+                            .attr("y", -25)
                             .attr("text-anchor", "middle")
                             .style("font-size", "18px")
                             .text("Heatmap")
