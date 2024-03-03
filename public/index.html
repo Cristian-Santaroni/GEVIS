@@ -2909,14 +2909,26 @@ let last_box = ""
               })
               .on("click", function(d) {
               // On click, select the circle and add the GSM value to the list
-              var selectedGSM = d.GSM; // Assuming GSM is a property in the object
-              console.log("Selected GSM:", selectedGSM);
-              gsmList.push(selectedGSM);
-              console.log("GSM List:", gsmList);
-              d3.select(this).classed("pulse-red", gsmList.includes(selectedGSM));
-              d3.select(this).attr("stroke", "black").attr("stroke-width", 4);
-              updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy,first_dims,ordering)
-              pca(pca_data)
+              var selectedGSM = d.GSM;
+              var isSelected = gsmList.includes(selectedGSM);
+              // console.log(isSelected);
+
+              // Toggle selection state
+              if (!isSelected) {
+                  gsmList.push(selectedGSM);
+              } else {
+                  gsmList = gsmList.filter(gsm => gsm !== selectedGSM);
+              }
+
+              // Update class, stroke, and stroke-width
+              d3.select(this)
+                  .classed("pulse-red", !isSelected)
+                  .attr("stroke", isSelected ? "black" : "black")
+                  .attr("stroke-width", isSelected ? 1 : 2);
+
+              // Call necessary update functions
+              updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
+              pca(pca_data);
               
 
           });
