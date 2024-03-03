@@ -62,40 +62,7 @@
       height: 100%;
       width: 100%;
     }
-   /* <!-- Da qui-->*/
-    body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-        }
-
-        .flex {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
-            align-items: stretch; /* Adjust alignment as needed */
-            height: 100%;
-            max-width: 100%; /* Ensure the container takes full width */
-        }
-
-        .flex-container {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: stretch; /* Adjust alignment as needed */
-            max-width: 100%; /* Ensure the container takes full width */
-        }
-
-        .flex-container > div {
-            margin-bottom: 20px; /* Add spacing between items */
-            border: 2px solid #ddd;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            background-color: rgb(54, 54, 54);
-            flex: 1 1 auto;
-        }
-       /* <!-- a qui -->*/
+   
 
     #style_scatter{
     border: 2px solid #ddd; /* Border color */
@@ -328,6 +295,10 @@ input.range2[type="range" i]::-webkit-slider-thumb {
             
           </div>
     <div id="heatmap"></div>
+    
+    </div>
+    <div id="style_scatter">
+    <div id="counter" style="color: white"> </div>
     </div>
     </div>
 
@@ -355,15 +326,15 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     let thr_prc;
     let filteredData;
     let matrix;
-    let data_original;
-    let dataC_original;
-    let dataN_original;
-    let data_copy;
-    let dataC_copy;
-    let dataN_copy;
-    let data_copy1;
-    let dataC_copy1;
-    let dataN_copy1;
+    let data_original=[];
+    let dataC_original=[];
+    let dataN_original=[];
+    let data_copy=[];
+    let dataC_copy=[];
+    let dataN_copy=[];
+    let data_copy1=[];
+    let dataC_copy1=[];
+    let dataN_copy1=[];
     let thr_fc = 1.1;
     let logFC_data;
     let log_thr_fc = Math.log2(thr_fc);
@@ -401,13 +372,25 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     var currentCircleFill
     var first_dims = ['Age at Diagnosis']
 
+    // Remove entries corresponding to ind from dataN
+    var dataC_copy_pval
 
+    // Remove entries corresponding to ind from dataN
+    var  dataN_copy_pval 
+
+
+    var data_copy_pval
+
+// Remove entries corresponding to ind from logFC
+var parsedLogFC_pval 
     var color_by = 'case'
     let pca_data = []
     let heatmap_data= []
     let square;
     
-    
+   
+
+
 
     function calculateLogFC(dataC, dataN) {
     const logFCData = [];
@@ -716,6 +699,7 @@ function moon(θ) {
           }
           return result;
         }, []);
+        
 
         console.log("geni tolti dal primo filtering del pval",ind.length)
 
@@ -726,13 +710,13 @@ function moon(θ) {
             // Remove entries corresponding to ind from dataN
 
             // Remove entries corresponding to ind from dataN
-            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+            dataC_copy_pval = dataC_copy.filter((entry, index) => !ind.includes(index));
 
             // Remove entries corresponding to ind from dataN
-            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+            dataN_copy_pval = dataN_copy.filter((entry, index) => !ind.includes(index));
 
 
-            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+            data_copy_pval = data_copy.filter((entry, index) => !ind.includes(index));
 
             console.log("geni rimamenti dal primo filtering",data_copy.length)
             // Remove entries corresponding to ind from logFC
@@ -766,11 +750,11 @@ function moon(θ) {
             
 
             
-            updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
+            updateParallel(selectedGeneData,data_copy_pval,dataC_copy_pval,dataN_copy, first_dims)
             
-            updateBoxPlot(mostUpregulatedGeneName,parsedLogFC,dataN_copy,dataC_copy)
+            updateBoxPlot(mostUpregulatedGeneName,parsedLogFC,dataN_copy_pval,dataC_copy_pval)
 
-
+            updateCounter()
 
             scatter.selectAll("circle")
              .filter(circleData => circleData.gene === mostUpregulatedGeneName || circleData.gene === mostDownregulatedGeneName)
@@ -877,7 +861,7 @@ function moon(θ) {
 
                         pca(pca_data);
                         heatmap(heatmap_data);
-
+                        
                         })
 
               
@@ -910,6 +894,7 @@ function moon(θ) {
 
           })
           .catch(error => console.error('Error reading file:', error));
+          
         });
 
     document.getElementById("thresholdSlider").addEventListener("input", function() {
@@ -1003,7 +988,7 @@ function moon(θ) {
           }
 
           console.log("ho rimosso",ind2.length," GENI da data e ne rimangono ",data_copy.length)
-
+          updateCounter()
       // console.log(parsedLogFC)
       // console.log(data_copy)
 
@@ -1062,20 +1047,20 @@ function moon(θ) {
             // Remove entries corresponding to ind from dataN
 
             // Remove entries corresponding to ind from dataN
-            dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+            dataC_copy_pval = dataC_copy.filter((entry, index) => !ind.includes(index));
 
             // Remove entries corresponding to ind from dataN
-            dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+            dataN_copy_pval = dataN_copy.filter((entry, index) => !ind.includes(index));
 
 
-            data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+            data_copy_pval = data_copy.filter((entry, index) => !ind.includes(index));
 
             // Remove entries corresponding to ind from logFC
-            parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+            parsedLogFC_pval = parsedLogFC.filter((entry, index) => !ind.includes(index));
 
             console.log("geni passati a box dal IQR slider", parsedLogFC.length)
-            updateBoxPlot(last_box,parsedLogFC,dataN_copy,dataC_copy)
-            updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
+            updateBoxPlot(last_box,parsedLogFC,dataN_copy_pval,dataC_copy_pval)
+            updateBoxPlot1(parsedLogFC_pval,dataN_copy_pval,dataC_copy_pval)
 
 
             var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
@@ -1109,15 +1094,15 @@ function moon(θ) {
 
 
             
-            updateParallel(selectedGeneData,data_copy,dataC_copy,dataN_copy, first_dims)
-            
+            updateParallel(selectedGeneData,data_copy_pval,dataC_copy_pval,dataN_copy_pval, first_dims)
+            updateCounter()
             var pc1Values = [];
                     var pc2Values = [];
                     var groupValues = [];
             var req = ocpu.call("pca", {
-                    data: data_copy,
-                    dataN: dataN_copy,
-                    dataC: dataC_copy
+                    data: data_copy_pval,
+                    dataN: dataN_copy_pval,
+                    dataC: dataC_copy_pval
                 }, function(session) {
                     var filteredDataURL = session.loc + "/R/.val/json";
                     //console.log(session);
@@ -1204,7 +1189,7 @@ function moon(θ) {
 
                         pca(pca_data);
                         heatmap(heatmap_data)
-
+                       
                         })
 
               
@@ -1263,7 +1248,8 @@ function moon(θ) {
 
             parsedLogFC = parsedLogFC_origin.filter((entry, index) => !ind.includes(index)); 
           }
-  
+        
+          updateCounter()
         updateLogFCHistogram(parsedLogFC_origin);
       
       });
@@ -1313,20 +1299,20 @@ function moon(θ) {
                         // Remove entries corresponding to ind from dataN
 
                         // Remove entries corresponding to ind from dataN
-                        dataC_copy = dataC_copy.filter((entry, index) => !ind.includes(index));
+                        dataC_copy_pval = dataC_copy.filter((entry, index) => !ind.includes(index));
 
                         // Remove entries corresponding to ind from dataN
-                        dataN_copy = dataN_copy.filter((entry, index) => !ind.includes(index));
+                        dataN_copy_pval = dataN_copy.filter((entry, index) => !ind.includes(index));
 
-                        data_copy = data_copy.filter((entry, index) => !ind.includes(index));
+                        data_copy_pval = data_copy.filter((entry, index) => !ind.includes(index));
 
                         // Remove entries corresponding to ind from logFC
-                        parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
+                        parsedLogFC_pval = parsedLogFC.filter((entry, index) => !ind.includes(index));
                         
                         
-                        updateBoxPlot(last_box,parsedLogFC,dataN_copy,dataC_copy)
-                        updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
-                        
+                        updateBoxPlot(last_box,parsedLogFC_pval,dataN_copy_pval,dataC_copy_pval)
+                        updateBoxPlot1(parsedLogFC_pval,dataN_copy_pval,dataC_copy_pval)
+                        updateCounter()
                         selectedGeneData = selectedGeneData.filter(function(gene) {
                             // Check if the gene is present in dataC_copy or dataN_copy
                             return dataC_copy.some(function(d) { return d.gene === gene; }) ||
@@ -1343,9 +1329,9 @@ function moon(θ) {
                     // var pc2Values = [];
                     // var groupValues = [];
             var req = ocpu.call("pca", {
-                    data: data_copy,
-                    dataN: dataN_copy,
-                    dataC: dataC_copy
+                    data: data_copy_pval,
+                    dataN: dataN_copy_pval,
+                    dataC: dataC_copy_pval
                 }, function(session) {
                     var filteredDataURL = session.loc + "/R/.val/json";
                     //console.log(session);
@@ -1468,6 +1454,7 @@ function moon(θ) {
         }, []);
 
         updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+       
 
         if (ind.length > 0) {
 
@@ -1476,18 +1463,18 @@ function moon(θ) {
             // Remove entries corresponding to ind from dataN
 
             // Remove entries corresponding to ind from dataN
-            var dataC_copy_pval = dataC_copy.filter((entry, index) => !ind.includes(index));
+            dataC_copy_pval = dataC_copy.filter((entry, index) => !ind.includes(index));
 
             // Remove entries corresponding to ind from dataN
-           var  dataN_copy_pval = dataN_copy.filter((entry, index) => !ind.includes(index));
+             dataN_copy_pval = dataN_copy.filter((entry, index) => !ind.includes(index));
 
 
-          var data_copy_pval = data_copy.filter((entry, index) => !ind.includes(index));
+           data_copy_pval = data_copy.filter((entry, index) => !ind.includes(index));
 
             // Remove entries corresponding to ind from logFC
-           var parsedLogFC_pval = parsedLogFC.filter((entry, index) => !ind.includes(index));
+            parsedLogFC_pval = parsedLogFC.filter((entry, index) => !ind.includes(index));
 
-            
+           updateCounter()
             updateBoxPlot(last_box,parsedLogFC_pval,dataN_copy,dataC_copy)
             
             var pc1Values = [];
@@ -1580,7 +1567,7 @@ function moon(θ) {
                       // Display the newData array
                       console.log(pca_data);
 
-
+                        
                         pca(pca_data);
                         heatmap(heatmap_data)
 
@@ -2752,7 +2739,7 @@ svg.append("text")
               }
 }
 
-function formatPValue(pval) {
+    function formatPValue(pval) {
     // Check if the p-value is too small to be displayed without scientific notation
     if (pval < 0.01) {
         // Use toExponential to format the p-value in scientific notation with two decimal places
@@ -2764,7 +2751,7 @@ function formatPValue(pval) {
 }
 
 
-let last_box = ""
+    let last_box = ""
 
     function updateBoxPlot(genename,parsedLogFC,dataN,dataC){
  
@@ -4473,6 +4460,22 @@ radioInputs.forEach(function(input) {
         updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
     });
 });
+
+function updateCounter() {
+  // Select the counter div
+  var counterDiv = d3.select("#counter");
+
+  // Update the content of the counter
+  counterDiv.html(
+    "<strong>Total number of genes:</strong> " + data_original.length + "<br>" +
+    "<strong>Genes remained after IQR:</strong> " + data_copy1.length + "<br>" +
+    "<strong>Genes remained after FC:</strong> " + data_copy.length + "<br>" +
+    "<strong>Genes remained after p-val:</strong> " + data_copy_pval.length + "<br>" +
+    "<strong>IQR threshold:</strong> " + prc_IQR + "<br>" +
+    "<strong>Log FC threshold:</strong> " + thr_fc + "<br>" +
+    "<strong>Significance level:</strong> " + threshold + "<br>"
+  );
+}
 
 
   </script>
