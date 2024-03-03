@@ -62,6 +62,40 @@
       height: 100%;
       width: 100%;
     }
+   /* <!-- Da qui-->*/
+    body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: stretch; /* Adjust alignment as needed */
+            height: 100%;
+            max-width: 100%; /* Ensure the container takes full width */
+        }
+
+        .flex-container {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: stretch; /* Adjust alignment as needed */
+            max-width: 100%; /* Ensure the container takes full width */
+        }
+
+        .flex-container > div {
+            margin-bottom: 20px; /* Add spacing between items */
+            border: 2px solid #ddd;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: rgb(54, 54, 54);
+            flex: 1 1 auto;
+        }
+       /* <!-- a qui -->*/
 
     #style_scatter{
     border: 2px solid #ddd; /* Border color */
@@ -215,7 +249,7 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     <div id="style_scatter">
     
 
-    <div id="IQR"></div><!--div(4) IQR-->
+    <div id="IQR" style="width: 100%"></div><!--div(4) IQR-->
     <div> <!--div(3) bottoni IQR-->
       <input type="range" id="thresholdSlider" class="range2" min="0.1" max="0.99" step="0.01" value="0.1" style="width: 200px;">
       <span id="thresholdValue" style="color: white;">0.1</span>
@@ -280,7 +314,7 @@ input.range2[type="range" i]::-webkit-slider-thumb {
           <label for="variable3" style="color: #ddd;">Stage</label>
         </div>
     </div>
-  <div id="parallelcoordinates"></div>
+  <div id="parallelcoordinates" style="width: 100%"></div>
 </div>
 </div>
 </div>
@@ -2403,54 +2437,100 @@ svg.append("text")
 
             // Add a rectangle around the legend with shadow
             var legendRect = legend.append("rect")
-                .attr("x", 5)  // Adjusted x-coordinate to provide some padding
-                .attr("y", 5)  // Adjusted y-coordinate to provide some padding
-                .attr("width", 160)  // Adjusted width to encapsulate the legend content
-                .attr("height", 70)  // Adjusted height to encapsulate the legend content
-                .style("stroke", "white")  // Border color
-                .style("fill", "none")  // No fill for the rectangle
-                .style("filter", "url(#legendShadow)");  // Apply the drop shadow filter
+                .attr("x", 5)  
+                .attr("y", 5)  
+                .attr("width", 140)  
+                .attr("height", 180)  
+                .style("stroke", "white")  
+                .style("fill", "none")  
+                .style("filter", "url(#legendShadow)");  
 
-              legend.append("circle")
-                          .attr("cx", 10)
-                          .attr("cy", 20)
-                          .attr("r", 3)
-                          .style("fill", "darkred");
+            // Append legend for upregulated genes (LogFC > log2(thr_fc) and pval_adj < threshold)
+            var upregulatedLegend = legend.append("g")
+                .attr("transform", "translate(0,0)");
 
-              legend.append("text")
-                  .attr("x", 20)
-                  .attr("y", 20)
-                  .text("Upregulated")
-                  .attr("text-anchor", "left")
-                  .style("alignment-baseline", "middle")
-                  .style("fill", "white");
+            upregulatedLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 20)
+                .attr("r", 3)
+                .style("fill", "darkred");
 
-                  legend.append("circle")
-                          .attr("cx", 10)
-                          .attr("cy", 40)
-                          .attr("r", 3)
-                          .style("fill", "royalblue");
-
-                legend.append("text")
+            upregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 20)
+                .style("fill", "white")
+                .text("Upregulated")
+                .append("tspan")
                     .attr("x", 20)
-                    .attr("y", 40)
-                    .text("Downregulated")
-                    .attr("text-anchor", "left")
-                    .style("alignment-baseline", "middle")
-                    .style("fill", "white");
+                    .attr("dy", 12) // Adjusted spacing for subtitle
+                    .style("font-size", "10px") // Smaller font size for subtitle
+                    .text("LogFC > log2(" + thr_fc + ") and");
 
-                    legend.append("circle")
-                          .attr("cx", 10)
-                          .attr("cy", 65)
-                          .attr("r", 3)
-                          .style("fill", "grey");
+            upregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 44)
+                .style("fill", "white")
+                .text("pval_adj < " + threshold)
+                .style("font-size", "10px"); // Smaller font size for subtitle
 
-                      legend.append("text")
-                          .attr("x", 20)
-                          .attr("y", 68)
-                          .text("Not Significant")
-                          .style("fill", "white");
+            // Calculate the height of the first legend item
+            var legendItemHeight = upregulatedLegend.node().getBBox().height;
 
+            // Append legend for downregulated genes (LogFC < -log2(thr_fc) and pval_adj < threshold)
+            var downregulatedLegend = legend.append("g")
+                .attr("transform", "translate(0," + legendItemHeight + ")");
+
+            downregulatedLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 40)
+                .attr("r", 3)
+                .style("fill", "royalblue");
+
+            downregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 40)
+                .style("fill", "white")
+                .text("Downregulated")
+                .append("tspan")
+                    .attr("x", 20)
+                    .attr("dy", 12) // Adjusted spacing for subtitle
+                    .style("font-size", "10px") // Smaller font size for subtitle
+                    .text("LogFC < -log2(" + thr_fc + ") and");
+
+            downregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 64)
+                .style("fill", "white")
+                .text("pval_adj < " + threshold)
+                .style("font-size", "10px"); // Smaller font size for subtitle
+
+            // Append legend for not significant genes (abs(LogFC) < log2(thr_fc) OR pval_adj > threshold)
+            var notSignificantLegend = legend.append("g")
+                .attr("transform", "translate(0," + 2 * legendItemHeight + ")");
+
+            notSignificantLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 65)
+                .attr("r", 3)
+                .style("fill", "grey");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 68)
+                .style("fill", "white")
+                .text("Not Significant")
+                .append("tspan")
+                    .attr("x", 20)
+                    .attr("dy", 12) // Adjusted spacing for subtitle
+                    .style("font-size", "10px") // Smaller font size for subtitle
+                    .text("|LogFC| < log2(" + thr_fc + ") or");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 94)
+                .style("fill", "white")
+                .text("pval_adj > " + threshold)
+                .style("font-size", "10px"); // Smaller font size for subtitle
 
             // Add circles to the scatter plot
             var tooltip = d3.select("#tooltip");
