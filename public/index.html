@@ -218,14 +218,14 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     <div id="IQR"></div><!--div(4) IQR-->
     <div> <!--div(3) bottoni IQR-->
       <input type="range" id="thresholdSlider" class="range2" min="0.1" max="0.99" step="0.01" value="0.1" style="width: 200px;">
-      <span id="thresholdValue">0.1</span>
+      <span id="thresholdValue" style="color: white;">0.1</span>
     </div><!-- div(3)-->
   <div id="logFCHistogram"></div> <!-- div(5) FC-->
 
     <div><!-- div(6) bottoni FC-->
       
       <input type="range" id="log_thresholdSlider" class="range1" min="1.1" max="10" step="0.01" value="1.1" style="width: 200px;">
-      <span id="log_thresholdSliderValue">1.1</span>
+      <span id="log_thresholdSliderValue" style="color: white;">1.1</span>
       <div id="boxPlot"></div>
         <!-- Initialize a select button -->
         <select id="selectButton" class="btn btn-secondary dropdown-toggle">
@@ -2316,14 +2316,14 @@ legend.append("text")
         d3.select("#resetButton")
             .on("click", resetZoom);
 
-            // Add X axis label
-            svg.append("text")
-                .attr("x", width / 2)
-                .attr("y", height + margin.bottom - 10)
-                .attr("text-anchor", "middle")
-                .style("font-size", "14px")
-                .text("Expression (Normal)")
-                .style("fill", "white");
+// Add X axis label
+svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", height + margin.bottom - 10)
+    .attr("text-anchor", "middle")
+    .style("font-size", "14px")
+    .style("fill", "white")
+    .html("log<tspan dy='5'>10</tspan> <tspan dy ='-5'>(Expression (Normal))</tspan>");
 
             // Add Y axis label
             svg.append("text")
@@ -2332,7 +2332,7 @@ legend.append("text")
                 .attr("y", -margin.left + 20)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
-                .text("Expression (Case)")
+                .html("log<tspan dy='5'>10</tspan> <tspan dy ='-5'>(Expression (Case))</tspan>")
                 .style("fill", "white");
 
             // Add title
@@ -2540,7 +2540,7 @@ legend.append("text")
                   tooltip.transition()
                       .style("opacity", .9);
 
-                  tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.Normal.toFixed(2)}<br><strong>Case:</strong> ${d.Case.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toFixed(2) : 'NA'}`)
+                  tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>Normal:</strong> ${d.Normal.toFixed(2)}<br><strong>Case:</strong> ${d.Case.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? formatPValue(d.pval_adj) : 'NA'}`)
                       .style("left", (d3.event.pageX + 15) + "px")
                       .style("top", (d3.event.pageY - 28) + "px");
               })
@@ -2670,15 +2670,19 @@ legend.append("text")
                   .duration(750)
                   .call(zoom.transform, d3.zoomIdentity);
               }
-
-
-
-       
-        
-
-
-        
 }
+
+function formatPValue(pval) {
+    // Check if the p-value is too small to be displayed without scientific notation
+    if (pval < 0.01) {
+        // Use toExponential to format the p-value in scientific notation with two decimal places
+        return pval.toExponential(3);
+    } else {
+        // Otherwise, use toFixed to format the p-value with two decimal places
+        return pval.toFixed(2);
+    }
+}
+
 
 let last_box = ""
 
