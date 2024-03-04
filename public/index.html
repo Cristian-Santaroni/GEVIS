@@ -297,8 +297,12 @@ input.range2[type="range" i]::-webkit-slider-thumb {
     <div id="heatmap"></div>
     
     </div>
+    
     <div id="style_scatter">
-    <div id="counter" style="color: white"> </div>
+    <div class="flex">
+    <div id="counter" style="color: white;  border: 1px solid #ddd; padding-right: 2vh; padding-left: 2vh;" > </div>
+    <div id="counter1" style="color: white; border: 1px solid #ddd;  padding-right: 7vh; padding-left: 2vh;"> </div>
+    </div>
     </div>
     </div>
 
@@ -4461,16 +4465,18 @@ radioInputs.forEach(function(input) {
 function updateCounter() {
   // Select the counter div
   var counterDiv = d3.select("#counter");
-
+  var counterDiv1 = d3.select("#counter1")
   // Update the content of the counter
   counterDiv.html(
     "<strong>Total number of genes:</strong> " + data_original.length + "<br>" +
     "<strong>Genes remained after IQR:</strong> " + data_copy1.length + "<br>" +
     "<strong>Genes remained after FC:</strong> " + data_copy.length + "<br>" +
-    "<strong>Genes remained after p-val:</strong> " + data_copy_pval.length + "<br>" +
+    "<strong>Genes remained after p-val:</strong> " + data_copy_pval.length 
+  );
+  counterDiv1.html(
     "<strong>IQR threshold:</strong> " + thr_prc.toFixed(3) + "<br>" +
-    "<strong>Log FC threshold:</strong> " + log_thr_fc.toFixed(3) + "<br>" 
-    //"<strong>Significance level:</strong> " + threshold + "<br>"
+    "<strong>Log FC threshold:</strong> " + log_thr_fc.toFixed(3) + "<br>" +
+    "<strong>Significance level:</strong> " + threshold 
   );
 }
 
