@@ -21,9 +21,8 @@
         integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
         crossorigin="anonymous"></script>
 
-        <link rel="stylesheet"
-        type="text/css" href="bootstrap.css">
-        <script src="bootstrap.js"></script>
+    <link rel="stylesheet" type="text/css" href="bootstrap.css">
+    <script src="bootstrap.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-color/3.0.0/d3-color.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-interpolate/1.5.0/d3-interpolate.min.js"></script>
@@ -313,7 +312,7 @@
                                 <input type="checkbox" id="vehicle4" name="vehicle4" value="Stage"
                                     onchange="handleCheckboxChangeStage()">
                                 Stage</label>
-                            
+
                             <label for="vehicle5" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
                                 <input type="checkbox" id="vehicle5" name="vehicle5" value="type"
                                     onchange="handleCheckboxChangeType()">
@@ -3733,8 +3732,8 @@
 
             // Update the y-scale for type
             y["type"] = d3.scaleOrdinal()
-                            .domain(["Normal", "Case"])
-                            .range([height, 0])
+                .domain(["Normal", "Case"])
+                .range([height, 0])
 
 
             // Build the X scale -> it finds the best position for each Y axis
@@ -3888,24 +3887,24 @@
                 .enter()
                 .append("g")
                 .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
-                .each(function (d) { 
+                .each(function (d) {
                     if (d === "Smoking Status") {
                         // For "Smoking Status" dimension, customize the tick format
-                        d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function(d) {
+                        d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function (d) {
                             // Customize the tick format here
                             return d === "Never Smoked" ? "Never" : d === "Former Smoker" ? "Former" : "Current";
-                        })); 
+                        }));
                     } else {
-                        d3.select(this).call(d3.axisLeft().scale(y[d])); 
+                        d3.select(this).call(d3.axisLeft().scale(y[d]));
                     }
                 });
 
             axis.append("text")
                 .style("text-anchor", "middle")
                 .attr("y", -9)
-                .text(function (d) { 
+                .text(function (d) {
                     // Set the label text for "Type" axis
-                    return d === "type" ? "Type" : d; 
+                    return d === "type" ? "Type" : d;
                 })
                 .style("fill", "white");
 
@@ -3931,15 +3930,15 @@
                 .append("g")
                 .attr("class", "axis-group")
                 .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
-                .each(function (d) { 
+                .each(function (d) {
                     if (d === "Smoking Status") {
                         // For "Smoking Status" dimension, customize the tick format
-                        d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function(d) {
+                        d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function (d) {
                             // Customize the tick format here
                             return d === "Never Smoked" ? "Never" : d === "Former Smoker" ? "Former" : "Current";
-                        })); 
+                        }));
                     } else {
-                        d3.select(this).call(d3.axisLeft().scale(y[d])); 
+                        d3.select(this).call(d3.axisLeft().scale(y[d]));
                     }
                 })
                 .call(drag); // Apply drag behavior to each axis group;
@@ -3948,9 +3947,9 @@
                 .attr("class", "dragging") // Add the axis-label class
                 .style("text-anchor", "middle")
                 .attr("y", -9)
-                .text(function (d) { 
+                .text(function (d) {
                     // Set the label text for "Type" axis
-                    return d === "type" ? "Type" : d; 
+                    return d === "type" ? "Type" : d;
                 })
                 .style("fill", "white");
 
