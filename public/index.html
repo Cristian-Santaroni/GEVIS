@@ -4407,7 +4407,7 @@
             var mousemove = function (d) {
                 var valueString;
                 if (d.value < 0.01) {
-                    valueString = d.value.toExponential(2);
+                    valueString = d.value.toExponential(2)  + "%";
                 } else {
                     valueString = (d.value).toFixed(2) + "%";
                 }
