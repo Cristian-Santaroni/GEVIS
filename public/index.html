@@ -3721,7 +3721,7 @@
                 .range([height, 0]);
 
             // Update the y-scale for Cigarette Smoking Status
-            y["Cigarette Smoking Status"] = d3.scaleOrdinal()
+            y["Smoking Status"] = d3.scaleOrdinal()
                 .domain(["Never Smoked", "Former Smoker", "Current Smoker"])
                 .range([height, height / 2, 0])
 
@@ -3798,7 +3798,7 @@
                             // If the GSM is found in metadata, insert the corresponding Age at Diagnosis
                             transposedData[i]['Age at Diagnosis'] = metadata['Age at Diagnosis:ch1'][gsmIndex];
                             transposedData[i]['Gender'] = metadata['Gender:ch1'][gsmIndex];
-                            transposedData[i]['Cigarette Smoking Status'] = metadata['Cigarette Smoking Status:ch1'][gsmIndex];
+                            transposedData[i]['Smoking Status'] = metadata['Cigarette Smoking Status:ch1'][gsmIndex];
                             transposedData[i]['Stage'] = metadata['Stage:ch1'][gsmIndex];
                         }
                     });
@@ -3809,7 +3809,7 @@
                     GSM: gsm,
                     'Age at Diagnosis': metadata['Age at Diagnosis:ch1'][i],
                     'Gender': metadata['Gender:ch1'][i],
-                    'Cigarette Smoking Status': metadata['Cigarette Smoking Status:ch1'][i],
+                    'Smoking Status': metadata['Cigarette Smoking Status:ch1'][i],
                     'Stage': metadata['Stage:ch1'][i],
                     type: metadata['Stage:ch1'][i] === "Normal" ? "normal" : "case"
                 }));
@@ -3833,7 +3833,7 @@
                     if (selectedVariable === "case") {
                         return color(d.type);
                     } else if (selectedVariable === "Smoker") {
-                        return color(d['Cigarette Smoking Status']);
+                        return color(d['Smoking Status']);
                     } else if (selectedVariable === "Gender") {
                         return color(d['Gender']);
                     } else if (selectedVariable === "Stage") {
@@ -3888,7 +3888,17 @@
                 .enter()
                 .append("g")
                 .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
-                .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); });
+                .each(function (d) { 
+                    if (d === "Smoking Status") {
+                        // For "Smoking Status" dimension, customize the tick format
+                        d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function(d) {
+                            // Customize the tick format here
+                            return d === "Never Smoked" ? "Never" : d === "Former Smoker" ? "Former" : "Current";
+                        })); 
+                    } else {
+                        d3.select(this).call(d3.axisLeft().scale(y[d])); 
+                    }
+                });
 
             axis.append("text")
                 .style("text-anchor", "middle")
@@ -3921,7 +3931,17 @@
                 .append("g")
                 .attr("class", "axis-group")
                 .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
-                .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
+                .each(function (d) { 
+                    if (d === "Smoking Status") {
+                        // For "Smoking Status" dimension, customize the tick format
+                        d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function(d) {
+                            // Customize the tick format here
+                            return d === "Never Smoked" ? "Never" : d === "Former Smoker" ? "Former" : "Current";
+                        })); 
+                    } else {
+                        d3.select(this).call(d3.axisLeft().scale(y[d])); 
+                    }
+                })
                 .call(drag); // Apply drag behavior to each axis group;
 
             axisGroups.append("text")
@@ -4134,7 +4154,7 @@
                 if (selectedVariable === "case") {
                     selected_reg = d.type;
                 } else if (selectedVariable === "Smoker") {
-                    selected_reg = d['Cigarette Smoking Status'];
+                    selected_reg = d['Smoking Status'];
                 } else if (selectedVariable === "Gender") {
                     selected_reg = d['Gender'];
                 } else if (selectedVariable === "Stage") {
@@ -4149,7 +4169,7 @@
                         if (selectedVariable === "case") {
                             return data.type === selected_reg ? color(selected_reg) : "lightgrey";
                         } else if (selectedVariable === "Smoker") {
-                            return data['Cigarette Smoking Status'] === selected_reg ? color(selected_reg) : "lightgrey";
+                            return data['Smoking Status'] === selected_reg ? color(selected_reg) : "lightgrey";
                         } else if (selectedVariable === "Gender") {
                             return data['Gender'] === selected_reg ? color(selected_reg) : "lightgrey";
                         } else if (selectedVariable === "Stage") {
@@ -4161,7 +4181,7 @@
                         if (selectedVariable === "case") {
                             return data.type === selected_reg ? "1" : "0.2";
                         } else if (selectedVariable === "Smoker") {
-                            return data['Cigarette Smoking Status'] === selected_reg ? "1" : "0.2";
+                            return data['Smoking Status'] === selected_reg ? "1" : "0.2";
                         } else if (selectedVariable === "Gender") {
                             return data['Gender'] === selected_reg ? "1" : "0.2";
                         } else if (selectedVariable === "Stage") {
@@ -4186,7 +4206,7 @@
                         if (selectedVariable === "case") {
                             return color(data.type);
                         } else if (selectedVariable === "Smoker") {
-                            return color(data['Cigarette Smoking Status']);
+                            return color(data['Smoking Status']);
                         } else if (selectedVariable === "Gender") {
                             return color(data['Gender']);
                         } else if (selectedVariable === "Stage") {
@@ -4302,10 +4322,10 @@
 
             var mousemove = function (d) {
                 var valueString;
-                if (d.value < 0.0001) {
+                if (d.value < 0.01) {
                     valueString = d.value.toExponential(2);
                 } else {
-                    valueString = (d.value * 100).toFixed(2) + "%";
+                    valueString = (d.value).toFixed(2) + "%";
                 }
                 // Calculate the position of the tooltip
                 var xPosition = d3.event.pageX + 10; // 10 pixels to the right of the mouse pointer
@@ -4512,10 +4532,10 @@
 
             if (isChecked) {
                 // Add 'Age at Diagnosis' dimension to dimensions array
-                first_dims.unshift('Cigarette Smoking Status');
+                first_dims.unshift('Smoking Status');
             } else {
                 // Remove 'Age at Diagnosis' dimension from dimensions array
-                var index = first_dims.indexOf('Cigarette Smoking Status');
+                var index = first_dims.indexOf('Smoking Status');
                 if (index !== -1) {
                     first_dims.splice(index, 1);
                     if (first_dims === undefined) {
