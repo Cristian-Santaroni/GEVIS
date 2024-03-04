@@ -1474,7 +1474,7 @@ function moon(θ) {
             // Remove entries corresponding to ind from logFC
             parsedLogFC_pval = parsedLogFC.filter((entry, index) => !ind.includes(index));
 
-           updateCounter()
+            updateCounter()
             updateBoxPlot(last_box,parsedLogFC_pval,dataN_copy,dataC_copy)
             
             var pc1Values = [];
@@ -1583,9 +1583,6 @@ function moon(θ) {
 
       })
     
-
-
-
     function pca(pca_data) {
     pc1Values = []
     pc2Values = []
@@ -4092,7 +4089,7 @@ svg.selectAll(".gsm-path")
             var myVars = Object.keys(heatmap_data_subset[0]).filter(d => d !== "gene");
             // set the dimensions and margins of the graph
             
-            var margin = { top: 80, right: 25, bottom: 30, left: 80 },
+            var margin = { top: 40, right: 25, bottom: 30, left: 80 },
             width = 500 - margin.left - margin.right,
             height = 500 - margin.top - margin.bottom;
 
@@ -4471,9 +4468,9 @@ function updateCounter() {
     "<strong>Genes remained after IQR:</strong> " + data_copy1.length + "<br>" +
     "<strong>Genes remained after FC:</strong> " + data_copy.length + "<br>" +
     "<strong>Genes remained after p-val:</strong> " + data_copy_pval.length + "<br>" +
-    "<strong>IQR threshold:</strong> " + prc_IQR + "<br>" +
-    "<strong>Log FC threshold:</strong> " + thr_fc + "<br>" +
-    "<strong>Significance level:</strong> " + threshold + "<br>"
+    "<strong>IQR threshold:</strong> " + thr_prc.toFixed(3) + "<br>" +
+    "<strong>Log FC threshold:</strong> " + log_thr_fc.toFixed(3) + "<br>" 
+    //"<strong>Significance level:</strong> " + threshold + "<br>"
   );
 }
 
