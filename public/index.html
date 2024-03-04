@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.0.0/simple-statistics.min.js"></script>
     <script src='https://cdn.jsdelivr.net/gh/kdpsingh/rjs@master/r.js'></script>
     <script src="https://d3js.org/d3.v4.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.js" integrity="sha512-5mCB0Kvv97yTzqo0174qxPjMisck/WlK51+mw/RV7UfYbtHI8LuLR82BzZuxHUKSfbh75u9cZHgUcqrZDaBJuA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
@@ -306,7 +306,7 @@
                             <label for="vehicle4" style="color: #ddd;">
                                 Stage</label>
                         </div>
-                        <div id="radiobox" style="visibility: hidden; margin-left: 20%;">
+                        <div id="radiobox" style="visibility: hidden; margin-left: 10%;">
                             <input type="radio" id="variable1" name="variable" value="case" checked>
                             <label for="variable1" style="color: #ddd;">Case/Normal</label>
 
@@ -319,9 +319,9 @@
                             <input type="radio" id="variable4" name="variable" value="Stage">
                             <label for="variable3" style="color: #ddd;">Stage</label>
                         </div>
-                        <div id="parallelLegend" style="margin-top: 2px; color: #ddd; margin-left: 20%;"></div>
                         <!-- Add this div for the legend -->
                     </div>
+                    <div id="parallelLegend" style="margin-top: 2px; color: #ddd;"></div>
                     <div id="parallelcoordinates" style="width: 100%"></div>
                 </div>
             </div>
@@ -3635,15 +3635,15 @@
             var color;
             if (selectedVariable === "case") {
                 color = d3.scaleOrdinal()
-                    .domain(["case", "normal"])
+                    .domain(["Case", "Normal"])
                     .range(["#0d0887", "#fddb6d"]);
             } else if (selectedVariable === "Smoker") {
                 color = d3.scaleOrdinal()
-                    .domain(["0", "1", "2"])
+                    .domain(["Never Smoked", "Former Smoker", "Current Smoker"])
                     .range(["#fddb6d", "#bd3786", "#0d0887"]);
             } else if (selectedVariable === "Gender") {
                 color = d3.scaleOrdinal()
-                    .domain(["0", "1"])
+                    .domain(["Male", "Female"]) // Set the domain based on the age data
                     .range(["#fddb6d", "#0d0887"]);
             } else if (selectedVariable === "Stage") {
                 color = d3.scaleOrdinal()
@@ -3716,93 +3716,39 @@
             legend.html(""); // Clear previous legend content
 
             // Define legend dimensions and position
-            var legendWidth = 200;
-            var legendHeight = 20;
+            var legendWidth = 550;
+            var legendHeight = 80;
             var legendX = 20;
             var legendY = 10;
 
-            // Create SVG element for the legend
-            var svgLegend = legend.append("svg")
+
+            // Create legend
+            legend = d3.select("#parallelLegend")
+                .append("svg")
                 .attr("width", legendWidth)
                 .attr("height", legendHeight)
                 .append("g")
+                .attr("class", "legendOrdinal")
                 .attr("transform", "translate(" + legendX + "," + legendY + ")");
 
-            // Define gradient
-            var gradient = svgLegend.append("defs")
-                .append("linearGradient")
-                .attr("id", "legendGradient")
-                .attr("x1", "0%")
-                .attr("y1", "0%")
-                .attr("x2", "100%")
-                .attr("y2", "0%");
+            // Define legend color scale
+            var legendColor = d3.legendColor()
+                .shapeWidth(60) // Adjust shape width as needed
+                .orient('horizontal')
+                .labelWrap(30)
+                .scale(color);
 
-            // Define color stops for the gradient based on the selected variable
-            var colorStops;
-            if (selectedVariable === "case") {
-                colorStops = [{ offset: "0%", color: "#0d0887" }, { offset: "100%", color: "#fddb6d" }];
-            } else if (selectedVariable === "Smoker") {
-                colorStops = [{ offset: "0%", color: "#fddb6d" }, { offset: "50%", color: "#bd3786" }, { offset: "100%", color: "#0d0887" }];
-            } else if (selectedVariable === "Gender") {
-                colorStops = [{ offset: "0%", color: "#fddb6d" }, { offset: "100%", color: "#0d0887" }];
-            } else if (selectedVariable === "Stage") {
-                colorStops = [
-                    { offset: "0%", color: "#fddb6d" },
-                    { offset: "12.5%", color: "#ed7953" },
-                    { offset: "25%", color: "#d8576b" },
-                    { offset: "37.5%", color: "#bd3786" },
-                    { offset: "50%", color: "#9c179e" },
-                    { offset: "62.5%", color: "#7201a8" },
-                    { offset: "75%", color: "#46039f" },
-                    { offset: "100%", color: "#0d0887" }
-                ];
-            }
+            // Append legend to the SVG
+            legend.call(legendColor);
 
-            // Append color stops to the gradient
-            colorStops.forEach(function (stop) {
-                gradient.append("stop")
-                    .attr("offset", stop.offset)
-                    .attr("stop-color", stop.color);
-            });
+            // Set legend label color and style
+            legend.selectAll(".label")
+                .style("fill", "white") // Set label color to white
+                .style("font-size", "14px")  // Adjust font size
 
-            // Append rectangle to display the gradient
-            svgLegend.append("rect")
-                .attr("x", 0)
-                .attr("y", 0)
-                .attr("width", legendWidth)
-                .attr("height", legendHeight)
-                .style("fill", "url(#legendGradient)");
-
-            // Append text labels for legend
-            var labels;
-            if (selectedVariable === "case") {
-                labels = ["Case", "Normal"];
-            } else if (selectedVariable === "Smoker") {
-                labels = ["0", "1", "2"];
-            } else if (selectedVariable === "Gender") {
-                labels = ["0", "1"];
-            } else if (selectedVariable === "Stage") {
-                labels = ["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"];
-            }
-
-
-            // Create SVG element for labels
-            var svgLabels = legend.append("svg")
-                .attr("width", 250)
-                .attr("height", 30) // Adjust the height as needed for label visibility
-                .append("g")
-                .attr("transform", "translate(" + legendX + "," + (legendY + legendHeight - 5) + ")");
-
-            // Append text labels for legend
-            labels.forEach(function (label, i) {
-                svgLabels.append("text")
-                    .attr("x", i * (legendWidth / (labels.length - 1)))
-                    .attr("y", 0)
-                    .style("text-anchor", "middle")
-                    .style("fill", "#ddd") // Adjust label color as needed
-                    .text(label);
-            });
-
+            // Adjust label position
+            legend.selectAll("text")
+                .attr("dy", "-0.35em"); // Adjust vertical alignment
 
             // Transpose the structureCombinedData
             transposedData = [];
