@@ -315,6 +315,11 @@
                                 <input type="checkbox" id="vehicle4" name="vehicle4" value="Stage"
                                     onchange="handleCheckboxChangeStage()">
                                 Stage</label>
+                            
+                            <label for="vehicle5" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
+                                <input type="checkbox" id="vehicle5" name="vehicle5" value="type"
+                                    onchange="handleCheckboxChangeType()">
+                                Type</label>
                         </div>
                         <div id="radiobox" class="btn-group btn-group-toggle" data-toggle="buttons"
                             style="visibility: hidden; margin-left: 10%;">
@@ -3728,7 +3733,10 @@
                 .domain(["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"])
                 .range([height, height - interval, height - 2 * interval, height - 3 * interval, height - 4 * interval, height - 5 * interval, height - 6 * interval, 0]);
 
-
+            // Update the y-scale for type
+            y["type"] = d3.scaleOrdinal()
+                            .domain(["Normal", "Case"])
+                            .range([height, 0])
 
 
             // Build the X scale -> it finds the best position for each Y axis
@@ -3804,7 +3812,8 @@
                     'Age at Diagnosis': metadata['Age at Diagnosis:ch1'][i],
                     'Gender': metadata['Gender:ch1'][i],
                     'Cigarette Smoking Status': metadata['Cigarette Smoking Status:ch1'][i],
-                    'Stage': metadata['Stage:ch1'][i]
+                    'Stage': metadata['Stage:ch1'][i],
+                    type: metadata['Stage:ch1'][i] === "Normal" ? "normal" : "case"
                 }));
             }
             //console.log(transposedData);
@@ -3918,7 +3927,10 @@
                 .attr("class", "dragging") // Add the axis-label class
                 .style("text-anchor", "middle")
                 .attr("y", -9)
-                .text(function (d) { return d; })
+                .text(function (d) { 
+                    // Set the label text for "Type" axis
+                    return d === "type" ? "Type" : d; 
+                })
                 .style("fill", "white");
 
             axisGroups.selectAll(".domain")
@@ -4529,12 +4541,35 @@
             updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
         }
 
+        // Function to handle checkbox change event
+        function handleCheckboxChangeType() {
+            var checkbox = document.getElementById("vehicle5");
+            var isChecked = checkbox.checked;
+
+            if (isChecked) {
+                // Add 'Age at Diagnosis' dimension to dimensions array
+                first_dims.unshift('type');
+            } else {
+                // Remove 'Age at Diagnosis' dimension from dimensions array
+                var index = first_dims.indexOf('type');
+                if (index !== -1) {
+                    first_dims.splice(index, 1);
+                    if (first_dims === undefined) {
+                        first_dims = []
+                    }
+                }
+            }
+
+            // Call updateParallel with the updated dimensions array
+            updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
+        }
+
         // Attach event listener to the checkbox
         document.getElementById("vehicle1").addEventListener("change", handleCheckboxChange);
         document.getElementById("vehicle3").addEventListener("change", handleCheckboxChangeGender);
         document.getElementById("vehicle2").addEventListener("change", handleCheckboxChangeCigarettes);
         document.getElementById("vehicle4").addEventListener("change", handleCheckboxChangeStage);
-
+        document.getElementById("vehicle5").addEventListener("change", handleCheckboxChangeType);
 
         var radioContainer = document.getElementById("radiobox");
 
