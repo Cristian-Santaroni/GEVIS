@@ -291,33 +291,43 @@
 
                 <div id="style_scatter">
                     <div class="flex">
-                        <div id="checkbox" style="visibility: hidden;">
-                            <input type="checkbox" id="vehicle1" name="vehicle1" value="Age" checked>
-                            <label for="vehicle1" style="color: #ddd;">
+                        <div id="checkbox" class="btn-group btn-group-toggle" data-toggle="buttons" style="visibility: hidden;">
+                                <label for="vehicle1"class="btn btn-secondary active" style="color: #ddd; margin-right: 5px;">
+                                <input type="checkbox"  id="vehicle1" name="vehicle1" value="Age" checked  onchange="handleCheckboxChange()">
                                 Age</label>
-                            <input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker">
-                            <label for="vehicle2" style="color: #ddd;">
+                            
+                            <label for="vehicle2" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
+                                <input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker" onchange="handleCheckboxChangeCigarettes()">
                                 Smoker class</label>
-                            <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender">
-                            <label for="vehicle3" style="color: #ddd;">
+                            
+                            <label for="vehicle3" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
+                                <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender" onchange="handleCheckboxChangeGender()">
                                 Gender</label>
 
-                            <input type="checkbox" id="vehicle4" name="vehicle4" value="Stage">
-                            <label for="vehicle4" style="color: #ddd;">
+                            <label for="vehicle4" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
+                                <input type="checkbox" id="vehicle4" name="vehicle4" value="Stage" onchange="handleCheckboxChangeStage()">
                                 Stage</label>
                         </div>
-                        <div id="radiobox" style="visibility: hidden; margin-left: 10%;">
-                            <input type="radio" id="variable1" name="variable" value="case" checked>
-                            <label for="variable1" style="color: #ddd;">Case/Normal</label>
+                        <div id="radiobox"  class="btn-group btn-group-toggle"  data-toggle="buttons" style="visibility: hidden; margin-left: 10%;">
+                            
+                            <label for="variable1" class="btn btn-secondary active" style="color: #ddd;  margin-right: 5px; border-radius: 50px;">
+                                <input type="radio" id="variable1" name="variable" autocomplete="off" value="case" checked >
+                                Case/Normal</label>
 
-                            <input type="radio" id="variable2" name="variable" value="Smoker">
-                            <label for="variable2" style="color: #ddd;">Smoker class</label>
+                            
+                            <label for="variable2" class="btn btn-secondary" style="color: #ddd; margin-right: 5px; border-radius: 50px;">
+                                <input type="radio" id="variable2" name="variable"autocomplete="off"  value="Smoker">
+                                Smoker class</label>
 
-                            <input type="radio" id="variable3" name="variable" value="Gender">
-                            <label for="variable3" style="color: #ddd;">Gender</label>
+                            
+                            <label for="variable3" class="btn btn-secondary" style="color: #ddd; margin-right: 5px; border-radius: 50px;">
+                                <input type="radio" id="variable3" name="variable" autocomplete="off"value="Gender">
+                                Gender</label>
 
-                            <input type="radio" id="variable4" name="variable" value="Stage">
-                            <label for="variable3" style="color: #ddd;">Stage</label>
+                            
+                            <label for="variable4" class="btn btn-secondary" style="color: #ddd; margin-right: 5px; border-radius: 50px;">
+                                <input type="radio" id="variable4" name="variable" autocomplete="off"  value="Stage">
+                                Stage</label>
                         </div>
                         <!-- Add this div for the legend -->
                     </div>
@@ -810,6 +820,8 @@
 
                                                 document.getElementById("checkbox").style.visibility = "visible";
                                                 document.getElementById("radiobox").style.visibility = "visible";
+
+
                                             }
                                             console.log(dataN_copy.length)
                                             var pc1Values = [];
@@ -3629,7 +3641,7 @@
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            var selectedVariable = document.querySelector('input[name="variable"]:checked').value;
+            //var selectedVariable = document.querySelector('input[name="variable"]:checked').value;
 
 
             var color;
@@ -4498,44 +4510,27 @@
         document.getElementById("vehicle4").addEventListener("change", handleCheckboxChangeStage);
 
 
-        var radioInputs = document.querySelectorAll('input[type="radio"]');
+        var radioContainer = document.getElementById("radiobox");
 
-        // Define a function to update colors
-        function updateColors(selectedVariable) {
-            var color;
-            if (selectedVariable === "case") {
-                color = d3.scaleOrdinal()
-                    .domain(["case", "normal"])
-                    .range(["lightblue", "darkblue"]);
-            } else if (selectedVariable === "Smoker") {
-                color = d3.scaleOrdinal()
-                    .domain(["0", "1", "2"])
-                    .range(["orange", "brown", "yellow"]);
-            } else if (selectedVariable === "Gender") {
-                color = d3.scaleOrdinal()
-                    .domain(["0", "1"])
-                    .range(["blue", "purple"]);
-            } else if (selectedVariable === "Stage") {
-                color = d3.scaleOrdinal()
-                    .domain(["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"])
-                    .range(["gray", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2"]);
-            }
+radioContainer.addEventListener("click", function (event) {
+    var selectedRadio = event.target;
+    var radioInput = selectedRadio.querySelector('input[type="radio"]');
 
-            return color;
-        }
+    console.log("value =",radioInput.value)
+    if (radioInput && radioInput.type === "radio") {
+        console.log(radioInput.value);
 
-        // Call the updateColors function when a radio box is selected
-        radioInputs.forEach(function (input) {
-            input.addEventListener('change', function () {
-                console.log(this.value)
-                selectedVariable = this.value;
-                console.log("Geneselected order in radio:", selectedGeneData);
-                console.log("Metadata order in radio:", first_dims);
-                console.log("Total order in radio:", ordering);
+        selectedVariable = radioInput.value;
 
-                updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
-            });
-        });
+        console.log("Geneselected order in radio:", selectedGeneData);
+        console.log("Metadata order in radio:", first_dims);
+        console.log("Total order in radio:", ordering);
+
+        updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
+    }
+});
+
+
 
         function updateCounter() {
             // Select the counter div
