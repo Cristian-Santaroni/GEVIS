@@ -11,7 +11,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.0.0/simple-statistics.min.js"></script>
     <script src='https://cdn.jsdelivr.net/gh/kdpsingh/rjs@master/r.js'></script>
     <script src="https://d3js.org/d3.v4.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.js" integrity="sha512-5mCB0Kvv97yTzqo0174qxPjMisck/WlK51+mw/RV7UfYbtHI8LuLR82BzZuxHUKSfbh75u9cZHgUcqrZDaBJuA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.js"
+        integrity="sha512-5mCB0Kvv97yTzqo0174qxPjMisck/WlK51+mw/RV7UfYbtHI8LuLR82BzZuxHUKSfbh75u9cZHgUcqrZDaBJuA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
@@ -291,42 +293,54 @@
 
                 <div id="style_scatter">
                     <div class="flex">
-                        <div id="checkbox" class="btn-group btn-group-toggle" data-toggle="buttons" style="visibility: hidden;">
-                                <label for="vehicle1"class="btn btn-secondary active" style="color: #ddd; margin-right: 5px;">
-                                <input type="checkbox"  id="vehicle1" name="vehicle1" value="Age" checked  onchange="handleCheckboxChange()">
+                        <div id="checkbox" class="btn-group btn-group-toggle" data-toggle="buttons"
+                            style="visibility: hidden;">
+                            <label for="vehicle1" class="btn btn-secondary active"
+                                style="color: #ddd; margin-right: 5px;">
+                                <input type="checkbox" id="vehicle1" name="vehicle1" value="Age" checked
+                                    onchange="handleCheckboxChange()">
                                 Age</label>
-                            
+
                             <label for="vehicle2" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
-                                <input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker" onchange="handleCheckboxChangeCigarettes()">
+                                <input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker"
+                                    onchange="handleCheckboxChangeCigarettes()">
                                 Smoker class</label>
-                            
+
                             <label for="vehicle3" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
-                                <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender" onchange="handleCheckboxChangeGender()">
+                                <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender"
+                                    onchange="handleCheckboxChangeGender()">
                                 Gender</label>
 
                             <label for="vehicle4" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
-                                <input type="checkbox" id="vehicle4" name="vehicle4" value="Stage" onchange="handleCheckboxChangeStage()">
+                                <input type="checkbox" id="vehicle4" name="vehicle4" value="Stage"
+                                    onchange="handleCheckboxChangeStage()">
                                 Stage</label>
                         </div>
-                        <div id="radiobox"  class="btn-group btn-group-toggle"  data-toggle="buttons" style="visibility: hidden; margin-left: 10%;">
-                            
-                            <label for="variable1" class="btn btn-secondary active" style="color: #ddd;  margin-right: 5px; border-radius: 50px;">
-                                <input type="radio" id="variable1" name="variable" autocomplete="off" value="case" checked >
+                        <div id="radiobox" class="btn-group btn-group-toggle" data-toggle="buttons"
+                            style="visibility: hidden; margin-left: 10%;">
+
+                            <label for="variable1" class="btn btn-secondary active"
+                                style="color: #ddd;  margin-right: 5px; border-radius: 50px;">
+                                <input type="radio" id="variable1" name="variable" autocomplete="off" value="case"
+                                    checked>
                                 Case/Normal</label>
 
-                            
-                            <label for="variable2" class="btn btn-secondary" style="color: #ddd; margin-right: 5px; border-radius: 50px;">
-                                <input type="radio" id="variable2" name="variable"autocomplete="off"  value="Smoker">
+
+                            <label for="variable2" class="btn btn-secondary"
+                                style="color: #ddd; margin-right: 5px; border-radius: 50px;">
+                                <input type="radio" id="variable2" name="variable" autocomplete="off" value="Smoker">
                                 Smoker class</label>
 
-                            
-                            <label for="variable3" class="btn btn-secondary" style="color: #ddd; margin-right: 5px; border-radius: 50px;">
-                                <input type="radio" id="variable3" name="variable" autocomplete="off"value="Gender">
+
+                            <label for="variable3" class="btn btn-secondary"
+                                style="color: #ddd; margin-right: 5px; border-radius: 50px;">
+                                <input type="radio" id="variable3" name="variable" autocomplete="off" value="Gender">
                                 Gender</label>
 
-                            
-                            <label for="variable4" class="btn btn-secondary" style="color: #ddd; margin-right: 5px; border-radius: 50px;">
-                                <input type="radio" id="variable4" name="variable" autocomplete="off"  value="Stage">
+
+                            <label for="variable4" class="btn btn-secondary"
+                                style="color: #ddd; margin-right: 5px; border-radius: 50px;">
+                                <input type="radio" id="variable4" name="variable" autocomplete="off" value="Stage">
                                 Stage</label>
                         </div>
                         <!-- Add this div for the legend -->
@@ -3613,10 +3627,10 @@
 
                 var combinedData = [];
                 expressionValuesC.forEach((expression, i) => {
-                    combinedData.push({ GSM: gsmValuesC[i], expression: expression, type: 'case', index: i });
+                    combinedData.push({ GSM: gsmValuesC[i], expression: expression, type: 'Case', index: i });
                 });
                 expressionValuesN.forEach((expression, i) => {
-                    combinedData.push({ GSM: gsmValuesN[i], expression: expression, type: 'normal', index: i });
+                    combinedData.push({ GSM: gsmValuesN[i], expression: expression, type: 'Normal', index: i });
                 });
 
                 structureCombinedData.push({
@@ -3647,20 +3661,20 @@
             var color;
             if (selectedVariable === "case") {
                 color = d3.scaleOrdinal()
-                    .domain(["Case", "Normal"])
+                    .domain(["Normal", "Case"])
                     .range(["#0d0887", "#fddb6d"]);
             } else if (selectedVariable === "Smoker") {
                 color = d3.scaleOrdinal()
                     .domain(["Never Smoked", "Former Smoker", "Current Smoker"])
-                    .range(["#fddb6d", "#bd3786", "#0d0887"]);
+                    .range(["#0d0887", "#bd3786", "#fddb6d"]);
             } else if (selectedVariable === "Gender") {
                 color = d3.scaleOrdinal()
                     .domain(["Male", "Female"]) // Set the domain based on the age data
-                    .range(["#fddb6d", "#0d0887"]);
+                    .range(["#0d0887", "#fddb6d"]);
             } else if (selectedVariable === "Stage") {
                 color = d3.scaleOrdinal()
                     .domain(["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"])
-                    .range(["#fddb6d", "#ed7953", "#d8576b", "#bd3786", "#9c179e", "#7201a8", "#46039f", "#0d0887"]);
+                    .range(["#0d0887", "#46039f", "#7201a8", "#9c179e", "#bd3786", "#d8576b", "#ed7953", "#fddb6d"]);
             }
 
             var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
@@ -3729,7 +3743,7 @@
 
             // Define legend dimensions and position
             var legendWidth = 550;
-            var legendHeight = 80;
+            var legendHeight = 60;
             var legendX = 20;
             var legendY = 10;
 
@@ -3764,23 +3778,35 @@
 
             // Transpose the structureCombinedData
             transposedData = [];
-            geneselected.forEach(function (geneName) {
-                var geneData = structureCombinedData.find(d => d.gene === geneName);
-                geneData.expressions.forEach(function (expression, i) {
-                    if (!transposedData[i]) transposedData[i] = { GSM: expression.GSM }; // Use GSM value from expression
-                    transposedData[i][geneName] = expression.expression;
-                    transposedData[i].type = expression.type; // Add the type property to each observation
-                    // Find the index of the GSM in the metadata's geo_accession array
-                    var gsmIndex = metadata.geo_accession.findIndex(item => item === expression.GSM);
-                    if (gsmIndex !== -1) {
-                        // If the GSM is found in metadata, insert the corresponding Age at Diagnosis
-                        transposedData[i]['Age at Diagnosis'] = metadata['Age at Diagnosis:ch1'][gsmIndex];
-                        transposedData[i]['Gender'] = metadata['Gender:ch1'][gsmIndex];
-                        transposedData[i]['Cigarette Smoking Status'] = metadata['Cigarette Smoking Status:ch1'][gsmIndex];
-                        transposedData[i]['Stage'] = metadata['Stage:ch1'][gsmIndex];
-                    }
+            if (geneselected.length > 0) {
+                // Use geneselected when it's not empty
+                geneselected.forEach(function (geneName) {
+                    var geneData = structureCombinedData.find(d => d.gene === geneName);
+                    geneData.expressions.forEach(function (expression, i) {
+                        if (!transposedData[i]) transposedData[i] = { GSM: expression.GSM }; // Use GSM value from expression
+                        transposedData[i][geneName] = expression.expression;
+                        transposedData[i].type = expression.type; // Add the type property to each observation
+                        // Find the index of the GSM in the metadata's geo_accession array
+                        var gsmIndex = metadata.geo_accession.findIndex(item => item === expression.GSM);
+                        if (gsmIndex !== -1) {
+                            // If the GSM is found in metadata, insert the corresponding Age at Diagnosis
+                            transposedData[i]['Age at Diagnosis'] = metadata['Age at Diagnosis:ch1'][gsmIndex];
+                            transposedData[i]['Gender'] = metadata['Gender:ch1'][gsmIndex];
+                            transposedData[i]['Cigarette Smoking Status'] = metadata['Cigarette Smoking Status:ch1'][gsmIndex];
+                            transposedData[i]['Stage'] = metadata['Stage:ch1'][gsmIndex];
+                        }
+                    });
                 });
-            });
+            } else {
+                // Use first_dims when geneselected is empty
+                transposedData = metadata.geo_accession.map((gsm, i) => ({
+                    GSM: gsm,
+                    'Age at Diagnosis': metadata['Age at Diagnosis:ch1'][i],
+                    'Gender': metadata['Gender:ch1'][i],
+                    'Cigarette Smoking Status': metadata['Cigarette Smoking Status:ch1'][i],
+                    'Stage': metadata['Stage:ch1'][i]
+                }));
+            }
             //console.log(transposedData);
             // Select all paths with the class "gsm-path"
             var gsmPaths = svg.selectAll(".gsm-path")
@@ -4512,23 +4538,23 @@
 
         var radioContainer = document.getElementById("radiobox");
 
-radioContainer.addEventListener("click", function (event) {
-    var selectedRadio = event.target;
-    var radioInput = selectedRadio.querySelector('input[type="radio"]');
+        radioContainer.addEventListener("click", function (event) {
+            var selectedRadio = event.target;
+            var radioInput = selectedRadio.querySelector('input[type="radio"]');
 
-    console.log("value =",radioInput.value)
-    if (radioInput && radioInput.type === "radio") {
-        console.log(radioInput.value);
+            //console.log("value = ", radioInput.value)
+            if (radioInput && radioInput.type === "radio") {
+                console.log(radioInput.value);
 
-        selectedVariable = radioInput.value;
+                selectedVariable = radioInput.value;
 
-        console.log("Geneselected order in radio:", selectedGeneData);
-        console.log("Metadata order in radio:", first_dims);
-        console.log("Total order in radio:", ordering);
+                console.log("Geneselected order in radio:", selectedGeneData);
+                console.log("Metadata order in radio:", first_dims);
+                console.log("Total order in radio:", ordering);
 
-        updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
-    }
-});
+                updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
+            }
+        });
 
 
 
