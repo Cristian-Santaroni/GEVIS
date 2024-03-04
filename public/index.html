@@ -3895,7 +3895,10 @@
             axis.append("text")
                 .style("text-anchor", "middle")
                 .attr("y", -9)
-                .text(function (d) { return d; })
+                .text(function (d) { 
+                    // Set the label text for "Type" axis
+                    return d === "type" ? "Type" : d; 
+                })
                 .style("fill", "white");
 
             axis.selectAll(".domain")
