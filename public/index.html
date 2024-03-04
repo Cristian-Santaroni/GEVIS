@@ -21,8 +21,8 @@
         integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
         crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" type="text/css" href="bootstrap.css">
-    <script src="bootstrap.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <script src="css/bootstrap.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-color/3.0.0/d3-color.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-interpolate/1.5.0/d3-interpolate.min.js"></script>
@@ -70,6 +70,7 @@
             background-color: black;
             height: 100%;
             width: 100%;
+            overflow: hidden;
         }
 
 
@@ -312,7 +313,7 @@
 
     <div class="flex"> <!-- div(1) che mette in colonna-->
 
-        <div class="flex-container"><!--div(2) che mette in riga iqr e FC-->
+        <div class="flex-container" style="margin-top : 6px; margin-left : 6px"><!--div(2) che mette in riga iqr e FC-->
             <div id="style_scatter">
 
                 <div id="IQR" style="width: 100%"></div><!--div(4) IQR-->
@@ -340,7 +341,7 @@
         </div><!--div(2)-->
 
         <div>
-            <div class="flex-container">
+            <div class="flex-container" style="margin-top : 6px;">
                 <div id="style_scatter">
                     <div id="scatterPlot"></div>
                     <button id="resetButton" class="btn btn-secondary">Reset
@@ -420,7 +421,7 @@
             </div>
         </div>
 
-        <div class="flex-container">
+        <div class="flex-container" style="margin-top : 6px;">
 
             <div id="style_scatter">
                 <div>
@@ -436,10 +437,10 @@
                 <div class="flex"
                     style="display: flex; justify-content: center; align-items: center; height: 100%; width: 100%;">
                     <div id="counter"
-                        style="color: white; border: 0.01px solid #ddd; border-right: none; border-left: none; width: 50%; height: 100%; box-sizing: border-box;">
+                        style="color: white; border: 0.01px solid #ddd; border-bottom: none; border-right: none; border-left: none; width: 50%; height: 100%; box-sizing: border-box; text-align: center; justify-content: center;">
                     </div>
                     <div id="counter1"
-                        style="color: white; border: 0.01px solid #ddd; border-right: none; width: 50%; height: 100%; box-sizing: border-box;">
+                        style="color: white; border: 0.01px solid #ddd; border-bottom: none; border-right: none; width: 50%; height: 100%; box-sizing: border-box; text-align: center; justify-content: center;">
                     </div>
                 </div>
             </div>
@@ -2052,7 +2053,7 @@
             svg.append("text")
                 .attr("transform", "rotate(-90)")
                 .attr("x", -height / 2)
-                .attr("y", -margin.left + 10)
+                .attr("y", -margin.left + 12)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
                 .style("fill", "white")
@@ -2247,7 +2248,7 @@
             svg.append("text")
                 .attr("transform", "rotate(-90)")
                 .attr("x", -height / 2)
-                .attr("y", -margin.left + 10)
+                .attr("y", -margin.left + 12)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
                 .style("fill", "white")
@@ -3023,6 +3024,18 @@
                 var yAxisGroup = svg.append("g")
                     .attr("class", "y-axis") // Assign a class to the group element
                     .call(d3.axisLeft(y));
+
+                // Append the y-axis label
+                yAxisGroup.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", -40)  // Adjust the position as needed
+                    .attr("x", -height / 2)
+                    .attr("dy", "1em")
+                    .style("text-anchor", "middle")
+                    .style("fill", "white")
+                    .style("font-size", "14px")
+                    .html("log<tspan dy='5'>2</tspan> <tspan dy ='-5'>(Expression)");
+
 
                 // You can further customize the appearance of the axis elements if needed
                 yAxisGroup.selectAll("line, path")
@@ -4702,11 +4715,12 @@
             // Update the content of the counter
             counterDiv.html(
                 "<strong>Total number of genes:</strong> " + data_original.length + "<br>" +
-                "<strong>Genes remained after IQR:</strong> " + data_copy1.length + "<br>" +
-                "<strong>Genes remained after FC:</strong> " + data_copy.length + "<br>" +
-                "<strong>Genes remained after p-val:</strong> " + data_copy_pval.length
+                "<strong>Genes filtered by IQR:</strong> " + data_copy1.length + "<br>" +
+                "<strong>Genes filtered by FC:</strong> " + data_copy.length + "<br>" +
+                "<strong>Genes filtered by p-val:</strong> " + data_copy_pval.length
             );
             counterDiv1.html(
+                "<strong>Parameters</strong> <br>" +
                 "<strong>IQR threshold:</strong> " + thr_prc.toFixed(3) + "<br>" +
                 "<strong>Log FC threshold:</strong> " + log_thr_fc.toFixed(3) + "<br>" +
                 "<strong>Significance level:</strong> " + threshold
