@@ -2848,40 +2848,46 @@
                     }
                 });
 
-                function synchronizeAnimations(targetElement) {
-    // Retrieve all elements with the class 'pulse'
-    const elements = document.querySelectorAll('.pulse');
+            function synchronizeAnimations(targetElement) {
+                // Retrieve all elements with the class 'pulse'
+                const elements = [
+                    ...document.querySelectorAll('.pulse'),
+                    ...document.querySelectorAll('.pulse1')
+                ];
 
-    // Retrieve the Animation object of the target element
-    const targetAnimation = findAnimByName(targetElement, 'pulseAnimation');
+                // Retrieve the Animation object of the target element
+                const targetAnimation = findAnimByName(targetElement, 'pulseAnimation');
 
-    // Get the current time of the target animation
-    const targetTime = targetAnimation.currentTime;
+                // Get the current time of the target animation
+                const targetTime = targetAnimation.currentTime;
 
-    // Loop through each element with the class 'pulse'
-    elements.forEach(element => {
-        // Retrieve the Animation object of the current element
-        const currentAnimation = findAnimByName(element, 'pulseAnimation');
+                // Loop through each element with the class 'pulse'
+                elements.forEach(element => {
+                    let currentAnimation = findAnimByName(element, 'pulseAnimation');
 
-        // Get the current time of the current animation
-        const currentTime = currentAnimation.currentTime;
+                    if (!currentAnimation) {
+                        currentAnimation = findAnimByName(element, 'pulseAnimation1');
+                    }
 
-        // Calculate the time difference between the target animation and the current animation
-        const timeDifference = targetTime - currentTime;
+                    // Get the current time of the current animation
+                    const currentTime = currentAnimation.currentTime;
 
-        // Adjust the playback position of the current animation to match the target animation
-        currentAnimation.currentTime += timeDifference;
-    });
-}
+                    // Calculate the time difference between the target animation and the current animation
+                    const timeDifference = targetTime - currentTime;
 
-// Simple helper to find an Animation by animationName
-function findAnimByName(elem, name) {
-    // Get all the active animations on this element
-    const anims = elem.getAnimations();
-    
-    // Return the first one with the expected animationName
-    return anims.find((anim) => anim.animationName === name);
-}
+                    // Adjust the playback position of the current animation to match the target animation
+                    currentAnimation.currentTime += timeDifference;
+                });
+            }
+
+            // Simple helper to find an Animation by animationName
+            function findAnimByName(elem, name) {
+                // Get all the active animations on this element
+                const anims = elem.getAnimations();
+
+                // Return the first one with the expected animationName
+                return anims.find((anim) => anim.animationName === name);
+            }
 
             function updateChart() {
                 // recover the new scale
@@ -4528,8 +4534,55 @@ function findAnimByName(elem, name) {
                         correspondingCircle.attr("data-initial-fill", currentCircleFill); // Save the initial fill color
                         selectedElement.style("stroke", "red");
                         correspondingCircle.style("fill", myColor(d.value)).classed("pulse1", true);
+                        console.log(correspondingCircle)
+                        synchronizeAnimations(correspondingCircle.node())
                     }
                 });
+
+            function synchronizeAnimations(targetElement) {
+                // Retrieve all elements with the class 'pulse'
+                const elements = [
+                    ...document.querySelectorAll('.pulse'),
+                    ...document.querySelectorAll('.pulse1')
+                ];
+
+                // Retrieve the Animation object of the target element
+                const targetAnimation = findAnimByName(targetElement, 'pulseAnimation1');
+
+                // Get the current time of the target animation
+                const targetTime = targetAnimation.currentTime;
+
+                // Loop through each element with the class 'pulse'
+                elements.forEach(element => {
+                    // Retrieve the Animation object of the current element
+                    let currentAnimation = findAnimByName(element, 'pulseAnimation');
+
+                    if (!currentAnimation) {
+                        currentAnimation = findAnimByName(element, 'pulseAnimation1');
+                    }
+
+                    // Get the current time of the current animation
+                    const currentTime = currentAnimation.currentTime;
+
+                    // Calculate the time difference between the target animation and the current animation
+                    const timeDifference = targetTime - currentTime;
+
+                    // Adjust the playback position of the current animation to match the target animation
+                    currentAnimation.currentTime += timeDifference;
+                });
+            }
+
+            // Simple helper to find an Animation by animationName
+            function findAnimByName(elem, name) {
+                // Get all the active animations on this element
+                const anims = elem.getAnimations();
+
+                console.log(anims)
+
+                // Return the first one with the expected animationName
+                return anims.find((anim) => anim.animationName === name);
+            }
+
 
             document.getElementById("loadingOverlay").style.display = "none";
         }
@@ -4746,33 +4799,33 @@ function findAnimByName(elem, name) {
 
 
         function updateCounter() {
-    // Select the counter div
-    var counterDiv = d3.select("#counter");
-    var counterDiv1 = d3.select("#counter1");
+            // Select the counter div
+            var counterDiv = d3.select("#counter");
+            var counterDiv1 = d3.select("#counter1");
 
-    // Update the content of the counter and apply margin-left to text
-    counterDiv.html(
-        "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Total number of genes:</span>" +
-        "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_original.length + "</span><br>" +
-        "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by IQR:</span>" +
-        "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy1.length + "</span><br>" +
-        "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by FC:</span>" +
-        "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy.length + "</span><br>" +
-        "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by p-val:</span>" +
-        "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy_pval.length + "</span>"
-    );
+            // Update the content of the counter and apply margin-left to text
+            counterDiv.html(
+                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Total number of genes:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_original.length + "</span><br>" +
+                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by IQR:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy1.length + "</span><br>" +
+                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by FC:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy.length + "</span><br>" +
+                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by p-val:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy_pval.length + "</span>"
+            );
 
-    counterDiv1.html(
-        "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Parameters</span>" +
-        "<span style='display: inline-block; width: 100px; text-align: left;'> </span><br>" +
-        "<span style='display: inline-block; width: 180px; margin-left: 20px;'>IQR threshold:</span>" +
-        "<span style='display: inline-block; width: 100px; text-align: left;'>" + thr_prc.toFixed(3) + "</span><br>" +
-        "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Log FC threshold:</span>" +
-        "<span style='display: inline-block; width: 100px; text-align: left;'>" + log_thr_fc.toFixed(3) + "</span><br>" +
-        "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Significance level:</span>" +
-        "<span style='display: inline-block; width: 100px; text-align: left;'>" + threshold + "</span>"
-    );
-}
+            counterDiv1.html(
+                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Parameters</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left;'> </span><br>" +
+                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>IQR threshold:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left;'>" + thr_prc.toFixed(3) + "</span><br>" +
+                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Log FC threshold:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left;'>" + log_thr_fc.toFixed(3) + "</span><br>" +
+                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Significance level:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left;'>" + threshold + "</span>"
+            );
+        }
 
     </script>
 
