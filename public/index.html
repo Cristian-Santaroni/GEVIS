@@ -1812,7 +1812,7 @@
                 })
                 .attr("stroke-width", function (d) {
                     // Set stroke width based on presence in gsmList
-                    return gsmList.includes(d.GSM) ? 2 : null;
+                    return gsmList.includes(d.GSM) ? 4 : null;
                 })
                 .on("click", function (d) {
                     // On click, select the circle and add the GSM value to the list
@@ -1921,7 +1921,7 @@
 
                         // Select the circle visually
                         circle.attr("stroke", "black")
-                            .attr("stroke-width", 2);
+                            .attr("stroke-width", 4);
 
                     });
                 }
@@ -2538,7 +2538,7 @@
 
             // Create a legend
             var legend = svg.append("g")
-                .attr("transform", "translate(" + (width - 80) + "," + (height - 250) + ")");
+                .attr("transform", "translate(" + (width - 75) + "," + (height - 250) + ")");
 
             // Add a filter for the shadow
             var defs = svg.append("defs");
@@ -2567,13 +2567,14 @@
 
             // Add a rectangle around the legend with shadow
             var legendRect = legend.append("rect")
-                .attr("x", 5)
-                .attr("y", 5)
-                .attr("width", 140)
-                .attr("height", 180)
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 160)
+                .attr("height", 210)
                 .style("stroke", "white")
                 .style("fill", "none")
-                .style("filter", "url(#legendShadow)");
+                .style("filter", "url(#legendShadow)")
+                .style("pointer-events", "none");
 
             // Append legend for upregulated genes (LogFC > log2(thr_fc) and pval_adj < threshold)
             var upregulatedLegend = legend.append("g")
@@ -2582,85 +2583,88 @@
             upregulatedLegend.append("circle")
                 .attr("cx", 10)
                 .attr("cy", 20)
-                .attr("r", 3)
+                .attr("r", 6)
                 .style("fill", "darkred");
 
             upregulatedLegend.append("text")
                 .attr("x", 20)
                 .attr("y", 20)
                 .style("fill", "white")
+                .style("font-size", "20px")
                 .text("Upregulated")
                 .append("tspan")
                 .attr("x", 20)
-                .attr("dy", 12) // Adjusted spacing for subtitle
-                .style("font-size", "10px") // Smaller font size for subtitle
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
                 .text("LogFC > log2(" + thr_fc + ") and");
 
             upregulatedLegend.append("text")
                 .attr("x", 20)
-                .attr("y", 44)
+                .attr("y", 48)
                 .style("fill", "white")
                 .text("pval_adj < " + threshold)
-                .style("font-size", "10px"); // Smaller font size for subtitle
+                .style("font-size", "12px"); // Smaller font size for subtitle
 
             // Calculate the height of the first legend item
             var legendItemHeight = upregulatedLegend.node().getBBox().height;
 
             // Append legend for downregulated genes (LogFC < -log2(thr_fc) and pval_adj < threshold)
             var downregulatedLegend = legend.append("g")
-                .attr("transform", "translate(0," + legendItemHeight + ")");
+                .attr("transform", "translate(0," + 2 * legendItemHeight + ")");
 
             downregulatedLegend.append("circle")
                 .attr("cx", 10)
-                .attr("cy", 40)
-                .attr("r", 3)
+                .attr("cy", 65)
+                .attr("r", 6)
                 .style("fill", "royalblue");
 
             downregulatedLegend.append("text")
                 .attr("x", 20)
-                .attr("y", 40)
+                .attr("y", 68)
                 .style("fill", "white")
+                .style("font-size", "20px")
                 .text("Downregulated")
                 .append("tspan")
                 .attr("x", 20)
-                .attr("dy", 12) // Adjusted spacing for subtitle
-                .style("font-size", "10px") // Smaller font size for subtitle
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
                 .text("LogFC < -log2(" + thr_fc + ") and");
 
             downregulatedLegend.append("text")
                 .attr("x", 20)
-                .attr("y", 64)
+                .attr("y", 96)
                 .style("fill", "white")
                 .text("pval_adj < " + threshold)
-                .style("font-size", "10px"); // Smaller font size for subtitle
+                .style("font-size", "12px"); // Smaller font size for subtitle
 
             // Append legend for not significant genes (abs(LogFC) < log2(thr_fc) OR pval_adj > threshold)
             var notSignificantLegend = legend.append("g")
-                .attr("transform", "translate(0," + 2 * legendItemHeight + ")");
+                .attr("transform", "translate(0," + legendItemHeight + ")");
 
             notSignificantLegend.append("circle")
                 .attr("cx", 10)
-                .attr("cy", 65)
-                .attr("r", 3)
+                .attr("cy", 40)
+                .attr("r", 6)
                 .style("fill", "grey");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 40)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Not Significant")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("|LogFC| < log2(" + thr_fc + ") or");
 
             notSignificantLegend.append("text")
                 .attr("x", 20)
                 .attr("y", 68)
                 .style("fill", "white")
-                .text("Not Significant")
-                .append("tspan")
-                .attr("x", 20)
-                .attr("dy", 12) // Adjusted spacing for subtitle
-                .style("font-size", "10px") // Smaller font size for subtitle
-                .text("|LogFC| < log2(" + thr_fc + ") or");
-
-            notSignificantLegend.append("text")
-                .attr("x", 20)
-                .attr("y", 94)
-                .style("fill", "white")
                 .text("pval_adj > " + threshold)
-                .style("font-size", "10px"); // Smaller font size for subtitle
+                .style("font-size", "12px"); // Smaller font size for subtitle
 
             // Add circles to the scatter plot
             var tooltip = d3.select("#tooltip");
@@ -3182,7 +3186,7 @@
                         // Toggle selection state
                         if (!isSelected) {
                             gsmList.push(selectedGSM);
-                            
+
                         } else {
                             gsmList = gsmList.filter(gsm => gsm !== selectedGSM);
                         }
@@ -3192,7 +3196,7 @@
                             .classed("pulse-red", !isSelected)
                             .attr("stroke", isSelected ? "black" : "black")
                             .attr("stroke-width", isSelected ? 1 : 2);
-                        
+
                         synchronizeAnimations();
 
                         // Call necessary update functions
@@ -3552,7 +3556,7 @@
                 // Retrieve all elements with the class 'pulse'
                 const elements = document.querySelectorAll(".pulse-red")
                 console.log(elements)
-                if (elements.length===0){
+                if (elements.length === 0) {
                     return
                 }
 
@@ -4030,7 +4034,7 @@
                     gsmList.splice(index, 1);
                 }
 
-                                // Update the class of the clicked path based on its presence in gsmList
+                // Update the class of the clicked path based on its presence in gsmList
                 d3.select(this)
                     .classed("pulse-red", gsmList.includes(clickedGSM));
 
@@ -4070,7 +4074,7 @@
                 // Retrieve the Animation object of the target element
                 const targetAnimation = findAnimByName(targetElement, 'pulseRedAnimation');
 
-                if (!targetAnimation){
+                if (!targetAnimation) {
                     return
                 }
 
@@ -4555,8 +4559,11 @@
                 // Calculate the position of the tooltip
                 var xPosition = d3.event.pageX + 10; // 10 pixels to the right of the mouse pointer
                 var yPosition = d3.event.pageY - 10; // 10 pixels above the mouse pointer
+
+                var variableUppercase = d.variable.toUpperCase();
+
                 tooltip
-                    .html("The exact value of<br>this cell is: " + valueString)
+                    .html("The contribution percentage of<br>" + d.gene + " in " + variableUppercase + " is: " + valueString)
                     .style("left", xPosition + "px")
                     .style("top", yPosition + "px");
             };
@@ -4903,25 +4910,25 @@
 
             // Update the content of the counter and apply margin-left to text
             counterDiv.html(
-                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Total number of genes:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_original.length + "</span><br>" +
-                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by IQR:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy1.length + "</span><br>" +
-                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by FC:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy.length + "</span><br>" +
-                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Genes filtered by p-val:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: left;'>" + data_copy_pval.length + "</span>"
+                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Total number of genes:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left; font-weight: bold;'>" + data_original.length + "</span><br>" +
+                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Genes filtered by IQR:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left; font-weight: bold;'>" + data_copy1.length + "</span><br>" +
+                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Genes filtered by FC:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left; font-weight: bold;'>" + data_copy.length + "</span><br>" +
+                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Genes filtered by p-val:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left; font-weight: bold;'>" + data_copy_pval.length + "</span>"
             );
 
             counterDiv1.html(
-                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Parameters</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: left;'> </span><br>" +
-                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>IQR threshold:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: left;'>" + thr_prc.toFixed(3) + "</span><br>" +
-                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Log FC threshold:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: left;'>" + log_thr_fc.toFixed(3) + "</span><br>" +
-                "<span style='display: inline-block; width: 180px; margin-left: 20px;'>Significance level:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: left;'>" + threshold + "</span>"
+                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Parameters</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left; font-weight: bold;'> </span><br>" +
+                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>IQR threshold:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left; font-weight: bold;'>" + thr_prc.toFixed(3) + "</span><br>" +
+                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Log FC threshold:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left; font-weight: bold;'>" + log_thr_fc.toFixed(3) + "</span><br>" +
+                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Significance level:</span>" +
+                "<span style='display: inline-block; width: 100px; text-align: left; font-weight: bold;'>" + threshold + "</span>"
             );
         }
 
