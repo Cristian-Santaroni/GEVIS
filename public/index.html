@@ -3182,6 +3182,7 @@
                         // Toggle selection state
                         if (!isSelected) {
                             gsmList.push(selectedGSM);
+                            
                         } else {
                             gsmList = gsmList.filter(gsm => gsm !== selectedGSM);
                         }
@@ -3191,6 +3192,8 @@
                             .classed("pulse-red", !isSelected)
                             .attr("stroke", isSelected ? "black" : "black")
                             .attr("stroke-width", isSelected ? 1 : 2);
+                        
+                        synchronizeAnimations();
 
                         // Call necessary update functions
                         updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
@@ -3198,6 +3201,7 @@
 
 
                     });
+
 
             } else {
 
@@ -3514,7 +3518,7 @@
                                 .classed("pulse-red", !isSelected)
                                 .attr("stroke", isSelected ? "black" : "black")
                                 .attr("stroke-width", isSelected ? 1 : 2);
-
+                            synchronizeAnimations()
                             // Call necessary update functions
                             updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
                             pca(pca_data);
@@ -3540,6 +3544,50 @@
                 // // run the updateChart function with this selected option
                 updateBoxPlot(selectedOption, parsedLogFC, dataN, dataC)
             })
+
+            synchronizeAnimations()
+
+
+            function synchronizeAnimations() {
+                // Retrieve all elements with the class 'pulse'
+                const elements = document.querySelectorAll(".pulse-red")
+                console.log(elements)
+                if (elements.length===0){
+                    return
+                }
+
+                // Retrieve the Animation object of the target element
+                const targetAnimation = findAnimByName(elements[0], 'pulseRedAnimation');
+
+                // Get the current time of the target animation
+                const targetTime = targetAnimation.currentTime;
+
+                // Loop through each element with the class 'pulse'
+                elements.forEach(element => {
+                    // Retrieve the Animation object of the current element
+                    let currentAnimation = findAnimByName(element, 'pulseRedAnimation');
+
+                    // Get the current time of the current animation
+                    const currentTime = currentAnimation.currentTime;
+
+                    // Calculate the time difference between the target animation and the current animation
+                    const timeDifference = targetTime - currentTime;
+
+                    // Adjust the playback position of the current animation to match the target animation
+                    currentAnimation.currentTime += timeDifference;
+                });
+            }
+
+            // Simple helper to find an Animation by animationName
+            function findAnimByName(elem, name) {
+                // Get all the active animations on this element
+                const anims = elem.getAnimations();
+
+                console.log(anims)
+
+                // Return the first one with the expected animationName
+                return anims.find((anim) => anim.animationName === name);
+            }
 
 
 
@@ -3976,14 +4024,17 @@
                 if (index === -1) {
                     // If not in the list, add it
                     gsmList.push(clickedGSM);
+                    synchronizeAnimations(this)
                 } else {
                     // If already in the list, remove it
                     gsmList.splice(index, 1);
                 }
 
-                // Update the class of the clicked path based on its presence in gsmList
+                                // Update the class of the clicked path based on its presence in gsmList
                 d3.select(this)
                     .classed("pulse-red", gsmList.includes(clickedGSM));
+
+
                 pca(pca_data)
 
                 updateBoxPlot(last_box, parsedLogFC, dataN_copy, dataC_copy)
@@ -3996,6 +4047,7 @@
             function path(d) {
                 return d3.line()(dimensions.map(function (geneName) { return [x(geneName), y[geneName](d[geneName])]; }));
             }
+
             svg.selectAll(".gsm-path").each(function (data, i) {
                 // Reorder the SVG elements to bring paths with selected GSM to the front
                 gsmPaths.each(function () {
@@ -4007,6 +4059,52 @@
 
                 //console.log("Data bound to path " + (i + 1) + ":", data);
             });
+
+            function synchronizeAnimations(targetElement) {
+                // Retrieve all elements with the class 'pulse'
+                const elements = document.querySelectorAll(".pulse-red")
+
+
+                console.log(elements)
+
+                // Retrieve the Animation object of the target element
+                const targetAnimation = findAnimByName(targetElement, 'pulseRedAnimation');
+
+                if (!targetAnimation){
+                    return
+                }
+
+                // Get the current time of the target animation
+                const targetTime = targetAnimation.currentTime;
+
+                // Loop through each element with the class 'pulse'
+                elements.forEach(element => {
+                    // Retrieve the Animation object of the current element
+                    let currentAnimation = findAnimByName(element, 'pulseRedAnimation');
+
+                    // Get the current time of the current animation
+                    const currentTime = currentAnimation.currentTime;
+
+                    // Calculate the time difference between the target animation and the current animation
+                    const timeDifference = targetTime - currentTime;
+
+                    // Adjust the playback position of the current animation to match the target animation
+                    currentAnimation.currentTime += timeDifference;
+                });
+            }
+
+            // Simple helper to find an Animation by animationName
+            function findAnimByName(elem, name) {
+                // Get all the active animations on this element
+                const anims = elem.getAnimations();
+
+                console.log(anims)
+
+                // Return the first one with the expected animationName
+                return anims.find((anim) => anim.animationName === name);
+            }
+
+
 
 
             // Draw the axis:
