@@ -4,7 +4,7 @@
 
 This project implements a dashboard for conducting a differential gene expression analysis. The dashboard provides interactive visualization and analysis tools to explore gene expression data and identify differentially expressed genes between two biological conditions.
 
-<img src="pictures\Screenshot 2024-03-06 170957.png" alt="Dashboard Image" style="max-width: 100%; height: auto;">
+<img src="pictures/GEVIS Dashboard.png" alt="Dashboard Image" style="max-width: 100%; height: auto;">
 
 ## Features
 
