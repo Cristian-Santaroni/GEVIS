@@ -20,16 +20,38 @@ This project implements a dashboard for conducting a differential gene expressio
 
 ## Usage
 
-1. Clone the repository to your local machine.
-2. Run cd `GEVIS`.
-3. Run `npm install`.
-4. Run `docker run --name mybox -t -p 80:80 opencpu/rstudio`.
-5. Open another terminal, `run docker exec -i -t mybox /bin/bash` then `sudo -i`, `apt-get update` and finally `apt-get install cmake`.
-6. Go on localhost/rstudio/ (user: opencpu, passwd: opencpu)
-7. Create a package, calling it "GEVIS", and paste inside the hello.R function the content of the file that you will find [here](R/R/hello.R), then press Ctrl+Shift+B for build the project
-8. Finally, in the terminal you opened at the first point, run `node ./server.js`
-9. Go on localhost:3000 and use the interactive sliders and graphs to explore the gene expression data and identify differentially expressed genes.
-
+1. Open your terminal.
+2. Clone the repository to your local machine by running:
+    ```
+    https://github.com/francesco-fortunato/GEVIS.git
+    ```
+3. Navigate to the "GEVIS" directory using the command line.
+    ```
+    cd GEVIS
+    ```
+4. Install dependencies by running:
+    ```
+    npm install
+    ```
+5. Open a new terminal and launch a Docker container named "mybox" with the OpenCPU/RStudio image using the command:
+    ```
+    docker run --name mybox -t -p 80:80 opencpu/rstudio
+    ```
+6. Open another terminal window, then execute the following commands:
+    ```
+    run docker exec -i -t mybox /bin/bash
+    docker exec -i -t mybox /bin/bash
+    sudo -i
+    apt-get update
+    apt-get install cmake
+    ```
+7. Access RStudio by visiting localhost/rstudio/ (login credentials: username - opencpu, password - opencpu).
+8. Create a package, calling it "GEVIS", and paste inside the hello.R function the content of the file that you will find [here](R/R/hello.R). To build the project, press Ctrl+Shift+B.
+9. Back in the terminal from step 4, run the command:
+    ```
+    node ./server.js
+    ```
+10. Open localhost:3000 in your web browser to access the GEVIS dashboard. Utilize the interactive sliders and graphs to explore gene expression data and identify differentially expressed genes.
 
 ## Contributors
 
