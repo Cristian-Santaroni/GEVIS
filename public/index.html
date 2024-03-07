@@ -4806,11 +4806,33 @@
             // Select the counter div
             var counterDiv = d3.select("#counter");
             var counterDiv1 = d3.select("#counter1");
+            console.log(data_copy.length)
+            console.log(data_copy_pval.length)
+            if (data_copy_pval.length > data_copy.length) {
+                // Update the content of the counter and apply margin-left to text
+                counterDiv.html(
+                    "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Total number of genes:</span>" +
+                    "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_original.length + "</span><br>" +
+                    "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by IQR:</span>" +
+                    "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy1.length + "</span><br>" +
+                    "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by FC:</span>" +
+                    "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy.length + "</span><br>" +
+                    "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by p-val:</span>" +
+                    "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy.length + "</span>"
+                );
+            }
+            else {
+                counterDiv.html(
+                    "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Total number of genes:</span>" +
+                    "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_original.length + "</span><br>" +
+                    "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by IQR:</span>" +
+                    "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy1.length + "</span><br>" +
+                    "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by FC:</span>" +
+                    "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy.length + "</span><br>" +
+                    "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by p-val:</span>" +
+                    "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy_pval.length + "</span>"
+                );
 
-            if (dataC_copy_pval.length > dataC_copy.length) {
-                dataC_copy_pval = dataC_copy
-                dataN_copy_pval = dataN_copy
-                data_copy_pval = data_copy
             }
 
             // Update the content of the counter and apply margin-left to text
