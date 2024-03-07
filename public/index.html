@@ -865,9 +865,6 @@
 
                                                 console.log("Promise: al box gli passo parsedlogFC", parsedLogFC.length)
 
-                                                // updateBoxPlot1(parsedLogFC,dataN_copy,dataC_copy)
-
-
                                                 var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
 
                                                 var mostUpregulatedGene = sortedLogFC[0];
@@ -1182,6 +1179,10 @@
                         }, []);
                         console.log("geni con pval minore di thr nel iqr slider", ind.length)
                         console.log("thr pval ", threshold)
+                        dataC_copy_pval = dataC_copy
+                        dataN_copy_pval = dataN_copy
+                        data_copy_pval = data_copy
+
                         if (ind.length > 0) {
 
                             //console.log(parsedLogFC.length)
@@ -1201,153 +1202,153 @@
                             parsedLogFC_pval = parsedLogFC.filter((entry, index) => !ind.includes(index));
 
                             console.log("geni passati a box dal IQR slider", parsedLogFC.length)
-                            updateBoxPlot(last_box, parsedLogFC, dataN_copy_pval, dataC_copy_pval)
-                            updateBoxPlot1(parsedLogFC_pval, dataN_copy_pval, dataC_copy_pval)
-
-
-                            var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
-
-                            var mostUpregulatedGene = sortedLogFC[0];
-                            var secondMostUpregulatedGene = sortedLogFC[1];
-
-                            var mostDownregulatedGene = sortedLogFC[sortedLogFC.length - 1];
-                            var secondMostDownregulatedGene = sortedLogFC[sortedLogFC.length - 2];
-
-                            var mostUpregulatedGeneName = mostUpregulatedGene.Gene
-                            //var secondMostUpregulatedGeneName = secondMostUpregulatedGene.Gene
-                            var mostDownregulatedGeneName = mostDownregulatedGene.Gene
-                            //var secondMostDownregulatedGeneName = secondMostDownregulatedGene.Gene
-
-
-                            genes = [mostUpregulatedGeneName, mostDownregulatedGeneName]
-                            if (selectedGeneData == []) {
-                                selectedGeneData.push(mostUpregulatedGeneName)
-                                selectedGeneData.push(mostDownregulatedGeneName)
-
-                            }
-                            else {
-                                // Filter out genes that are not present in dataC_copy or dataN_copy
-                                selectedGeneData = selectedGeneData.filter(function (gene) {
-                                    // Check if the gene is present in dataC_copy or dataN_copy
-                                    return dataC_copy.some(function (d) { return d.gene === gene; }) ||
-                                        dataN_copy.some(function (d) { return d.gene === gene; });
-                                });
-                            }
+                        }
+                        updateBoxPlot(last_box, parsedLogFC, dataN_copy_pval, dataC_copy_pval)
 
 
 
-                            updateParallel(selectedGeneData, data_copy_pval, dataC_copy_pval, dataN_copy_pval, first_dims)
-                            updateCounter()
-                            var pc1Values = [];
-                            var pc2Values = [];
-                            var groupValues = [];
-                            var req = ocpu.call("pca", {
-                                data: data_copy_pval,
-                                dataN: dataN_copy_pval,
-                                dataC: dataC_copy_pval
-                            }, function (session) {
-                                var filteredDataURL = session.loc + "/R/.val/json";
-                                //console.log(session);
-                                // Fetch the filtered data from the URL
-                                fetch(filteredDataURL)
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        json = data
-                                        console.log(filteredDataURL)
-                                        console.log(json)
+                        var sortedLogFC = parsedLogFC.slice().sort((a, b) => b.logFC - a.logFC);
 
-                                        var pc1Key = "PC1";
-                                        var pc2Key = "PC2";
-                                        var groupKey = "Group";
+                        var mostUpregulatedGene = sortedLogFC[0];
+                        var secondMostUpregulatedGene = sortedLogFC[1];
 
-                                        // Arrays to store PC1 and PC2 values
+                        var mostDownregulatedGene = sortedLogFC[sortedLogFC.length - 1];
+                        var secondMostDownregulatedGene = sortedLogFC[sortedLogFC.length - 2];
+
+                        var mostUpregulatedGeneName = mostUpregulatedGene.Gene
+                        //var secondMostUpregulatedGeneName = secondMostUpregulatedGene.Gene
+                        var mostDownregulatedGeneName = mostDownregulatedGene.Gene
+                        //var secondMostDownregulatedGeneName = secondMostDownregulatedGene.Gene
 
 
-                                        // Iterate over each object in the JSON array
-                                        json.scores_df.forEach(function (obj) {
-                                            // Push PC1, PC2, and Group values to the arrays
-                                            pc1Values.push(obj[pc1Key]);
-                                            pc2Values.push(obj[pc2Key]);
-                                            groupValues.push(obj[groupKey]);
-                                        });
-                                        // console.log(pc1Values)
-
-                                        pca_data = [];
-
-                                        // Iterate over each object in the JSON array
-                                        json.scores_df.forEach(function (obj) {
-                                            // Retrieve additional data from metadata based on _row
-                                            var gsm = obj._row;
-                                            var group = obj.Group;
-
-                                            // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                                            var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                            var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                            var pc1 = obj.PC1;
-                                            var pc2 = obj.PC2;
-
-                                            // Create an object with the required fields
-                                            var newObj = {
-                                                GSM: gsm,
-                                                group: group,
-                                                smokerclass: smokerclass,
-                                                stage: stage,
-                                                pc1: pc1,
-                                                pc2: pc2
-                                            };
-
-                                            // Push the new object to the newData array
-                                            pca_data.push(newObj);
-
-                                        });
-
-
-                                        heatmap_data = []
-                                        json.scores_var.forEach(function (obj) {
-                                            // Push PC1, PC2, and Group values to the arrays
-                                            var gene = obj._row
-                                            var pc1 = obj.PC1
-                                            var pc2 = obj.PC2
-                                            var pc3 = obj.PC3
-                                            var pc4 = obj.PC4
-                                            var pc5 = obj.PC5
-                                            var pc6 = obj.PC6
-
-                                            var newObj = {
-                                                gene: gene,
-                                                pc1: pc1,
-                                                pc2: pc2,
-                                                pc3: pc3,
-                                                pc4: pc4,
-                                                pc5: pc5,
-                                                pc6: pc6
-                                            };
-                                            heatmap_data.push(newObj);
-                                        })
-
-                                        // Display the newData array
-                                        console.log(pca_data);
-
-
-                                        pca(pca_data);
-                                        heatmap(heatmap_data)
-
-                                    })
-
-
-
-
-
-                            })
-                            scatter.selectAll("circle")
-                                .filter(circleData => circleData.gene === mostUpregulatedGeneName || circleData.gene === mostDownregulatedGeneName)
-                                .style("fill", d => {
-                                    // Check if logFC is greater than or equal to the threshold
-                                    return "green";
-
-                                });
+                        genes = [mostUpregulatedGeneName, mostDownregulatedGeneName]
+                        if (selectedGeneData == []) {
+                            selectedGeneData.push(mostUpregulatedGeneName)
+                            selectedGeneData.push(mostDownregulatedGeneName)
 
                         }
+                        else {
+                            // Filter out genes that are not present in dataC_copy or dataN_copy
+                            selectedGeneData = selectedGeneData.filter(function (gene) {
+                                // Check if the gene is present in dataC_copy or dataN_copy
+                                return dataC_copy.some(function (d) { return d.gene === gene; }) ||
+                                    dataN_copy.some(function (d) { return d.gene === gene; });
+                            });
+                        }
+
+
+
+                        updateParallel(selectedGeneData, data_copy_pval, dataC_copy_pval, dataN_copy_pval, first_dims)
+                        updateCounter()
+                        var pc1Values = [];
+                        var pc2Values = [];
+                        var groupValues = [];
+                        var req = ocpu.call("pca", {
+                            data: data_copy_pval,
+                            dataN: dataN_copy_pval,
+                            dataC: dataC_copy_pval
+                        }, function (session) {
+                            var filteredDataURL = session.loc + "/R/.val/json";
+                            //console.log(session);
+                            // Fetch the filtered data from the URL
+                            fetch(filteredDataURL)
+                                .then(response => response.json())
+                                .then(data => {
+                                    json = data
+                                    console.log(filteredDataURL)
+                                    console.log(json)
+
+                                    var pc1Key = "PC1";
+                                    var pc2Key = "PC2";
+                                    var groupKey = "Group";
+
+                                    // Arrays to store PC1 and PC2 values
+
+
+                                    // Iterate over each object in the JSON array
+                                    json.scores_df.forEach(function (obj) {
+                                        // Push PC1, PC2, and Group values to the arrays
+                                        pc1Values.push(obj[pc1Key]);
+                                        pc2Values.push(obj[pc2Key]);
+                                        groupValues.push(obj[groupKey]);
+                                    });
+                                    // console.log(pc1Values)
+
+                                    pca_data = [];
+
+                                    // Iterate over each object in the JSON array
+                                    json.scores_df.forEach(function (obj) {
+                                        // Retrieve additional data from metadata based on _row
+                                        var gsm = obj._row;
+                                        var group = obj.Group;
+
+                                        // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                                        var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                        var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                        var pc1 = obj.PC1;
+                                        var pc2 = obj.PC2;
+
+                                        // Create an object with the required fields
+                                        var newObj = {
+                                            GSM: gsm,
+                                            group: group,
+                                            smokerclass: smokerclass,
+                                            stage: stage,
+                                            pc1: pc1,
+                                            pc2: pc2
+                                        };
+
+                                        // Push the new object to the newData array
+                                        pca_data.push(newObj);
+
+                                    });
+
+
+                                    heatmap_data = []
+                                    json.scores_var.forEach(function (obj) {
+                                        // Push PC1, PC2, and Group values to the arrays
+                                        var gene = obj._row
+                                        var pc1 = obj.PC1
+                                        var pc2 = obj.PC2
+                                        var pc3 = obj.PC3
+                                        var pc4 = obj.PC4
+                                        var pc5 = obj.PC5
+                                        var pc6 = obj.PC6
+
+                                        var newObj = {
+                                            gene: gene,
+                                            pc1: pc1,
+                                            pc2: pc2,
+                                            pc3: pc3,
+                                            pc4: pc4,
+                                            pc5: pc5,
+                                            pc6: pc6
+                                        };
+                                        heatmap_data.push(newObj);
+                                    })
+
+                                    // Display the newData array
+                                    console.log(pca_data);
+
+
+                                    pca(pca_data);
+                                    heatmap(heatmap_data)
+
+                                })
+
+
+
+
+
+                        })
+                        scatter.selectAll("circle")
+                            .filter(circleData => circleData.gene === mostUpregulatedGeneName || circleData.gene === mostDownregulatedGeneName)
+                            .style("fill", d => {
+                                // Check if logFC is greater than or equal to the threshold
+                                return "green";
+
+                            });
+
 
 
                     });
@@ -1398,6 +1399,11 @@
 
         document.getElementById("log_thresholdSlider").addEventListener("change", function () {
             document.getElementById("loadingOverlay").style.display = "block";
+            dataC_copy_pval = dataC_copy
+            dataN_copy_pval = dataN_copy
+            data_copy_pval = data_copy
+            updateCounter()
+
 
             var req = ocpu.call("hello", {
                 data: data_copy
@@ -1432,6 +1438,9 @@
                             }
                             return result;
                         }, []);
+                        dataC_copy_pval = dataC_copy
+                        dataN_copy_pval = dataN_copy
+                        data_copy_pval = data_copy
 
                         console.log("geni con pval minore di thr nel logFC slider", ind.length)
 
@@ -1454,8 +1463,6 @@
 
 
                             updateBoxPlot(last_box, parsedLogFC_pval, dataN_copy_pval, dataC_copy_pval)
-                            updateBoxPlot1(parsedLogFC_pval, dataN_copy_pval, dataC_copy_pval)
-                            updateCounter()
                             selectedGeneData = selectedGeneData.filter(function (gene) {
                                 // Check if the gene is present in dataC_copy or dataN_copy
                                 return dataC_copy.some(function (d) { return d.gene === gene; }) ||
@@ -1468,6 +1475,8 @@
 
                             console.log(dataN_copy.length)
                         }
+                        updateCounter()
+
                         //   var pc1Values = [];
                         // var pc2Values = [];
                         // var groupValues = [];
@@ -1476,7 +1485,7 @@
                             dataN: dataN_copy_pval,
                             dataC: dataC_copy_pval
                         }, function (session) {
-                            var filteredDataURL = session.loc + "/R/.val/json";
+                            var filteredDataURL = session.loc + "R/.val/json";
                             //console.log(session);
                             // Fetch the filtered data from the URL
                             fetch(filteredDataURL)
@@ -1600,6 +1609,9 @@
             }, []);
 
             updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+            // dataC_copy_pval=dataC_copy
+            // dataN_copy_pval=dataN_copy
+            // data_copy_pval=data_copy
 
 
             if (ind.length > 0) {
@@ -1725,11 +1737,14 @@
 
                 })
 
+            } else {
+                document.getElementById("loadingOverlay").style.display = "none";
             }
 
         })
 
         function pca(pca_data) {
+            console.log("update pca")
             pc1Values = []
             pc2Values = []
             groupValues = []
@@ -3593,198 +3608,7 @@
                 return anims.find((anim) => anim.animationName === name);
             }
 
-
-
         }
-
-
-        function updateBoxPlot1(parsedLogFC, dataN, dataC) {
-
-
-            combinedData1 = []
-            var mostDownregulatedGene = parsedLogFC.reduce((minGene, currentGene) => {
-                return currentGene.logFC < minGene.logFC ? currentGene : minGene;
-            }, parsedLogFC[0]);
-
-            //console.log(mostUpregulatedGene)
-            geneNameDown = mostDownregulatedGene.Gene;
-
-
-
-            var geneDataN = dataN.filter(d => d.gene === geneNameDown)
-            var geneDataC = dataC.filter(d => d.gene === geneNameDown)
-
-            // Extract GSM values for each gene
-            var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
-            var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
-
-
-            //  console.log(geneDataC)  
-            //  console.log(geneDataC)
-
-            function computeBoxPlotStatistics(data1) {
-                var expressionValues = data1.map(entry => entry.expression);
-
-                // Sort the data for calculating quartiles
-                expressionValues.sort((a, b) => a - b);
-
-                // Calculate quartiles and median
-                var q1 = d3.quantile(expressionValues, 0.25);
-                var q3 = d3.quantile(expressionValues, 0.75);
-                var median = d3.median(expressionValues);
-
-                // Calculate interquartile range (IQR)
-                var iqr = q3 - q1;
-
-
-                var min = q1 - 1.5 * iqr
-                var max = q3 + 1.5 * iqr
-
-                return {
-                    q1: q1,
-                    median: median,
-                    q3: q3,
-                    iqr: iqr,
-                    min: min,
-                    max: max
-                };
-            }
-            let expressionValuesC
-            geneDataC.forEach(entry => {
-                expressionValuesC = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-            })
-            let expressionValuesN
-            geneDataN.forEach(entry => {
-                expressionValuesN = Object.values(entry).filter(val => typeof val === 'number' && !isNaN(val));
-
-            })
-            // Assuming you have expressionValuesC and expressionValuesN
-
-            // Create a new array to store the combined data
-            //
-
-            // Iterate over expressionValuesC and add objects to combinedData with type 'case'
-            expressionValuesC.forEach((expression, i) => {
-                combinedData1.push({ GSM: gsmValuesC[i], expression: expression, type: 'Case' });
-            });
-
-            // Iterate over expressionValuesN and add objects to combinedData with type 'normal'
-            expressionValuesN.forEach((expression, i) => {
-                combinedData1.push({ GSM: gsmValuesN[i], expression: expression, type: 'Normal' });
-            });
-
-            // Now combinedData has the desired structure
-            //console.log(combinedData);
-
-
-
-            var boxPlotStatisticsC = computeBoxPlotStatistics(combinedData1);
-
-
-            sumstat1 = d3.nest()
-                .key(function (d) { return d.type; }) // Assuming 'type' is the property indicating 'normal' or 'case'
-                .rollup(function (d) {
-                    q1 = d3.quantile(d.map(function (g) { return g.expression; }).sort(d3.ascending), 0.25);
-                    median = d3.quantile(d.map(function (g) { return g.expression; }).sort(d3.ascending), 0.5);
-                    q3 = d3.quantile(d.map(function (g) { return g.expression; }).sort(d3.ascending), 0.75);
-                    interQuantileRange = q3 - q1;
-                    min = q1 - 1.5 * interQuantileRange;
-                    max = q3 + 1.5 * interQuantileRange;
-
-                    return { q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max };
-                })
-                .entries(combinedData1);
-
-            var margin = { top: 10, right: 30, bottom: 30, left: 40 },
-                width = 460 - margin.left - margin.right,
-                height = 400 - margin.top - margin.bottom;
-
-
-            var svg = d3.select("#boxPlot1")
-                .html("")  // Clear previous content
-                .append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform",
-                    "translate(" + margin.left + "," + margin.top + ")");
-
-            var x = d3.scaleBand()
-                .range([0, width])
-                .domain(["Normal", "Case"])
-                .paddingInner(1)
-                .paddingOuter(.5)
-
-            svg.append("g")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x))
-
-            var y = d3.scaleLinear()
-                .domain([boxPlotStatisticsC.min - 4, boxPlotStatisticsC.max + 4])
-                .range([height, 0])
-            svg.append("g").call(d3.axisLeft(y))
-
-            // Add a title
-            svg.append("text")
-                .attr("x", width / 2)
-                .attr("y", margin.top)
-                .attr("text-anchor", "middle")
-                .style("font-size", "18px")
-                .text("The Most Downregulated Gene " + geneNameDown);
-
-
-            svg
-                .selectAll("vertLines")
-                .data(sumstat1)
-                .enter()
-                .append("line")
-                .attr("x1", function (d) { return (x(d.key)) })
-                .attr("x2", function (d) { return (x(d.key)) })
-                .attr("y1", function (d) { return (y(d.value.min)) })
-                .attr("y2", function (d) { return (y(d.value.max)) })
-                .attr("stroke", "black")
-                .style("width", 40)
-
-            // rectangle for the main box
-            var boxWidth = 100
-            svg
-                .selectAll("boxes")
-                .data(sumstat1)
-                .enter()
-                .append("rect")
-                .attr("x", function (d) { return (x(d.key) - boxWidth / 2) })
-                .attr("y", function (d) { return (y(d.value.q3)) })
-                .attr("height", function (d) { return (y(d.value.q1) - y(d.value.q3)) })
-                .attr("width", boxWidth)
-                .attr("stroke", "black")
-                .style("fill", "#69b3a2")
-
-            svg
-                .selectAll("medianLines")
-                .data(sumstat1)
-                .enter()
-                .append("line")
-                .attr("x1", function (d) { return (x(d.key) - boxWidth / 2) })
-                .attr("x2", function (d) { return (x(d.key) + boxWidth / 2) })
-                .attr("y1", function (d) { return (y(d.value.median)) })
-                .attr("y2", function (d) { return (y(d.value.median)) })
-                .attr("stroke", "black")
-                .style("width", 80)
-
-            var jitterWidth = 50
-            svg
-                .selectAll(".indPoints")
-                .data(combinedData1)
-                .enter()
-                .append("circle")
-                .attr("cx", function (d) { return (x(d.type) - jitterWidth / 2 + Math.random() * jitterWidth) })
-                .attr("cy", function (d) { return (y(d.expression)) })
-                .attr("r", 2)
-                .style("fill", "white")
-                .attr("stroke", "black")
-        }
-
 
         function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
             let structureCombinedData = [];
@@ -4461,6 +4285,8 @@
         }
 
         function heatmap(heatmap_data) {
+            document.getElementById("loadingOverlay").style.display = "none";
+
             var heatmap_data_subset = heatmap_data.slice(0, 6);
             console.log(heatmap_data_subset)
             // Labels of row and columns -> unique identifier of the column called 'group' and 'variable'
@@ -4631,6 +4457,7 @@
                         selectedElement.style("stroke", "none");
                         correspondingCircle.style("fill", initialCircleFill)
                             .classed("pulse1", false)
+                        synchronizeAnimations(correspondingCircle.node(), true)
                     } else {
                         // If the rectangle is not stroked, toggle the stroke and set circle's fill color
                         currentCircleFill = correspondingCircle.attr("data-initial-fill");
@@ -4640,19 +4467,30 @@
                         selectedElement.style("stroke", "red");
                         correspondingCircle.style("fill", myColor(d.value)).classed("pulse1", true);
                         console.log(correspondingCircle)
-                        synchronizeAnimations(correspondingCircle.node())
+                        synchronizeAnimations(correspondingCircle.node(), false)
                     }
                 });
 
-            function synchronizeAnimations(targetElement) {
-                // Retrieve all elements with the class 'pulse'
+            function synchronizeAnimations(targetElement, banana) {
+
                 const elements = [
                     ...document.querySelectorAll('.pulse'),
                     ...document.querySelectorAll('.pulse1')
                 ];
-
+                let targetAnimation
+                if (banana) {
+                    targetAnimation = findAnimByName(targetElement, 'pulseAnimation');
+                }
+                else {
+                    targetAnimation = findAnimByName(targetElement, 'pulseAnimation1');
+                }
                 // Retrieve the Animation object of the target element
-                const targetAnimation = findAnimByName(targetElement, 'pulseAnimation1');
+
+                if (!targetAnimation) {
+                    return
+                }
+
+                console.log("sono passato")
 
                 // Get the current time of the target animation
                 const targetTime = targetAnimation.currentTime;
@@ -4907,6 +4745,12 @@
             // Select the counter div
             var counterDiv = d3.select("#counter");
             var counterDiv1 = d3.select("#counter1");
+
+            if (dataC_copy_pval.length > dataC_copy.length) {
+                dataC_copy_pval = dataC_copy
+                dataN_copy_pval = dataN_copy
+                data_copy_pval = data_copy
+            }
 
             // Update the content of the counter and apply margin-left to text
             counterDiv.html(
