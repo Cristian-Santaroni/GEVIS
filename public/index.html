@@ -70,7 +70,8 @@
             background-color: black;
             height: 100%;
             width: 100%;
-            overflow: hidden;
+            overflow-y: hidden;
+
         }
 
 
@@ -4754,14 +4755,14 @@
 
             // Update the content of the counter and apply margin-left to text
             counterDiv.html(
-                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Total number of genes:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: center; font-weight: bold;'>" + data_original.length + "</span><br>" +
-                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Genes filtered by IQR:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: center; font-weight: bold;'>" + data_copy1.length + "</span><br>" +
-                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Genes filtered by FC:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: center; font-weight: bold;'>" + data_copy.length + "</span><br>" +
-                "<span style='display: inline-block; width: 210px; margin-left: 20px; font-weight: bold;'>Genes filtered by p-val:</span>" +
-                "<span style='display: inline-block; width: 100px; text-align: center; font-weight: bold;'>" + data_copy_pval.length + "</span>"
+                "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Total number of genes:</span>" +
+                "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_original.length + "</span><br>" +
+                "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by IQR:</span>" +
+                "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy1.length + "</span><br>" +
+                "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by FC:</span>" +
+                "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy.length + "</span><br>" +
+                "<span style='display: inline-block; width: 235px; margin-left: 10px; font-weight: bold; font-size : 13px;'>Genes retained after filtering by p-val:</span>" +
+                "<span style='display: inline-block; width: 70px; text-align: center; font-weight: bold;'>" + data_copy_pval.length + "</span>"
             );
 
             counterDiv1.html(
