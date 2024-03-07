@@ -26,7 +26,7 @@ This project implements a dashboard for conducting a differential gene expressio
 4. Run `docker run --name mybox -t -p 80:80 opencpu/rstudio`.
 5. Open another terminal, `run docker exec -i -t mybox /bin/bash` then `sudo -i`, `apt-get update` and finally `apt-get install cmake`.
 6. Go on localhost/rstudio/ (user: opencpu, passwd: opencpu)
-7. Create a package, calling it "GEVIS", and paste inside the hello.R function the content of the file that you will find [here](R\R\hello.R), then press Ctrl+Shift+B for build the project
+7. Create a package, calling it "GEVIS", and paste inside the hello.R function the content of the file that you will find [here](R/R/hello.R), then press Ctrl+Shift+B for build the project
 8. Finally, in the terminal you opened at the first point, run `node ./server.js`
 9. Go on localhost:3000 and use the interactive sliders and graphs to explore the gene expression data and identify differentially expressed genes.
 
