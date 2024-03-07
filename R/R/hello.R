@@ -1,6 +1,3 @@
-library(factoextra)
-library(FactoMineR)
-library(dplyr)
 hello <- function(data) {
   # Save the column of genes before removing the last column
   genes <- data[, ncol(data)]
@@ -27,6 +24,7 @@ hello <- function(data) {
   return(result)
 }
 
+
 pca <- function(data, dataC, dataN) {
   library(FactoMineR)
   library(factoextra)
@@ -43,20 +41,12 @@ pca <- function(data, dataC, dataN) {
   # Remove the first column (it's now the row names)
   data1 <- data1[, -1]
 
-  # Print the updated data frame
-  #print(data1)
-
-
-
-
   gsmC <- colnames(dataC)
   gsmN <- colnames(dataN)
-
 
   # Convert GSM headers to vectors and remove the last element
   gsmC_vector <- head(unlist(gsmC), -1)
   gsmN_vector <- head(unlist(gsmN), -1)
-
 
   # Combine data from case and normal samples
   data1 <- t(data1[, c(gsmC_vector, gsmN_vector)])
@@ -80,6 +70,7 @@ pca <- function(data, dataC, dataN) {
   # Sort by PC1 contribution
   scores_var <- scores_var[order(scores_var[,"PC1"], decreasing = TRUE), ]
   scores_var= as.data.frame(scores_var)
+
   # Get gene names
   gene_names <- rownames(scores_var)
   print(gene_names)
