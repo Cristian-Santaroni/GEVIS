@@ -53,6 +53,14 @@ This project implements a dashboard for conducting a differential gene expressio
     ```
 10. Open localhost:3000 in your web browser to access the GEVIS dashboard. Utilize the interactive sliders and graphs to explore gene expression data and identify differentially expressed genes.
 
+## Docs
+
+- [Project Report](docs/pdf/GEVIS.pdf)  
+  This document contains the detailed report for our project, including methodologies, results, and conclusions.
+
+- [Project Presentation](https://docs.google.com/presentation/d/1ZU2Z-0I1FXjg4zcnIxp9G5TC15fB4vIK7RZeQ4DTJkc/edit?usp=sharing)  
+  This document contains the slides used for the project presentation, highlighting key aspects of the project.
+
 ## Contributors
 
 - [Francesco Fortunato](https://github.com/francesco-fortunato)
