@@ -4503,7 +4503,7 @@
                     // Store the selected rectangle's variable
                     var selectedVariable = d.variable;
 
-                    svg.selectAll("rect")
+                    svg.selectAll(".heatmap-rect")
                         .filter(function (rectData) {
                             return rectData.gene === d.gene;
                         })
