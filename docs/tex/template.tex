@@ -29,7 +29,7 @@
 
 \addbibresource{sample.bib} % BibLaTeX bibliography file
 
-\runninghead{GEVIS - Gene Expression VIS} % A shortened article title to appear in the running head, leave this command empty for no running head
+\runninghead{GEVIS: A Differential Gene Expression Analysis Web-Application Tool for Lung Adenocarcinoma} % A shortened article title to appear in the running head, leave this command empty for no running head
 
 \footertext{\textit{Cristian Santaroni, Francesco Fortunato} (March 2024)} % Text to appear in the footer, leave this command empty for no footer text
 
@@ -39,7 +39,8 @@
 %	TITLE SECTION
 %----------------------------------------------------------------------------------------
 
-\title{GEVIS - Gene Expression VIS} % Article title, use manual lines breaks (\\) to beautify the layout
+\title{GEVIS: \\A Differential Gene Expression Analysis Web-Application Tool for Lung Adenocarcinoma
+} % Article title, use manual lines breaks (\\) to beautify the layout
 
 % Authors are listed in a comma-separated list with superscript numbers indicating affiliations
 % \thanks{} is used for any text that should be placed in a footnote on the first page, such as the corresponding author's email, journal acceptance dates, a copyright/license notice, keywords, etc
@@ -137,7 +138,7 @@ Certainly, an advanced tool should be capable of accepting input from various da
 
 \section{Overview of the Visualization System}
 
-Our proposed system, GEVIS (Gene Expression VIS), is a comprehensive dashboard designed to facilitate differential gene expression analysis. GEVIS provides researchers with an intuitive and interactive platform for exploring gene expression data, identifying differentially expressed genes, and gaining insights into underlying biological mechanisms.
+Our proposed system, GEVIS - Gene Expression VIS, is a comprehensive dashboard designed to facilitate differential gene expression analysis. GEVIS provides researchers with an intuitive and interactive platform for exploring gene expression data, identifying differentially expressed genes, and gaining insights into underlying biological mechanisms.
 
 At the core of GEVIS is a series of visualization tools and statistical analyses that enable users to conduct differential expression analysis on the GSE10072 dataset and visualize the results in real-time. The system incorporates various visualization techniques, including histograms, scatterplots, boxplots, parallel coordinates graph and principal component analysis (PCA), to facilitate a comprehensive understanding of complex gene expression patterns, enabling researchers to discern subtle trends and uncover significant insights.
 
@@ -221,7 +222,7 @@ Additionally, further examination of scatterplot visualization revealed two othe
 
 Through our PCA analysis, we identified several genes exhibiting a high contribution percentage in the first component. Upon applying various thresholds and subsequently filtering out differing quantities of genes, two consistently emerged with the highest percentages: FHL1 and TCF21.
 
-FHL1 has been implicated in cigarette smoke-induced pulmonary pathology. Notably, a recent study (Wang et al., 2022) \autocite{Wang:fhl1} reported that the protein expression of FHL1 correlated with cigarette smoke extract (CSE)-induced PASMC proliferation. Furthermore, experimental manipulation of FHL1 expression levels resulted in a significant suppression of cell proliferation and inhibition of the cell cycle transition between the G1 and S phase. Dysregulation in these key stages may lead to aberrant DNA synthesis, genomic instability, and the unchecked proliferation of cells, thereby contributing significantly to the onset and progression of cancer. This implies that exposure to cigarette smoke extract prompts an increase in the rate of PASMC division, and the expression of FHL1 is somehow involved in mediating this effect.
+Notably, a recent study (Chang et al., 2012) \autocite{Chang:fhl1} showed that FHL1 protein was downregulated in over 90$\%$ of 80 lung cancer patients. Furthermore, experimental manipulation of FHL1 expression levels resulted in a significant suppression of cell proliferation and inhibition of the cell cycle transition between the G1 and G2 phase. Dysregulation in these key stages may lead to aberrant DNA synthesis, genomic instability, and the unchecked proliferation of cells, thereby contributing significantly to the onset and progression of cancer. This implies that reduced expression of FHL1 may play an important role in the development and progression of lung cancer and that FHL1 may be a useful target for lung cancer gene therapy.
 
 Research by Xiao et al. (2017) \autocite{Xiao:TCF21} demonstrated that decreased mRNA expression of TCF21 is an unfavorable prognostic factor for lung adenocarcinoma patients. Their study highlighted the prognostic significance of TCF21 in LUAD, showing that decreased mRNA expression of TCF21 is associated with unfavorable overall survival outcomes for patients with lung adenocarcinoma. This finding further underscores the importance of TCF21 in LUAD prognosis and suggests its potential as a biomarker for identifying high-risk patients.
 
