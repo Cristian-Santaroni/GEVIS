@@ -2,7 +2,7 @@
 
 ## Description
 
-This project implements a dashboard for conducting a differential gene expression analysis. The dashboard provides interactive visualization and analysis tools to explore gene expression data and identify differentially expressed genes between two biological conditions.
+This project implements a dashboard for conducting a differential gene expression analysis on the [GSE10072](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE10072) GEO dataset. The dashboard provides interactive visualization and analysis tools to explore gene expression data and identify differentially expressed genes between two biological conditions.
 
 <img src="pictures/GEVIS Dashboard.png" alt="Dashboard Image" style="max-width: 100%; height: auto;">
 
