@@ -56,10 +56,10 @@ This project implements a dashboard for conducting a differential gene expressio
 ## Docs
 
 - [Project Report](docs/pdf/GEVIS.pdf)  
-  This document contains the detailed report for our project, including methodologies, results, and conclusions.
+  This document contains the pdf report for our project, including methodologies, results, and conclusions.
 
 - [Project Presentation](https://docs.google.com/presentation/d/1ZU2Z-0I1FXjg4zcnIxp9G5TC15fB4vIK7RZeQ4DTJkc/edit?usp=sharing)  
-  This document contains the slides used for the project presentation, highlighting key aspects of the project.
+  This document contains the slides used for the project presentation.
 
 ## Contributors
 
