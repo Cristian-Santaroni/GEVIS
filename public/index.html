@@ -4363,7 +4363,7 @@
             var svg = d3.select("#heatmap")
                 .html("")
                 .append("svg")
-                .attr("width", width + margin.left + margin.right)
+                .attr("width", 670)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
                 .attr("transform", "translate(" + (margin.left + 46) + "," + margin.top + ")");
@@ -4587,6 +4587,64 @@
                 return anims.find((anim) => anim.animationName === name);
             }
 
+
+            // Define the color scale for the legend
+            var legendScale = d3.scaleLinear()
+                .domain([d3.min(heatmap_data_subset, d => d3.min(myVars, v => d[v])),
+                d3.max(heatmap_data_subset, d => d3.max(myVars, v => d[v]))])
+                .range([0, 150]); // Adjust the range according to the height of the heatmap
+
+            // Specify the tick values based on desired intervals
+            var tickValues = [
+                d3.min(heatmap_data_subset, d => d3.min(myVars, v => d[v])), // Minimum value
+                (d3.max(heatmap_data_subset, d => d3.max(myVars, v => d[v])) - d3.min(heatmap_data_subset, d => d3.min(myVars, v => d[v]))) / 4, // 1/4 of maximum
+                (d3.max(heatmap_data_subset, d => d3.max(myVars, v => d[v])) - d3.min(heatmap_data_subset, d => d3.min(myVars, v => d[v]))) / 2, // 2/4 of maximum
+                (d3.max(heatmap_data_subset, d => d3.max(myVars, v => d[v])) - d3.min(heatmap_data_subset, d => d3.min(myVars, v => d[v]))) * 3 / 4, // 3/4 of maximum
+                d3.max(heatmap_data_subset, d => d3.max(myVars, v => d[v])) // Maximum value
+            ];
+
+            // Create a separate SVG element for the legend
+            var legend = svg.append("g")
+                .attr("class", "legend")
+                .attr("transform", "translate(" + (450) + "," + 10 + ")");
+
+            // Create color gradient for legend
+            var defs = legend.append("defs");
+            var linearGradient = defs.append("linearGradient")
+                .attr("id", "linear-gradient")
+                .attr("x1", "0%")
+                .attr("y1", "0%")
+                .attr("x2", "0%")
+                .attr("y2", "100%");
+
+            // Add color stops based on the heatmap color scale
+            myColor.ticks(10).forEach(function (t, i, n) {
+                linearGradient.append("stop")
+                    .attr("offset", (100 * i / n.length) + "%")
+                    .attr("stop-color", myColor(t));
+            });
+
+            // Draw rectangle to display the legend
+            legend.append("rect")
+                .attr("width", 10)
+                .attr("height", 150)
+                .style("fill", "url(#linear-gradient)");
+
+            legendAxis = d3.axisRight(legendScale)
+                .tickValues(tickValues)
+                .tickFormat(function (d) { return (d).toFixed(2) + "%"; }); // Format tick values with three digits after the comma and add a percentage symbol
+            var axis = legend.append("g")
+                .attr("class", "legend-axis")
+                .attr("transform", "translate(20,0)")
+                .call(legendAxis);
+
+            // Apply style to axis ticks to make them white
+            axis.selectAll("text").style("fill", "white").style("font-size", "13px")
+            axis.selectAll("line").style("stroke", "white");
+
+
+            // Remove the domain path
+            axis.select(".domain").remove();
 
             document.getElementById("loadingOverlay").style.display = "none";
         }
