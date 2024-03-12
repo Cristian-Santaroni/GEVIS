@@ -4503,14 +4503,17 @@
                     // Store the selected rectangle's variable
                     var selectedVariable = d.variable;
 
-                    svg.selectAll(".heatmap-rect")
+                    // Remove stroke from all rectangles of the current gene
+                    svg.selectAll("rect")
                         .filter(function (rectData) {
-                            return rectData.gene === d.gene;
+                            if(rectData !== undefined){
+                                return rectData.gene === d.gene;
+                            }
                         })
-                        .style("stroke", function (rectData) {
-                            // Remove stroke only from rectangles that are not selected
-                            return rectData.variable === selectedVariable ? "red" : "none";
-                        });
+                        .style("stroke", "none");
+
+                    // Toggle the stroke of the selected rectangle
+                    selectedElement.style("stroke", "red");
 
                     // If the rectangle is already stroked, remove the stroke and revert circle's fill color
                     if (isRectangleStroked) {
