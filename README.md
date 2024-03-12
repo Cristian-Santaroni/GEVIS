@@ -39,7 +39,6 @@ This project implements a dashboard for conducting a differential gene expressio
     ```
 6. Open another terminal window, then execute the following commands:
     ```
-    run docker exec -i -t mybox /bin/bash
     docker exec -i -t mybox /bin/bash
     sudo -i
     apt-get update
