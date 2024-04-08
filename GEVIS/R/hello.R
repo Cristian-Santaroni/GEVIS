@@ -73,9 +73,52 @@ pca <- function(data, dataC, dataN) {
 
   # Get gene names
   gene_names <- rownames(scores_var)
-  print(gene_names)
+ # print(gene_names)
 
   # Return a list containing scores_df and scores_var
   return(list(scores_df = scores_df, scores_var = scores_var))
 }
 
+enrichment <- function (data){
+  library(forcats)
+  library(stringr)
+  library(enrichR)
+
+  top_term <- 10
+  thr_pval <- 0.05
+  dbs <- c("DisGeNET","GO_Molecular_Function_2021", "GO_Biological_Process_2021", "KEGG_2021_Human", "TRANSFAC_and_JASPAR_PWMs")
+
+  list <- split(data$gene,data$direction)
+
+  df <- lapply(list, function(x){
+    enrichr(x, dbs)
+  })
+
+
+
+  DisGeNET <- df$UP$DisGeNET
+  DisGeNET <- DisGeNET[DisGeNET$Adjusted.P.value < thr_pval, ]
+  DisGeNET <- DisGeNET[order(DisGeNET$Adjusted.P.value, decreasing = F),]
+
+  DisGeNET$Gene_count <- sapply(DisGeNET$Genes, function(x){
+    tmp <- unlist(strsplit(x, split = ";"))
+    count <- length(tmp)
+  })
+
+  DisGeNET$Gene_ratio <- unlist(lapply(DisGeNET$Overlap, function(x){
+
+    total <- as.numeric(strsplit(x,"/")[[1]][2])
+    count <- as.numeric(strsplit(x,"/")[[1]][1])
+
+    Gene_ratio <- count/total
+
+  } ))
+
+    if(length(top_term) != 0 & top_term <= nrow(DisGeNET)){
+      annotation_top <- DisGeNET[1:top_term,]
+    }else{
+      annotation_top <- DisGeNET
+    }
+  return(annotation_top)
+
+}
