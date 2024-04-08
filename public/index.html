@@ -338,6 +338,7 @@
                     </select>
 
                 </div><!--div(6)-->
+                <div id="dotplot"></div>
             </div>
         </div><!--div(2)-->
 
@@ -913,9 +914,9 @@
                                             var pc2Values = [];
                                             var groupValues = [];
                                             var req = ocpu.call("pca", {
-                                                data: data_copy,
-                                                dataN: dataN_copy,
-                                                dataC: dataC_copy
+                                                data: data_copy_pval,
+                                                dataN: dataN_copy_pval,
+                                                dataC: dataC_copy_pval
                                             }, function (session) {
                                                 var filteredDataURL = session.loc + "/R/.val/json";
                                                 //console.log(session);
@@ -1008,6 +1009,12 @@
 
 
                                             })
+                                          //  DEG(data_copy_pval,parsedLogFC,old_p_adj)
+                                            // var req = ocpu.call("enrichment", {
+                                            //     data: data_copy
+                                            //     }, function (session) {
+                                                    
+                                            // })
                                         });
 
 
@@ -1035,6 +1042,137 @@
                     .catch(error => console.error('Error reading file:', error));
 
             });
+
+    function DEG(data,logFC,pval_adj){
+
+            // console.log("DEG da modificare",data)
+            // console.log("parsed log", logFC)
+            // console.log("pval adj", pval_adj)
+
+                                // Create an empty array to store the final structure
+                    var result = [];
+
+                // Iterate over logFC data
+                for (var i = 0; i < logFC.length; i++) {
+                    var geneData = {
+                        gene: logFC[i].Gene,
+                        pval_adj: null, // Placeholder for pval_adj
+                        logFC: logFC[i].logFC,
+                        direction: logFC[i].logFC >= 0 ? 'UP' : 'DOWN'
+                    };
+
+                    // Find corresponding pval_adj for the current gene
+                    for (var j = 0; j < pval_adj.length; j++) {
+                        if (pval_adj[j].Gene === logFC[i].Gene) {
+                            geneData.pval_adj = pval_adj[j].pval_adj;
+                            break; // Exit loop once found
+                        }
+                    }
+
+                    // Push the geneData to the result array
+                    result.push(geneData);
+                }
+
+                // Log the final structure
+                console.log(result);
+
+           enrichment(result)
+
+        }
+
+    function enrichment(list) {
+    var req = ocpu.call("enrichment", {
+        data: list
+    }, function(session) {
+        // Once the OpenCPU call is successful
+        console.log(session);
+        
+        // Extract the JSON data URL from the session object
+        var filteredDataURL = session.loc + "/R/.val/json";
+        console.log(filteredDataURL);
+        
+        // Load the JSON data directly using d3.json()
+        d3.json(filteredDataURL, function(data) {
+            // Process the data and create the dot plot
+            createDotPlot(data);
+        });
+    });
+}
+
+
+    function createDotPlot(data){
+    var minValue = d3.min(data, function(d) { return d['Adjusted.P.value']; });
+    var maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
+
+    // Define a linear color scale from red to blue based on the calculated domain
+    var colorScale = d3.scaleLinear()
+    .domain([minValue, maxValue])
+    .range(["red", "blue"]);
+
+    // Define dimensions and margins
+    var margin = { top: 20, right: 20, bottom: 30, left: 120 },
+            width = 600 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
+
+        // Append SVG to the dotplot div
+        var svg = d3.select("#dotplot").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // Define scales
+        var x = d3.scaleLinear()
+            .domain([0, d3.max(data, function(d) { return d.Gene_count; })])
+            .range([0, width]);
+
+        var y = d3.scaleBand()
+            .domain(data.map(function(d) { return d.Term; }))
+            .range([height, 0])
+            .padding(0.1);
+
+            
+        // Add axes
+       var xAxis = svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x))
+            .style("fill", "white");
+
+       var yAxis = svg.append("g")
+            .attr("class", "y axis")
+            .call(d3.axisLeft(y))
+            .style("fill", "white");
+            
+            yAxis.selectAll(".tick line")
+                .style("fill", "white");
+
+            yAxis.selectAll("text")
+                .style("fill", "white");
+
+                xAxis.selectAll(".tick line")
+                .style("fill", "white");
+
+            xAxis.selectAll("text")
+                .style("fill", "white");
+        // Add dots
+        svg.selectAll(".dot")
+            .data(data)
+            .enter().append("circle")
+            .attr("class", "dot")
+            .attr("cx", function(d) { return x(d.Gene_count); })
+            .attr("cy", function(d) { return y(d.Term) + y.bandwidth() / 2; })
+            .attr("r", function(d) { return d.Gene_ratio *20 }) // Adjust radius as per Gene_ratio
+            .style("fill", function(d) {
+        // Access the Adjusted.P.value property using bracket notation
+        var adjustedPValue = d['Adjusted.P.value'];
+
+        // Interpolate color using the color scale
+        return colorScale(adjustedPValue);
+    });
+
+
+    }
 
         document.getElementById("thresholdSlider").addEventListener("input", function () {
             // Update the threshold value on slider change
@@ -1634,6 +1772,7 @@
                 parsedLogFC_pval = parsedLogFC.filter((entry, index) => !ind.includes(index));
 
                 updateCounter()
+
                 updateBoxPlot(last_box, parsedLogFC_pval, dataN_copy, dataC_copy)
 
                 var pc1Values = [];
@@ -1657,9 +1796,6 @@
                             var pc1Key = "PC1";
                             var pc2Key = "PC2";
                             var groupKey = "Group";
-
-                            // Arrays to store PC1 and PC2 values
-
 
                             // Iterate over each object in the JSON array
                             json.scores_df.forEach(function (obj) {
@@ -1731,6 +1867,8 @@
                             heatmap(heatmap_data)
 
                         })
+                    
+                    
 
 
 
