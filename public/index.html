@@ -30,6 +30,41 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-scale-chromatic/1.6.0/d3-scale-chromatic.min.js"></script>
 
     <style>
+        /* Modal styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: #141313;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
         .axis-label {
             cursor: pointer;
             /* Cursor style when hovering over the axis label */
@@ -338,7 +373,8 @@
                     </select>
 
                 </div><!--div(6)-->
-                <div id="dotplot"></div>
+                
+                <button id="openModalBtn">Open Dot Plot</button>
             </div>
         </div><!--div(2)-->
 
@@ -451,13 +487,26 @@
 
     </div> <!-- div(1)-->
 
+                <!-- Modal -->
+                <div id="myModal" class="modal">
+                    <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <div id="dotplot"></div>
+                    <div id="slider_dot_polot"></div>
+
+                    </div>
+                </div>
     <script>
-        try {
+       
+       try {
             ocpu.seturl("//localhost/ocpu/lib/GEVIS/R");
         } catch (error) {
             // If an error occurs (e.g., ocpu is not defined), reload the page
             window.location.reload();
         }
+        
+        
+
         let variation_data;
         let variation_data_copy;
         let initial_num_genes;
@@ -530,6 +579,33 @@
 
         let selectedVariable = "case"
 
+// Get the modal element
+var modal = document.getElementById("myModal");
+
+// Get the button that opens the modal
+var btn = document.getElementById("openModalBtn");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close")[0];
+
+// When the user clicks the button, open the modal
+btn.onclick = function() {
+modal.style.display = "block";
+// Call your function to create the dot plot here
+DEG(data_copy_pval,parsedLogFC,old_p_adj)
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+if (event.target == modal) {
+    modal.style.display = "none";
+}
+}
 
 
 
@@ -862,7 +938,8 @@
                                                 console.log("geni rimamenti dal primo filtering", data_copy.length)
                                                 // Remove entries corresponding to ind from logFC
                                                 parsedLogFC = parsedLogFC.filter((entry, index) => !ind.includes(index));
-
+                                                
+                                                parsedLogFC_pval=parsedLogFC
                                                 updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
 
                                                 console.log("Promise: al box gli passo parsedlogFC", parsedLogFC.length)
@@ -1009,7 +1086,7 @@
 
 
                                             })
-                                          //  DEG(data_copy_pval,parsedLogFC,old_p_adj)
+                                          // DEG(data_copy_pval,parsedLogFC,old_p_adj)
                                             // var req = ocpu.call("enrichment", {
                                             //     data: data_copy
                                             //     }, function (session) {
@@ -1103,6 +1180,7 @@
     function createDotPlot(data){
     var minValue = d3.min(data, function(d) { return d['Adjusted.P.value']; });
     var maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
+    data.sort((a, b) => b.Gene_count - a.Gene_count);
 
     // Define a linear color scale from red to blue based on the calculated domain
     var colorScale = d3.scaleLinear()
@@ -1110,12 +1188,14 @@
     .range(["red", "blue"]);
 
     // Define dimensions and margins
-    var margin = { top: 20, right: 20, bottom: 30, left: 120 },
+    var margin = { top: 20, right: 100, bottom: 50, left: 120 },
             width = 600 - margin.left - margin.right,
             height = 400 - margin.top - margin.bottom;
 
         // Append SVG to the dotplot div
-        var svg = d3.select("#dotplot").append("svg")
+        var svg = d3.select("#dotplot")
+        .html("")
+        .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
@@ -1128,50 +1208,195 @@
 
         var y = d3.scaleBand()
             .domain(data.map(function(d) { return d.Term; }))
-            .range([height, 0])
+            .range([0, height])
             .padding(0.1);
 
-            
-        // Add axes
-       var xAxis = svg.append("g")
+
+            // Define axes
+        var xAxis = svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x))
-            .style("fill", "white");
+            .call(d3.axisBottom(x)
+                .tickSize(-height) // Add gridlines along the x-axis
+            );
 
-       var yAxis = svg.append("g")
+        var yAxis = svg.append("g")
             .attr("class", "y axis")
-            .call(d3.axisLeft(y))
-            .style("fill", "white");
+            .call(d3.axisLeft(y)
+                .tickSize(-width) // Add gridlines along the y-axis
+            );
+
+
+        // Add label for x-axis
+svg.append("text")
+    .attr("class", "x-axis-label")
+    .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.top + 20) + ")")
+    .style("text-anchor", "middle")
+    .style("fill", "white") // Set text color to white
+    .text("Gene Count");
+
             
-            yAxis.selectAll(".tick line")
-                .style("fill", "white");
 
-            yAxis.selectAll("text")
-                .style("fill", "white");
+        // Style axes and gridlines
+        svg.selectAll(".axis line")
+            .style("stroke", "white");
 
-                xAxis.selectAll(".tick line")
-                .style("fill", "white");
+        svg.selectAll(".axis path")
+            .style("stroke", "white");
+                    
+                yAxis.selectAll(".tick line")
+                    .style("fill", "white");
 
-            xAxis.selectAll("text")
-                .style("fill", "white");
-        // Add dots
-        svg.selectAll(".dot")
-            .data(data)
-            .enter().append("circle")
-            .attr("class", "dot")
-            .attr("cx", function(d) { return x(d.Gene_count); })
-            .attr("cy", function(d) { return y(d.Term) + y.bandwidth() / 2; })
-            .attr("r", function(d) { return d.Gene_ratio *20 }) // Adjust radius as per Gene_ratio
-            .style("fill", function(d) {
+                yAxis.selectAll("text")
+                    .style("fill", "white");
+
+                    xAxis.selectAll(".tick line")
+                    .style("fill", "white");
+
+                xAxis.selectAll("text")
+                    .style("fill", "white");
+
+            // Sort the data array based on gene count in descending order
+
+console.log(data)
+// Define a scaling factor that the user can adjust
+var scalingFactor = 20; // Default scaling factor
+
+// Add an input element for the user to adjust the scaling factor
+var scalingFactorInput = d3.select("#slider_dot_polot")
+    .html("")
+    .append("input")
+    .attr("type", "range")
+    .attr("min", 0) // Minimum scaling factor
+    .attr("max", 100) // Maximum scaling factor
+    .attr("value", scalingFactor) // Default scaling factor
+    .on("input", function() {
+        scalingFactor = +this.value;
+        updateDots(); // Update the dots with the new scaling factor
+    });
+
+// Function to update the dots with the new scaling factor
+function updateDots() {
+    svg.selectAll(".dot")
+        .attr("r", function(d) { return d.Gene_ratio * scalingFactor; }); // Adjust radius based on scaling factor
+}
+
+// Add dots with tooltips
+var dot = svg.selectAll(".dot")
+    .data(data)
+    .enter().append("circle")
+    .attr("class", "dot")
+    .attr("cx", function(d) { return x(d.Gene_count); })
+    .attr("cy", function(d) { return y(d.Term) + y.bandwidth() / 2; })
+    .attr("r", function(d) { return d.Gene_ratio * scalingFactor; }) // Adjust radius as per Gene_ratio and scaling factor
+    .style("fill", function(d) {
         // Access the Adjusted.P.value property using bracket notation
-        var adjustedPValue = d['Adjusted.P.value'];
+        adjustedPValue = d['Adjusted.P.value'];
 
         // Interpolate color using the color scale
         return colorScale(adjustedPValue);
+    })
+    .on("mouseover", function(d) {
+        // Show tooltip on mouseover
+        tooltip.transition()
+            .duration(200)
+            .style("opacity", .9);
+        tooltip.html("Gene Ratio: " + d.Gene_ratio)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px")
+            .style("color", "white");
+
+        // Add black stroke on mouseover
+        d3.select(this).style("stroke", "black")
+        .style("stroke-width", "2px");
+    })
+    .on("mouseout", function(d) {
+        // Hide tooltip on mouseout
+        tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
+
+        // Remove black stroke on mouseout
+        d3.select(this).style("stroke", "none");
     });
 
+// Append tooltip to the body
+var tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 
+
+
+
+   // Define the legend dimensions and margins
+var legendWidth = 20,
+    legendHeight = 150,
+    legendMargin = { top: 20, right: 10, bottom: 30, left: 10 };
+
+// Append the legend SVG
+var legend = svg.append("g")
+    .attr("class", "legend")
+    .attr("transform", "translate(" + (width + legendMargin.left + legendMargin.right) + "," + legendMargin.top + ")");
+
+// Append a defs (for definition) element to your SVG
+var defs = legend.append("defs");
+
+// Append a linearGradient element to the defs and give it a unique id
+var linearGradient = defs.append("linearGradient")
+    .attr("id", "linear-gradient1")
+    .attr("x1", "0%")
+    .attr("y1", "0%")
+    .attr("x2", "0%")
+    .attr("y2", "100%");
+
+// Add color stops to the linear gradient
+linearGradient.append("stop")
+    .attr("offset", "0%")
+    .attr("stop-color", "blue");
+
+linearGradient.append("stop")
+    .attr("offset", "100%")
+    .attr("stop-color", "red");
+
+// Draw the rectangle and fill with the linear gradient
+legend.append("rect")
+    .attr("width", legendWidth)
+    .attr("height", legendHeight)
+    .style("fill", "url(#linear-gradient1)");
+
+    console.log(minValue,maxValue)
+// Define the scale for the legend axis
+var legendScale = d3.scaleLinear()
+    .domain([minValue, maxValue])
+    .range([legendHeight, 0]);
+
+// Define the scale for the legend axis
+var legendScale = d3.scaleLinear()
+    .domain([minValue, maxValue])
+    .range([legendHeight, 0]);
+
+// Generate tick values for the legend axis
+var tickValues = [minValue, maxValue];
+
+// Append and style the legend axis
+var legendAxis = d3.axisRight(legendScale)
+    .tickValues(tickValues)
+    .tickFormat(d3.format(".2e")); // Preserve scientific notation with two decimal places
+
+
+var axis = legend.append("g")
+    .attr("class", "legend-axis")
+    .attr("transform", "translate(" + (legendWidth + 2) + ",0)") // Adjust position as needed
+    .call(legendAxis);
+
+
+
+    // Apply style to axis ticks to make them white
+    axis.selectAll("text").style("fill", "white").style("font-size", "13px")
+    axis.selectAll("line").style("stroke", "white");
+
+// Remove the domain path
+axis.select(".domain").remove();
     }
 
         document.getElementById("thresholdSlider").addEventListener("input", function () {
@@ -1477,6 +1702,7 @@
 
 
 
+                                DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
 
                         })
@@ -1706,6 +1932,9 @@
                                     pca(pca_data);
                                     heatmap(heatmap_data)
                                 })
+
+                                DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
+
                         })
 
 
@@ -1871,6 +2100,7 @@
                     
 
 
+                        DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
 
 
