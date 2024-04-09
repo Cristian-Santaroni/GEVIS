@@ -48,7 +48,10 @@
   margin: 15% auto;
   padding: 20px;
   border: 1px solid #888;
-  width: 80%;
+  width: auto;
+  height: auto;
+  max-width: 80%; /* Optionally, you can set a max-width to prevent the modal from becoming too wide */
+  max-height: 80vh; /* Optionally, you can set a max-height to prevent the modal from becoming too tall */
 }
 
 .close {
@@ -374,7 +377,7 @@
 
                 </div><!--div(6)-->
                 
-                <button id="openModalBtn">Open Dot Plot</button>
+                <button id="openModalBtn">Get Enrichment</button>
             </div>
         </div><!--div(2)-->
 
@@ -464,7 +467,6 @@
             <div id="style_scatter">
                 <div>
                     <div id="pca"></div>
-
                 </div>
                 <div id="heatmap"></div>
 
@@ -493,7 +495,7 @@
                     <span class="close">&times;</span>
                     <div id="dotplot"></div>
                     <div id="slider_dot_polot"></div>
-
+                    <div id="select_dot"></div>
                     </div>
                 </div>
     <script>
@@ -579,6 +581,7 @@
 
         let selectedVariable = "case"
 
+
 // Get the modal element
 var modal = document.getElementById("myModal");
 
@@ -588,23 +591,50 @@ var btn = document.getElementById("openModalBtn");
 // Get the <span> element that closes the modal
 var span = document.getElementsByClassName("close")[0];
 
-// When the user clicks the button, open the modal
+// Function to display loading message inside the modal
+function showLoadingMessage() {
+    var dotplotContainer = document.getElementById("dotplot");
+    var slider = document.getElementById("slider_dot_polot");
+    var selector = document.getElementById("select_dot");
+    selector.innerHTML="";
+    slider.innerHTML = "";
+    dotplotContainer.innerHTML = "<h3 style='color: white'>Loading data from EnrichR...</p>";
+}
+
+// Function to create the dot plot inside the modal
+function createDotPlotInsideModal() {
+    // Display loading message inside the modal
+    showLoadingMessage();
+
+    // Call your function to create the dot plot here
+    DEG(data_copy_pval, parsedLogFC, old_p_adj);
+}
+
+// When the user clicks the button, open the modal and create the dot plot inside it
 btn.onclick = function() {
-modal.style.display = "block";
-// Call your function to create the dot plot here
-DEG(data_copy_pval,parsedLogFC,old_p_adj)
+    modal.style.display = "block";
+    // Display loading message inside the modal
+    showLoadingMessage();
+    // Call function to create dot plot inside modal
+    createDotPlotInsideModal();
 }
 
 // When the user clicks on <span> (x), close the modal
 span.onclick = function() {
-modal.style.display = "none";
+    modal.style.display = "none";
+    // Clear the content of the modal when it is closed
+    var dotplotContainer = document.getElementById("dotplot");
+    dotplotContainer.innerHTML = "";
 }
 
 // When the user clicks anywhere outside of the modal, close it
 window.onclick = function(event) {
-if (event.target == modal) {
-    modal.style.display = "none";
-}
+    if (event.target == modal) {
+        modal.style.display = "none";
+        // Clear the content of the modal when it is closed
+        var dotplotContainer = document.getElementById("dotplot");
+        dotplotContainer.innerHTML = "";
+    }
 }
 
 
@@ -1126,7 +1156,7 @@ if (event.target == modal) {
             // console.log("parsed log", logFC)
             // console.log("pval adj", pval_adj)
 
-                                // Create an empty array to store the final structure
+                    // Create an empty array to store the final structure
                     var result = [];
 
                 // Iterate over logFC data
@@ -1177,18 +1207,32 @@ if (event.target == modal) {
 }
 
 
-    function createDotPlot(data){
-    var minValue = d3.min(data, function(d) { return d['Adjusted.P.value']; });
-    var maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
-    data.sort((a, b) => b.Gene_count - a.Gene_count);
+    function createDotPlot(data) {
+    data_disgen = data.annotation_top
+    var minValue = d3.min(data_disgen, function(d) { return d['Adjusted.P.value']; });
+    var maxValue = d3.max(data_disgen, function(d) { return d['Adjusted.P.value']; });
+    data_disgen.sort((a, b) => b.Gene_count - a.Gene_count);
 
     // Define a linear color scale from red to blue based on the calculated domain
     var colorScale = d3.scaleLinear()
     .domain([minValue, maxValue])
     .range(["red", "blue"]);
 
+    var options = ["DisGenNet","Bio. Process","Molecular function","KEGG"]
+    
+     // Create the select element
+var selectDot = d3.select("#select_dot").append('select');
+
+// Bind the data to options and enter the new options
+selectDot.selectAll('myOptions') // Next 4 lines add 6 options = 6 colors
+ 	.data(options)
+  .enter()
+	.append('option')
+  .text(function (d) { return d; }) // text showed in the menu
+  .attr("value", function (d) { return d; }) // corresponding value returned by the button
+
     // Define dimensions and margins
-    var margin = { top: 20, right: 100, bottom: 50, left: 120 },
+    var margin = { top: 20, right: 120, bottom: 50, left: 150 },
             width = 600 - margin.left - margin.right,
             height = 400 - margin.top - margin.bottom;
 
@@ -1203,11 +1247,11 @@ if (event.target == modal) {
 
         // Define scales
         var x = d3.scaleLinear()
-            .domain([0, d3.max(data, function(d) { return d.Gene_count; })])
+            .domain([0, d3.max(data_disgen, function(d) { return d.Gene_count; })])
             .range([0, width]);
 
         var y = d3.scaleBand()
-            .domain(data.map(function(d) { return d.Term; }))
+            .domain(data_disgen.map(function(d) { return d.Term; }))
             .range([0, height])
             .padding(0.1);
 
@@ -1225,6 +1269,15 @@ if (event.target == modal) {
             .call(d3.axisLeft(y)
                 .tickSize(-width) // Add gridlines along the y-axis
             );
+
+            // Add title
+          var title = svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", -3)
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("UP Genes DisGenNet ")
+                .style("fill", "white");
 
 
         // Add label for x-axis
@@ -1283,7 +1336,7 @@ function updateDots() {
 
 // Add dots with tooltips
 var dot = svg.selectAll(".dot")
-    .data(data)
+    .data(data_disgen)
     .enter().append("circle")
     .attr("class", "dot")
     .attr("cx", function(d) { return x(d.Gene_count); })
@@ -1397,6 +1450,120 @@ var axis = legend.append("g")
 
 // Remove the domain path
 axis.select(".domain").remove();
+
+
+
+function update(selectedGroup, data) {
+    var minValue;
+    var maxValue;
+    // Adjust data based on selected group
+    if (selectedGroup == 'DisGenNet') {
+        data = data.annotation_top;
+        data.sort((a, b) => b.Gene_count - a.Gene_count);
+         minValue = d3.min(data, function(d) { return d['Adjusted.P.value']; });
+         maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
+    } else if (selectedGroup == 'Bio. Process') {
+        data = data.annotation_top1;
+        data.sort((a, b) => b.Gene_count - a.Gene_count);
+         minValue = d3.min(data, function(d) { return d['Adjusted.P.value']; });
+         maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
+    } else if (selectedGroup == 'Molecular function') {
+        data = data.annotation_top2;
+        data.sort((a, b) => b.Gene_count - a.Gene_count);
+         minValue = d3.min(data, function(d) { return d['Adjusted.P.value']; });
+         maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
+    }
+    else if (selectedGroup == 'KEGG') {
+        data = data.annotation_top3;
+        data.sort((a, b) => b.Gene_count - a.Gene_count);
+         minValue = d3.min(data, function(d) { return d['Adjusted.P.value']; });
+         maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
+    }
+    title.text("UP Genes " + selectedGroup);
+
+    var colorScale = d3.scaleLinear()
+    .domain([minValue, maxValue])
+    .range(["red", "blue"]);
+
+    // Update x scale
+    var x = d3.scaleLinear()
+        .domain([0, d3.max(data, function(d) { return d.Gene_count; })])
+        .range([0, width]);
+
+    // Update y scale
+    var y = d3.scaleBand()
+        .domain(data.map(function(d) { return d.Term; }))
+        .range([0, height])
+        .padding(0.1);
+
+    // Update x-axis
+    xAxis.transition()
+        .duration(1000)
+        .call(d3.axisBottom(x)
+            .tickSize(-height) // Add gridlines along the x-axis
+        );
+
+    // Update y-axis
+    yAxis.transition()
+        .duration(1000)
+        .call(d3.axisLeft(y)
+            .tickSize(-width) // Add gridlines along the y-axis
+        );
+
+        // Style axes and gridlines
+        svg.selectAll(".axis line")
+            .style("stroke", "white");
+
+        svg.selectAll(".axis path")
+            .style("stroke", "white");
+                    
+                yAxis.selectAll(".tick line")
+                    .style("fill", "white");
+
+                yAxis.selectAll("text")
+                    .style("fill", "white");
+
+                    xAxis.selectAll(".tick line")
+                    .style("fill", "white");
+
+                xAxis.selectAll("text")
+                    .style("fill", "white");
+
+
+            // Update dots
+            dot.data(data)
+                .transition()
+                .duration(1000)
+                .attr("cx", function(d) { return x(d.Gene_count); })
+                .attr("cy", function(d) { return y(d.Term) + y.bandwidth() / 2; })
+                .attr("r", function(d) { return d.Gene_ratio * scalingFactor; }) // Adjust radius as per Gene_ratio and scaling factor
+                .style("fill", function(d) {
+                    // Access the Adjusted.P.value property using bracket notation
+                    adjustedPValue = d['Adjusted.P.value'];
+
+                    // Interpolate color using the color scale
+                    return colorScale(adjustedPValue);
+                });
+
+                 // Update legend
+    legendScale.domain([d3.min(data, function(d) { return d['Adjusted.P.value']; }), d3.max(data, function(d) { return d['Adjusted.P.value']; })]);
+    var tickValues = [d3.min(data, function(d) { return d['Adjusted.P.value']; }), d3.max(data, function(d) { return d['Adjusted.P.value']; })];
+    legendAxis.tickValues(tickValues);
+    axis.call(legendAxis);
+
+    // Apply style to axis ticks to make them white
+    axis.selectAll("text").style("fill", "white").style("font-size", "13px");
+    axis.selectAll("line").style("stroke", "white");
+
+    // Remove the domain path
+    axis.select(".domain").remove();
+        }
+
+// Define the event handler for the change event
+selectDot.on("change", function() {
+    var selectedOption = d3.select(this).property("value");
+    update(selectedOption, data);
+});
     }
 
         document.getElementById("thresholdSlider").addEventListener("input", function () {
@@ -1702,7 +1869,7 @@ axis.select(".domain").remove();
 
 
 
-                                DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
+                               // DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
 
                         })
@@ -1933,7 +2100,7 @@ axis.select(".domain").remove();
                                     heatmap(heatmap_data)
                                 })
 
-                                DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
+                                //DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
                         })
 
@@ -2100,7 +2267,7 @@ axis.select(".domain").remove();
                     
 
 
-                        DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
+                       // DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
 
 
@@ -2951,15 +3118,6 @@ axis.select(".domain").remove();
                 .style("font-size", "18px")
                 .text("Scatterplot")
                 .style("fill", "white");
-
-            // // Add X axis
-            // svg.append("g")
-            //     .attr("transform", "translate(0," + height + ")")
-            //     .call(d3.axisBottom(xScale));
-
-            // // Add Y axis
-            // svg.append("g")
-            //     .call(d3.axisLeft(yScale));
 
             // Create circles for each gene
             var data = Object.keys(averageExpressions10N).map(function (gene) {
