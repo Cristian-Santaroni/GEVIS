@@ -33,25 +33,26 @@
         /* Modal styles */
         .modal {
   display: none;
-  position: absolute;
+  position: fixed; /* Change to fixed for better centering */
   z-index: 1000;
   left: 0;
   top: 0;
-  width: 80%;
-  height: 90%;
+  width: 100%;
+  height: 100%;
   overflow: auto;
   background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
-  background-color: #141313;
-  margin: 15% auto;
+  position: absolute; /* Change to absolute */
+  left: 50%; /* Move content to the horizontal center */
+  top: 50%; /* Move content to the vertical center */
+  transform: translate(-50%, -50%); /* Adjust to center the content */
+  background-color: #0e0d0d;
   padding: 20px;
   border: 1px solid #888;
   width: auto; /* Adjust width based on content */
-  max-width: 80%; /* Optionally, set a maximum width */
   height: auto;
-  max-height: 80vh; /* Optionally, set a maximum height */
 }
 
 
@@ -60,6 +61,8 @@
   float: right;
   font-size: 28px;
   font-weight: bold;
+  width: 28px;
+  
 }
 
 .close:hover,
@@ -96,8 +99,9 @@
             display: flex;
             flex-direction: row;
             max-width: space-between;
-            height: 100%;
-            width: 100%
+            height: auto;
+            width: 50%;
+           
         }
 
         .flex-container {
@@ -1223,43 +1227,64 @@ window.onclick = function(event) {
         }
 
     function enrichment(list) {
-
-            var req = ocpu.call("enrichment", {
-        data: list,
-        direction: 'UP'
-    }, function(session) {
-        // Once the OpenCPU call is successful
-        console.log(session);
-        
-        // Extract the JSON data URL from the session object
-        var filteredDataURL = session.loc + "/R/.val/json";
-        console.log(filteredDataURL);
-        
-        // Load the JSON data directly using d3.json()
-        d3.json(filteredDataURL, function(data) {
-            // Process the data and create the dot plot
-            createDotPlot(data);
-        });
+        var req = ocpu.call("enrichment", {
+    data: list,
+    direction: 'UP'
+}, function(session) {
+    // Once the OpenCPU call is successful
+    console.log(session);
+    
+    // Extract the JSON data URL from the session object
+    var filteredDataURL = session.loc + "/R/.val/json";
+    console.log(filteredDataURL);
+    
+    // Load the JSON data directly using d3.json()
+    d3.json(filteredDataURL, function(data) {
+        // Process the data and create the dot plot
+        createDotPlot(data);
     });
+}).fail(function() {
+    // Handle errors here
+    console.log("Error: OpenCPU call failed.");
+    // Show error message to the user
+    showError("EnrichR takes too much to respond. Please try again!!");
+    modal.style.display = "none";
+    // Clear the content of the modal when it is closed
+    var dotplotContainer = document.getElementById("dotplot");
+    dotplotContainer.innerHTML = "";
+});
 
-
-    var req = ocpu.call("enrichment", {
-        data: list,
-        direction: 'DOWN'
-    }, function(session) {
-        // Once the OpenCPU call is successful
-        console.log(session);
-        
-        // Extract the JSON data URL from the session object
-        var filteredDataURL = session.loc + "/R/.val/json";
-        console.log(filteredDataURL);
-        
-        // Load the JSON data directly using d3.json()
-        d3.json(filteredDataURL, function(data) {
-            // Process the data and create the dot plot
-            createDotPlot1(data);
-        });
+var req = ocpu.call("enrichment", {
+    data: list,
+    direction: 'DOWN'
+}, function(session) {
+    // Once the OpenCPU call is successful
+    console.log(session);
+    
+    // Extract the JSON data URL from the session object
+    var filteredDataURL = session.loc + "/R/.val/json";
+    console.log(filteredDataURL);
+    
+    // Load the JSON data directly using d3.json()
+    d3.json(filteredDataURL, function(data) {
+        // Process the data and create the dot plot
+        createDotPlot1(data);
     });
+}).fail(function() {
+    // Handle errors here
+    console.log("Error: OpenCPU call failed.");
+    // Show error message to the user
+    showError("EnrichR takes too much to respond. Please try again!!");
+    modal.style.display = "none";
+    // Clear the content of the modal when it is closed
+    var dotplotContainer = document.getElementById("dotplot");
+    dotplotContainer.innerHTML = "";
+});
+
+function showError(message) {
+    // Display error message to the user
+    alert(message); // You can use other methods to display the message, such as showing it in a modal or updating a specific HTML element
+}
 }
 
 
