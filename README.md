@@ -23,7 +23,7 @@ This project implements a dashboard for conducting a differential gene expressio
 1. Open your terminal.
 2. Clone the repository to your local machine by running:
     ```
-    git clone https://github.com/francesco-fortunato/GEVIS.git
+    git clone https://github.com/Cristian-Santaroni/GEVIS.git
     ```
 3. Navigate to the "GEVIS" directory using the command line.
     ```
