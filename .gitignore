@@ -39,3 +39,7 @@ build/
 # OS-generated files
 .DS_Store
 Thumbs.db
+public/data_log1.json
+public/dataC_log1.json
+public/dataN_log1.json
+public/variation_lung1.txt

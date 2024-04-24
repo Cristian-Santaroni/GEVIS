@@ -324,7 +324,7 @@
         <a class="navbar-brand" href="#" style="color:white">GEVis</a>
         <button class="btn btn-secondary" id="openModalBtn">Get Enrichment</button>
     </nav>
-    <div id="loadingOverlay" style="display: flex; justify-content: center; align-items: center;">
+    <div id="loadingOverlay" style="display: none; justify-content: center; align-items: center;">
         <div style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
 
             <svg version="1.1" id="L1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -373,9 +373,9 @@
 
                 <div id="IQR" style="width: 100%"></div><!--div(4) IQR-->
                 <div> <!--div(3) bottoni IQR-->
-                    <input type="range" id="thresholdSlider" class="range2" min="0.1" max="0.99" step="0.01" value="0.1"
+                    <input type="range" id="thresholdSlider" class="range2" min="0.40" max="0.99" step="0.01" value="0.46"
                         style="width: 200px;">
-                    <span id="thresholdValue" style="color: white;">0.1</span>
+                    <span id="thresholdValue" style="color: white;">0.46</span>
                 </div><!-- div(3)-->
                 <div id="logFCHistogram"></div> <!-- div(5) FC-->
 
@@ -545,7 +545,7 @@
         let variation_data_copy;
         let initial_num_genes;
         let data_upd
-        let prc_IQR = 0.1;
+        let prc_IQR = 0.46;
         let thr_prc;
         let filteredData;
         let matrix;
@@ -851,13 +851,16 @@ window.onclick = function(event) {
 
 
         // Read the contents of the .txt file
-        Promise.all([fetchJSON('dataC_log.json'), fetchJSON('dataN_log.json'), fetchJSON('data_log.json'), fetchMeta('metadata.json')])
+        Promise.all([fetchJSON('dataC_log1.json'), fetchJSON('dataN_log1.json'), fetchJSON('data_log1.json'), fetchMeta('metadata.json')])
             .then(([dataC, dataN, data, meta]) => {
                 dataC_original = dataC
                 dataN_original = dataN
                 data_original = data
                 metadata = meta
-                fetch('variation_lung.txt')
+
+
+
+                fetch('variation_lung1.txt')
                     .then(response => response.text())
                     .then(text => {
                         // Parse the data
@@ -1064,102 +1067,102 @@ window.onclick = function(event) {
                                             var pc1Values = [];
                                             var pc2Values = [];
                                             var groupValues = [];
-                                            var req = ocpu.call("pca", {
-                                                data: data_copy_pval,
-                                                dataN: dataN_copy_pval,
-                                                dataC: dataC_copy_pval
-                                            }, function (session) {
-                                                var filteredDataURL = session.loc + "/R/.val/json";
-                                                //console.log(session);
-                                                // Fetch the filtered data from the URL
-                                                fetch(filteredDataURL)
-                                                    .then(response => response.json())
-                                                    .then(data => {
-                                                        json = data
-                                                        console.log(filteredDataURL)
-                                                        console.log(json)
+                                            // var req = ocpu.call("pca", {
+                                            //     data: data_copy_pval,
+                                            //     dataN: dataN_copy_pval,
+                                            //     dataC: dataC_copy_pval
+                                            // }, function (session) {
+                                            //     var filteredDataURL = session.loc + "/R/.val/json";
+                                            //     //console.log(session);
+                                            //     // Fetch the filtered data from the URL
+                                            //     fetch(filteredDataURL)
+                                            //         .then(response => response.json())
+                                            //         .then(data => {
+                                            //             json = data
+                                            //             console.log(filteredDataURL)
+                                            //             console.log(json)
 
-                                                        var pc1Key = "PC1";
-                                                        var pc2Key = "PC2";
-                                                        var groupKey = "Group";
+                                            //             var pc1Key = "PC1";
+                                            //             var pc2Key = "PC2";
+                                            //             var groupKey = "Group";
 
-                                                        // Arrays to store PC1 and PC2 values
-
-
-                                                        // Iterate over each object in the JSON array
-                                                        json.scores_df.forEach(function (obj) {
-                                                            // Push PC1, PC2, and Group values to the arrays
-                                                            pc1Values.push(obj[pc1Key]);
-                                                            pc2Values.push(obj[pc2Key]);
-                                                            groupValues.push(obj[groupKey]);
-                                                        });
-                                                        // console.log(pc1Values)
-
-                                                        pca_data = [];
-
-                                                        // Iterate over each object in the JSON array
-                                                        json.scores_df.forEach(function (obj) {
-                                                            // Retrieve additional data from metadata based on _row
-                                                            var gsm = obj._row;
-                                                            var group = obj.Group;
-
-                                                            // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                                                            var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                                            var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                                            var pc1 = obj.PC1;
-                                                            var pc2 = obj.PC2;
-
-                                                            // Create an object with the required fields
-                                                            var newObj = {
-                                                                GSM: gsm,
-                                                                group: group,
-                                                                smokerclass: smokerclass,
-                                                                stage: stage,
-                                                                pc1: pc1,
-                                                                pc2: pc2
-                                                            };
-
-                                                            // Push the new object to the newData array
-                                                            pca_data.push(newObj);
+                                            //             // Arrays to store PC1 and PC2 values
 
 
-                                                        });
-                                                        heatmap_data = []
-                                                        json.scores_var.forEach(function (obj) {
-                                                            // Push PC1, PC2, and Group values to the arrays
-                                                            var gene = obj._row
-                                                            var pc1 = obj.PC1
-                                                            var pc2 = obj.PC2
-                                                            var pc3 = obj.PC3
-                                                            var pc4 = obj.PC4
-                                                            var pc5 = obj.PC5
-                                                            var pc6 = obj.PC6
+                                            //             // Iterate over each object in the JSON array
+                                            //             json.scores_df.forEach(function (obj) {
+                                            //                 // Push PC1, PC2, and Group values to the arrays
+                                            //                 pc1Values.push(obj[pc1Key]);
+                                            //                 pc2Values.push(obj[pc2Key]);
+                                            //                 groupValues.push(obj[groupKey]);
+                                            //             });
+                                            //             // console.log(pc1Values)
 
-                                                            var newObj = {
-                                                                gene: gene,
-                                                                pc1: pc1,
-                                                                pc2: pc2,
-                                                                pc3: pc3,
-                                                                pc4: pc4,
-                                                                pc5: pc5,
-                                                                pc6: pc6
-                                                            };
-                                                            heatmap_data.push(newObj);
-                                                        })
-                                                        // Display the newData array
-                                                        //console.log(pca_data);
+                                            //             pca_data = [];
+
+                                            //             // Iterate over each object in the JSON array
+                                            //             json.scores_df.forEach(function (obj) {
+                                            //                 // Retrieve additional data from metadata based on _row
+                                            //                 var gsm = obj._row;
+                                            //                 var group = obj.Group;
+
+                                            //                 // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                                            //                 var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                            //                 var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                            //                 var pc1 = obj.PC1;
+                                            //                 var pc2 = obj.PC2;
+
+                                            //                 // Create an object with the required fields
+                                            //                 var newObj = {
+                                            //                     GSM: gsm,
+                                            //                     group: group,
+                                            //                     smokerclass: smokerclass,
+                                            //                     stage: stage,
+                                            //                     pc1: pc1,
+                                            //                     pc2: pc2
+                                            //                 };
+
+                                            //                 // Push the new object to the newData array
+                                            //                 pca_data.push(newObj);
 
 
-                                                        pca(pca_data);
-                                                        heatmap(heatmap_data);
+                                            //             });
+                                            //             heatmap_data = []
+                                            //             json.scores_var.forEach(function (obj) {
+                                            //                 // Push PC1, PC2, and Group values to the arrays
+                                            //                 var gene = obj._row
+                                            //                 var pc1 = obj.PC1
+                                            //                 var pc2 = obj.PC2
+                                            //                 var pc3 = obj.PC3
+                                            //                 var pc4 = obj.PC4
+                                            //                 var pc5 = obj.PC5
+                                            //                 var pc6 = obj.PC6
 
-                                                    })
+                                            //                 var newObj = {
+                                            //                     gene: gene,
+                                            //                     pc1: pc1,
+                                            //                     pc2: pc2,
+                                            //                     pc3: pc3,
+                                            //                     pc4: pc4,
+                                            //                     pc5: pc5,
+                                            //                     pc6: pc6
+                                            //                 };
+                                            //                 heatmap_data.push(newObj);
+                                            //             })
+                                            //             // Display the newData array
+                                            //             //console.log(pca_data);
 
 
+                                            //             pca(pca_data);
+                                            //             heatmap(heatmap_data);
+
+                                            //         })
 
 
 
-                                            })
+
+
+                                            // })
                                           // DEG(data_copy_pval,parsedLogFC,old_p_adj)
                                             // var req = ocpu.call("enrichment", {
                                             //     data: data_copy
@@ -2125,7 +2128,7 @@ selectDot.on("change", function() {
         });
 
         document.getElementById("thresholdSlider").addEventListener("change", function () {
-            document.getElementById("loadingOverlay").style.display = "block";
+            document.getElementById("loadingOverlay").style.display = "none";
 
             console.log("data copy in iqr prima di chiamare pval", data_copy)
             var req = ocpu.call("hello", {
@@ -2222,105 +2225,105 @@ selectDot.on("change", function() {
                         var pc1Values = [];
                         var pc2Values = [];
                         var groupValues = [];
-                        var req = ocpu.call("pca", {
-                            data: data_copy_pval,
-                            dataN: dataN_copy_pval,
-                            dataC: dataC_copy_pval
-                        }, function (session) {
-                            var filteredDataURL = session.loc + "/R/.val/json";
-                            //console.log(session);
-                            // Fetch the filtered data from the URL
-                            fetch(filteredDataURL)
-                                .then(response => response.json())
-                                .then(data => {
-                                    json = data
-                                    console.log(filteredDataURL)
-                                    console.log(json)
+                        // var req = ocpu.call("pca", {
+                        //     data: data_copy_pval,
+                        //     dataN: dataN_copy_pval,
+                        //     dataC: dataC_copy_pval
+                        // }, function (session) {
+                        //     var filteredDataURL = session.loc + "/R/.val/json";
+                        //     //console.log(session);
+                        //     // Fetch the filtered data from the URL
+                        //     fetch(filteredDataURL)
+                        //         .then(response => response.json())
+                        //         .then(data => {
+                        //             json = data
+                        //             console.log(filteredDataURL)
+                        //             console.log(json)
 
-                                    var pc1Key = "PC1";
-                                    var pc2Key = "PC2";
-                                    var groupKey = "Group";
+                        //             var pc1Key = "PC1";
+                        //             var pc2Key = "PC2";
+                        //             var groupKey = "Group";
 
-                                    // Arrays to store PC1 and PC2 values
-
-
-                                    // Iterate over each object in the JSON array
-                                    json.scores_df.forEach(function (obj) {
-                                        // Push PC1, PC2, and Group values to the arrays
-                                        pc1Values.push(obj[pc1Key]);
-                                        pc2Values.push(obj[pc2Key]);
-                                        groupValues.push(obj[groupKey]);
-                                    });
-                                    // console.log(pc1Values)
-
-                                    pca_data = [];
-
-                                    // Iterate over each object in the JSON array
-                                    json.scores_df.forEach(function (obj) {
-                                        // Retrieve additional data from metadata based on _row
-                                        var gsm = obj._row;
-                                        var group = obj.Group;
-
-                                        // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                                        var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                        var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                        var pc1 = obj.PC1;
-                                        var pc2 = obj.PC2;
-
-                                        // Create an object with the required fields
-                                        var newObj = {
-                                            GSM: gsm,
-                                            group: group,
-                                            smokerclass: smokerclass,
-                                            stage: stage,
-                                            pc1: pc1,
-                                            pc2: pc2
-                                        };
-
-                                        // Push the new object to the newData array
-                                        pca_data.push(newObj);
-
-                                    });
+                        //             // Arrays to store PC1 and PC2 values
 
 
-                                    heatmap_data = []
-                                    json.scores_var.forEach(function (obj) {
-                                        // Push PC1, PC2, and Group values to the arrays
-                                        var gene = obj._row
-                                        var pc1 = obj.PC1
-                                        var pc2 = obj.PC2
-                                        var pc3 = obj.PC3
-                                        var pc4 = obj.PC4
-                                        var pc5 = obj.PC5
-                                        var pc6 = obj.PC6
+                        //             // Iterate over each object in the JSON array
+                        //             json.scores_df.forEach(function (obj) {
+                        //                 // Push PC1, PC2, and Group values to the arrays
+                        //                 pc1Values.push(obj[pc1Key]);
+                        //                 pc2Values.push(obj[pc2Key]);
+                        //                 groupValues.push(obj[groupKey]);
+                        //             });
+                        //             // console.log(pc1Values)
 
-                                        var newObj = {
-                                            gene: gene,
-                                            pc1: pc1,
-                                            pc2: pc2,
-                                            pc3: pc3,
-                                            pc4: pc4,
-                                            pc5: pc5,
-                                            pc6: pc6
-                                        };
-                                        heatmap_data.push(newObj);
-                                    })
+                        //             pca_data = [];
 
-                                    // Display the newData array
-                                    console.log(pca_data);
+                        //             // Iterate over each object in the JSON array
+                        //             json.scores_df.forEach(function (obj) {
+                        //                 // Retrieve additional data from metadata based on _row
+                        //                 var gsm = obj._row;
+                        //                 var group = obj.Group;
+
+                        //                 // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                        //                 var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                        //                 var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                        //                 var pc1 = obj.PC1;
+                        //                 var pc2 = obj.PC2;
+
+                        //                 // Create an object with the required fields
+                        //                 var newObj = {
+                        //                     GSM: gsm,
+                        //                     group: group,
+                        //                     smokerclass: smokerclass,
+                        //                     stage: stage,
+                        //                     pc1: pc1,
+                        //                     pc2: pc2
+                        //                 };
+
+                        //                 // Push the new object to the newData array
+                        //                 pca_data.push(newObj);
+
+                        //             });
 
 
-                                    pca(pca_data);
-                                    heatmap(heatmap_data)
+                        //             heatmap_data = []
+                        //             json.scores_var.forEach(function (obj) {
+                        //                 // Push PC1, PC2, and Group values to the arrays
+                        //                 var gene = obj._row
+                        //                 var pc1 = obj.PC1
+                        //                 var pc2 = obj.PC2
+                        //                 var pc3 = obj.PC3
+                        //                 var pc4 = obj.PC4
+                        //                 var pc5 = obj.PC5
+                        //                 var pc6 = obj.PC6
 
-                                })
+                        //                 var newObj = {
+                        //                     gene: gene,
+                        //                     pc1: pc1,
+                        //                     pc2: pc2,
+                        //                     pc3: pc3,
+                        //                     pc4: pc4,
+                        //                     pc5: pc5,
+                        //                     pc6: pc6
+                        //                 };
+                        //                 heatmap_data.push(newObj);
+                        //             })
+
+                        //             // Display the newData array
+                        //             console.log(pca_data);
+
+
+                        //             pca(pca_data);
+                        //             heatmap(heatmap_data)
+
+                        //         })
 
 
 
-                               // DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
+                        //        // DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
 
-                        })
+                        // })
                         scatter.selectAll("circle")
                             .filter(circleData => circleData.gene === mostUpregulatedGeneName || circleData.gene === mostDownregulatedGeneName)
                             .style("fill", d => {
@@ -2378,7 +2381,7 @@ selectDot.on("change", function() {
         });
 
         document.getElementById("log_thresholdSlider").addEventListener("change", function () {
-            document.getElementById("loadingOverlay").style.display = "block";
+            document.getElementById("loadingOverlay").style.display = "none";
             dataC_copy_pval = dataC_copy
             dataN_copy_pval = dataN_copy
             data_copy_pval = data_copy
@@ -2460,97 +2463,97 @@ selectDot.on("change", function() {
                         //   var pc1Values = [];
                         // var pc2Values = [];
                         // var groupValues = [];
-                        var req = ocpu.call("pca", {
-                            data: data_copy_pval,
-                            dataN: dataN_copy_pval,
-                            dataC: dataC_copy_pval
-                        }, function (session) {
-                            var filteredDataURL = session.loc + "R/.val/json";
-                            //console.log(session);
-                            // Fetch the filtered data from the URL
-                            fetch(filteredDataURL)
-                                .then(response => response.json())
-                                .then(data => {
-                                    json = data
-                                    console.log(filteredDataURL)
-                                    console.log(json)
+                        // var req = ocpu.call("pca", {
+                        //     data: data_copy_pval,
+                        //     dataN: dataN_copy_pval,
+                        //     dataC: dataC_copy_pval
+                        // }, function (session) {
+                        //     var filteredDataURL = session.loc + "R/.val/json";
+                        //     //console.log(session);
+                        //     // Fetch the filtered data from the URL
+                        //     fetch(filteredDataURL)
+                        //         .then(response => response.json())
+                        //         .then(data => {
+                        //             json = data
+                        //             console.log(filteredDataURL)
+                        //             console.log(json)
 
-                                    var pc1Key = "PC1";
-                                    var pc2Key = "PC2";
-                                    var groupKey = "Group";
+                        //             var pc1Key = "PC1";
+                        //             var pc2Key = "PC2";
+                        //             var groupKey = "Group";
 
-                                    // Arrays to store PC1 and PC2 values
+                        //             // Arrays to store PC1 and PC2 values
 
 
-                                    // Iterate over each object in the JSON array
-                                    json.scores_df.forEach(function (obj) {
-                                        // Push PC1, PC2, and Group values to the arrays
-                                        pc1Values.push(obj[pc1Key]);
-                                        pc2Values.push(obj[pc2Key]);
-                                        groupValues.push(obj[groupKey]);
-                                    });
-                                    // console.log(pc1Values)
+                        //             // Iterate over each object in the JSON array
+                        //             json.scores_df.forEach(function (obj) {
+                        //                 // Push PC1, PC2, and Group values to the arrays
+                        //                 pc1Values.push(obj[pc1Key]);
+                        //                 pc2Values.push(obj[pc2Key]);
+                        //                 groupValues.push(obj[groupKey]);
+                        //             });
+                        //             // console.log(pc1Values)
 
-                                    pca_data = [];
+                        //             pca_data = [];
 
-                                    // Iterate over each object in the JSON array
-                                    json.scores_df.forEach(function (obj) {
-                                        // Retrieve additional data from metadata based on _row
-                                        var gsm = obj._row;
-                                        var group = obj.Group;
+                        //             // Iterate over each object in the JSON array
+                        //             json.scores_df.forEach(function (obj) {
+                        //                 // Retrieve additional data from metadata based on _row
+                        //                 var gsm = obj._row;
+                        //                 var group = obj.Group;
 
-                                        // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                                        var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                        var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                        var pc1 = obj.PC1;
-                                        var pc2 = obj.PC2;
+                        //                 // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                        //                 var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                        //                 var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                        //                 var pc1 = obj.PC1;
+                        //                 var pc2 = obj.PC2;
 
-                                        // Create an object with the required fields
-                                        var newObj = {
-                                            GSM: gsm,
-                                            group: group,
-                                            smokerclass: smokerclass,
-                                            stage: stage,
-                                            pc1: pc1,
-                                            pc2: pc2
-                                        };
+                        //                 // Create an object with the required fields
+                        //                 var newObj = {
+                        //                     GSM: gsm,
+                        //                     group: group,
+                        //                     smokerclass: smokerclass,
+                        //                     stage: stage,
+                        //                     pc1: pc1,
+                        //                     pc2: pc2
+                        //                 };
 
-                                        // Push the new object to the newData array
-                                        pca_data.push(newObj);
-                                    });
+                        //                 // Push the new object to the newData array
+                        //                 pca_data.push(newObj);
+                        //             });
 
-                                    // Display the newData array
-                                    console.log(pca_data);
-                                    heatmap_data = []
-                                    json.scores_var.forEach(function (obj) {
-                                        // Push PC1, PC2, and Group values to the arrays
-                                        var gene = obj._row
-                                        var pc1 = obj.PC1
-                                        var pc2 = obj.PC2
-                                        var pc3 = obj.PC3
-                                        var pc4 = obj.PC4
-                                        var pc5 = obj.PC5
-                                        var pc6 = obj.PC6
+                        //             // Display the newData array
+                        //             console.log(pca_data);
+                        //             heatmap_data = []
+                        //             json.scores_var.forEach(function (obj) {
+                        //                 // Push PC1, PC2, and Group values to the arrays
+                        //                 var gene = obj._row
+                        //                 var pc1 = obj.PC1
+                        //                 var pc2 = obj.PC2
+                        //                 var pc3 = obj.PC3
+                        //                 var pc4 = obj.PC4
+                        //                 var pc5 = obj.PC5
+                        //                 var pc6 = obj.PC6
 
-                                        var newObj = {
-                                            gene: gene,
-                                            pc1: pc1,
-                                            pc2: pc2,
-                                            pc3: pc3,
-                                            pc4: pc4,
-                                            pc5: pc5,
-                                            pc6: pc6
-                                        };
-                                        heatmap_data.push(newObj);
-                                    })
+                        //                 var newObj = {
+                        //                     gene: gene,
+                        //                     pc1: pc1,
+                        //                     pc2: pc2,
+                        //                     pc3: pc3,
+                        //                     pc4: pc4,
+                        //                     pc5: pc5,
+                        //                     pc6: pc6
+                        //                 };
+                        //                 heatmap_data.push(newObj);
+                        //             })
 
-                                    pca(pca_data);
-                                    heatmap(heatmap_data)
-                                })
+                        //             pca(pca_data);
+                        //             heatmap(heatmap_data)
+                        //         })
 
-                                //DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
+                        //         //DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
-                        })
+                        // })
 
 
 
@@ -2578,7 +2581,7 @@ selectDot.on("change", function() {
             //console.log(data_copy)
             //console.log(dataN_copy)
 
-            document.getElementById("loadingOverlay").style.display = "block";
+            document.getElementById("loadingOverlay").style.display = "none";
 
 
             threshold = parseFloat(this.value);
@@ -2622,104 +2625,104 @@ selectDot.on("change", function() {
                 var pc1Values = [];
                 var pc2Values = [];
                 var groupValues = [];
-                var req = ocpu.call("pca", {
-                    data: data_copy_pval,
-                    dataN: dataN_copy_pval,
-                    dataC: dataC_copy_pval
-                }, function (session) {
-                    var filteredDataURL = session.loc + "/R/.val/json";
-                    //console.log(session);
-                    // Fetch the filtered data from the URL
-                    fetch(filteredDataURL)
-                        .then(response => response.json())
-                        .then(data => {
-                            json = data
-                            console.log(filteredDataURL)
-                            console.log(json)
+                // var req = ocpu.call("pca", {
+                //     data: data_copy_pval,
+                //     dataN: dataN_copy_pval,
+                //     dataC: dataC_copy_pval
+                // }, function (session) {
+                //     var filteredDataURL = session.loc + "/R/.val/json";
+                //     //console.log(session);
+                //     // Fetch the filtered data from the URL
+                //     fetch(filteredDataURL)
+                //         .then(response => response.json())
+                //         .then(data => {
+                //             json = data
+                //             console.log(filteredDataURL)
+                //             console.log(json)
 
-                            var pc1Key = "PC1";
-                            var pc2Key = "PC2";
-                            var groupKey = "Group";
+                //             var pc1Key = "PC1";
+                //             var pc2Key = "PC2";
+                //             var groupKey = "Group";
 
-                            // Iterate over each object in the JSON array
-                            json.scores_df.forEach(function (obj) {
-                                // Push PC1, PC2, and Group values to the arrays
-                                pc1Values.push(obj[pc1Key]);
-                                pc2Values.push(obj[pc2Key]);
-                                groupValues.push(obj[groupKey]);
-                            });
-                            // console.log(pc1Values)
+                //             // Iterate over each object in the JSON array
+                //             json.scores_df.forEach(function (obj) {
+                //                 // Push PC1, PC2, and Group values to the arrays
+                //                 pc1Values.push(obj[pc1Key]);
+                //                 pc2Values.push(obj[pc2Key]);
+                //                 groupValues.push(obj[groupKey]);
+                //             });
+                //             // console.log(pc1Values)
 
-                            pca_data = [];
+                //             pca_data = [];
 
-                            // Iterate over each object in the JSON array
-                            json.scores_df.forEach(function (obj) {
-                                // Retrieve additional data from metadata based on _row
-                                var gsm = obj._row;
-                                var group = obj.Group;
+                //             // Iterate over each object in the JSON array
+                //             json.scores_df.forEach(function (obj) {
+                //                 // Retrieve additional data from metadata based on _row
+                //                 var gsm = obj._row;
+                //                 var group = obj.Group;
 
-                                // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                                var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                var pc1 = obj.PC1;
-                                var pc2 = obj.PC2;
+                //                 // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                //                 var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                //                 var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                //                 var pc1 = obj.PC1;
+                //                 var pc2 = obj.PC2;
 
-                                // Create an object with the required fields
-                                var newObj = {
-                                    GSM: gsm,
-                                    group: group,
-                                    smokerclass: smokerclass,
-                                    stage: stage,
-                                    pc1: pc1,
-                                    pc2: pc2
-                                };
+                //                 // Create an object with the required fields
+                //                 var newObj = {
+                //                     GSM: gsm,
+                //                     group: group,
+                //                     smokerclass: smokerclass,
+                //                     stage: stage,
+                //                     pc1: pc1,
+                //                     pc2: pc2
+                //                 };
 
-                                // Push the new object to the newData array
-                                pca_data.push(newObj);
+                //                 // Push the new object to the newData array
+                //                 pca_data.push(newObj);
 
-                            });
-
-
-                            heatmap_data = []
-                            json.scores_var.forEach(function (obj) {
-                                // Push PC1, PC2, and Group values to the arrays
-                                var gene = obj._row
-                                var pc1 = obj.PC1
-                                var pc2 = obj.PC2
-                                var pc3 = obj.PC3
-                                var pc4 = obj.PC4
-                                var pc5 = obj.PC5
-                                var pc6 = obj.PC6
-
-                                var newObj = {
-                                    gene: gene,
-                                    pc1: pc1,
-                                    pc2: pc2,
-                                    pc3: pc3,
-                                    pc4: pc4,
-                                    pc5: pc5,
-                                    pc6: pc6
-                                };
-                                heatmap_data.push(newObj);
-                            })
-
-                            // Display the newData array
-                            console.log(pca_data);
+                //             });
 
 
-                            pca(pca_data);
-                            heatmap(heatmap_data)
+                //             heatmap_data = []
+                //             json.scores_var.forEach(function (obj) {
+                //                 // Push PC1, PC2, and Group values to the arrays
+                //                 var gene = obj._row
+                //                 var pc1 = obj.PC1
+                //                 var pc2 = obj.PC2
+                //                 var pc3 = obj.PC3
+                //                 var pc4 = obj.PC4
+                //                 var pc5 = obj.PC5
+                //                 var pc6 = obj.PC6
 
-                        })
+                //                 var newObj = {
+                //                     gene: gene,
+                //                     pc1: pc1,
+                //                     pc2: pc2,
+                //                     pc3: pc3,
+                //                     pc4: pc4,
+                //                     pc5: pc5,
+                //                     pc6: pc6
+                //                 };
+                //                 heatmap_data.push(newObj);
+                //             })
+
+                //             // Display the newData array
+                //             console.log(pca_data);
+
+
+                //             pca(pca_data);
+                //             heatmap(heatmap_data)
+
+                //         })
                     
                     
 
 
-                       // DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
+                //        // DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
 
 
-                })
+                // })
 
             } else {
                 document.getElementById("loadingOverlay").style.display = "none";
@@ -2727,278 +2730,7 @@ selectDot.on("change", function() {
 
         })
 
-        function pca(pca_data) {
-            console.log("update pca")
-            pc1Values = []
-            pc2Values = []
-            groupValues = []
-            smokerValues = []
-            stageValues = []
-
-            // Iterate over the newData array
-            pca_data.forEach(function (obj) {
-                // Access pc1, pc2, and group values from each object
-                var pc1Value = obj.pc1;
-                var pc2Value = obj.pc2;
-                var groupValue = obj.group;
-                var smokerValue = obj.smokerclass;
-                var stageValue = obj.stage;
-                var gsmValue = obj.GSM; // Assuming GSM is a property in the object
-
-                pc1Values.push(pc1Value);
-                pc2Values.push(pc2Value);
-                groupValues.push(groupValue);
-                smokerValues.push(smokerValue);
-                stageValues.push(stageValue);
-
-                // Use the values as needed
-                //console.log("PC1:", pc1Value, ", PC2:", pc2Value, ", Group:", groupValue);
-            });
-
-            var margin = { top: 20, right: 20, bottom: 50, left: 60 };
-            var width = 600;
-            var height = 400;
-
-            // Create x and y scales
-            var xScale = d3.scaleLinear()
-                .domain(d3.extent(pc1Values))
-                .range([0, width]);
-
-            var yScale = d3.scaleLinear()
-                .domain(d3.extent(pc2Values))
-                .range([height, 0]);
-
-            // Create SVG container
-            var svg = d3.select("#pca")
-                .html("")
-                .append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-            // Add circles for each data point
-            svg.selectAll(".data-circle")
-                .data(pca_data) // Bind data directly to the circles
-                .enter().append("circle")
-                .attr("class", "data-circle") // Assign the class "data-circle" to the circles
-                .attr("cx", function (d) { return xScale(d.pc1); })
-                .attr("cy", function (d) { return yScale(d.pc2); })
-                .attr("r", 5) // Adjust the radius as needed
-                .style("fill", function (d) {
-                    // Set different colors based on groups
-                    if (d.stage === "Normal") {
-                        return "green";
-                    } else if (d.stage === "IA") {
-                        return "yellow";
-                    } else if (d.stage === "IIA") {
-                        return "orange";
-                    } else if (d.stage === "IIIA") {
-                        return "red";
-                    } else if (d.stage === "IB") {
-                        return "yellow";
-                    } else if (d.stage === "IIB") {
-                        return "orange";
-                    } else if (d.stage === "IIIB") {
-                        return "red";
-                    } else if (d.stage === "IV") {
-                        return "darkred";
-                    }
-                })
-                .attr("stroke", function (d) {
-                    // Set stroke color based on presence in gsmList
-                    return gsmList.includes(d.GSM) ? "black" : null;
-                })
-                .attr("stroke-width", function (d) {
-                    // Set stroke width based on presence in gsmList
-                    return gsmList.includes(d.GSM) ? 4 : null;
-                })
-                .on("click", function (d) {
-                    // On click, select the circle and add the GSM value to the list
-                    d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
-                    var selectedGSM = d.GSM; // Assuming GSM is a property in the object
-                    console.log("Selected GSM:", selectedGSM);
-                    gsmList.push(selectedGSM);
-                    console.log("GSM List:", gsmList);
-
-                    // Check if the selected GSM is in the transposedData list
-                    var selectedData = transposedData.find(function (data) {
-                        return data.GSM === selectedGSM;
-                    });
-
-                });
-
-            // Add x-axis
-            var xAxis = svg.append("g")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(xScale));
-
-            xAxis.selectAll("line, path")
-                .style("stroke", "white");
-
-            xAxis.selectAll("text")
-                .style("fill", "white");
-
-            // Add y-axis
-            var yAxis = svg.append("g")
-                .call(d3.axisLeft(yScale));
-
-            yAxis.selectAll("line, path")
-                .style("stroke", "white");
-
-            yAxis.selectAll("text")
-                .style("fill", "white");
-
-            svg.append("text")
-                .attr("x", width / 2)
-                .attr("y", 15)
-                .attr("text-anchor", "middle")
-                .style("font-size", "18px")
-                .text("Principal Component Analysis")
-                .style("fill", "white");
-
-
-            // Add X axis label
-            svg.append("text")
-                .attr("x", width / 2)
-                .attr("y", height + margin.bottom - 10)
-                .attr("text-anchor", "middle")
-                .style("font-size", "14px")
-                .style("fill", "white")
-                .text("PC1");
-
-            // Add Y axis label
-            svg.append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("x", -height / 2)
-                .attr("y", -margin.left + 20)
-                .attr("text-anchor", "middle")
-                .style("font-size", "14px")
-                .style("fill", "white")
-                .text("PC2");
-
-            // Define brush function
-            var brush = d3.brush()
-                .extent([[0, 0], [width, height]])
-                .on("end", brushended);
-
-            // Append brush to SVG
-            svg.append("g")
-                .attr("class", "brush")
-                .call(brush);
-
-            // Function to handle brushend event
-            function brushended() {
-                var selection = d3.event.selection; // Get the brush selection
-                var selectedCircles; // Initialize variable to store selected circles
-
-                if (!selection) {
-                    // If there's no selection (brush is removed)
-                    // Deselect all circles and clear the GSM list
-                    selectedCircles = d3.selectAll(".data-circle").each(function () {
-                        d3.select(this)
-                            .attr("stroke", null) // Remove stroke
-                            .attr("stroke-width", null); // Remove stroke width
-                    });
-                    gsmList = []; // Clear GSM list
-                } else {
-                    // If there's a selection, proceed as before to handle selected circles
-                    selectedCircles = d3.selectAll(".data-circle").filter(function () {
-                        var cx = d3.select(this).attr("cx"); // Get the x-coordinate of the circle
-                        var cy = d3.select(this).attr("cy"); // Get the y-coordinate of the circle
-                        return cx >= selection[0][0] && cx <= selection[1][0] && cy >= selection[0][1] && cy <= selection[1][1];
-                    });
-
-                    // Handle selected circles
-                    selectedCircles.each(function () {
-                        var circle = d3.select(this); // Select the circle
-                        var circleGSM = circle.datum().GSM; // Get the GSM value associated with the circle
-
-                        // Add circle's GSM to the list
-                        gsmList.push(circleGSM);
-                        console.log("Selected GSM:", circleGSM);
-
-                        // Select the circle visually
-                        circle.attr("stroke", "black")
-                            .attr("stroke-width", 4);
-
-                    });
-                }
-                // Define legend items
-
-                // Update parallel plot or any other function with the updated GSM list
-                updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
-
-
-                updateBoxPlot(last_box, parsedLogFC, dataN_copy, dataC_copy)
-
-
-
-
-            }
-            var legendItems = [
-                { label: "Normal", color: "green" },
-                { label: "Stage I", color: "yellow" },
-                { label: "Stage II", color: "orange" },
-                { label: "Stage III", color: "red" },
-                { label: "Stage IV", color: "darkred" }
-            ];
-
-            // Create legend group
-            var legend = svg.append("g")
-                .attr("class", "legend")
-                .attr("transform", "translate(" + (width - 580) + "," + 20 + ")")
-                .call(d3.drag()
-                    .on("drag", function (event) {
-                        d3.select(this).attr("transform", function () {
-                            return "translate(" + (d3.event.x) + "," + (d3.event.y) + ")";
-                        });
-                    })
-                );
-
-            // Calculate total height of legend
-            var legendHeight = legendItems.length * 17.3; // Assuming each legend item has a height of 20 units
-
-            // Calculate width based on the longest label
-            var longestLabelWidth = d3.max(legendItems, function (d) { return d.label.length; }) * 5.4; // Assuming each character width is 8 units
-
-            // Append white transparent rectangle around the legend
-            legend.append("rect")
-                .attr("x", -5)
-                .attr("y", -5)
-                .attr("width", longestLabelWidth + 20) // Add padding to the longest label width
-                .attr("height", legendHeight + 20) // Add padding to the legend height
-                .style("fill", "none")
-                .style("stroke", "white")  // Add stroke attribute
-                .style("stroke-width", 1);  // Set stroke width
-
-            // Change cursor to pointer when mouse enters the legend rectangle
-            legend.on("mouseover", function (event) {
-                d3.select(this).style("cursor", "move");
-            });
-
-            // Append legend circles and text
-            legend.selectAll("circle.legend-item")
-                .data(legendItems)
-                .enter().append("circle")
-                .attr("class", "legend-item")
-                .attr("cx", 5) // Adjust the x-coordinate as needed
-                .attr("cy", function (d, i) { return i * 20 + 5; }) // Adjust the y-coordinate as needed
-                .attr("r", 4) // Adjust the radius as needed
-                .style("fill", function (d) { return d.color; });
-
-            legend.selectAll("text.legend-item")
-                .data(legendItems)
-                .enter().append("text")
-                .attr("class", "legend-item")
-                .attr("x", 15)
-                .attr("y", function (d, i) { return i * 20 + 10; })
-                .text(function (d) { return d.label; })
-                .style("font-size", "12px")
-                .style("fill", "white");
-
-        }
-
+       
         function updateHistogram(variation_data) {
             // Filter data based on the threshold
             const filteredData = variation_data.filter(variation => variation >= thr_prc);
@@ -3475,12 +3207,16 @@ selectDot.on("change", function() {
             var xScale = d3.scaleLinear()
                 .domain(d3.extent(Object.values(averageExpressionsN)))
                 .range([0, width]);
+                console.log("Domain:", xScale.domain());
 
+                
+               //console.log(averageExpressionsN);
+                //console.log(averageExpressionsC);
             var yScale = d3.scaleLinear()
                 .domain(d3.extent(Object.values(averageExpressionsC)))
                 .range([height, 0])
                 .nice()
-
+                //console.log(yScale);
 
             var xAxis = svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
@@ -3568,7 +3304,7 @@ selectDot.on("change", function() {
                 .style("fill", "white");
 
             // Create circles for each gene
-            var data = Object.keys(averageExpressions10N).map(function (gene) {
+            var data = Object.keys(averageExpressionsN).map(function (gene) {
                 // Find the corresponding logFC value from parsedLogFC_origin
                 var logFCObj = parsed.find(d => d.Gene === gene) || null;
                 var logFC = logFCObj ? logFCObj.logFC : null;
@@ -3583,8 +3319,10 @@ selectDot.on("change", function() {
                 var pval_adjObj = old_p_adj.find(d => d.Gene === gene) || null;
                 var pval_adj = pval_adjObj ? pval_adjObj.pval_adj : null;
 
-                return { gene: gene, Normal: averageExpressions10N[gene], Case: averageExpressions10C[gene], logFC: logFC, pval_adj: pval_adj, type: type };
+                return { gene: gene, Normal: averageExpressionsN[gene], Case: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj, type: type };
             });
+
+            console.log(data)
 
             // Create a legend
             var legend = svg.append("g")
@@ -3723,8 +3461,15 @@ selectDot.on("change", function() {
             scatter.selectAll("circle")
                 .data(data)
                 .enter().append("circle")
-                .attr("cx", d => xScale(d.Normal))
-                .attr("cy", d => yScale(d.Case))
+                .attr("cx", d => {
+                    // Log the value of d['Normal'] to inspect its format
+                    if (isNaN(d['Normal'])) {
+                        console.log("NaN value found in 'Normal':", d['Normal']);
+                    }
+                    // Convert the value to a number, assuming it's a string
+                    return xScale(parseFloat(d['Normal']));
+                })
+                .attr("cy", d => yScale(d['Case']))
                 .attr("r", d => {
                     if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
                         return "2";
@@ -3990,9 +3735,286 @@ selectDot.on("change", function() {
                 return pval.toFixed(2);
             }
         }
+        function updateBoxPlot(){}
+        function updateParallel(){}
+        function heatmap(){}
+        function pca(){}
 
 
         let last_box = ""
+/*
+        function pca(pca_data) {
+            console.log("update pca")
+            pc1Values = []
+            pc2Values = []
+            groupValues = []
+            smokerValues = []
+            stageValues = []
+
+            // Iterate over the newData array
+            pca_data.forEach(function (obj) {
+                // Access pc1, pc2, and group values from each object
+                var pc1Value = obj.pc1;
+                var pc2Value = obj.pc2;
+                var groupValue = obj.group;
+                var smokerValue = obj.smokerclass;
+                var stageValue = obj.stage;
+                var gsmValue = obj.GSM; // Assuming GSM is a property in the object
+
+                pc1Values.push(pc1Value);
+                pc2Values.push(pc2Value);
+                groupValues.push(groupValue);
+                smokerValues.push(smokerValue);
+                stageValues.push(stageValue);
+
+                // Use the values as needed
+                //console.log("PC1:", pc1Value, ", PC2:", pc2Value, ", Group:", groupValue);
+            });
+
+            var margin = { top: 20, right: 20, bottom: 50, left: 60 };
+            var width = 600;
+            var height = 400;
+
+            // Create x and y scales
+            var xScale = d3.scaleLinear()
+                .domain(d3.extent(pc1Values))
+                .range([0, width]);
+
+            var yScale = d3.scaleLinear()
+                .domain(d3.extent(pc2Values))
+                .range([height, 0]);
+
+            // Create SVG container
+            var svg = d3.select("#pca")
+                .html("")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Add circles for each data point
+            svg.selectAll(".data-circle")
+                .data(pca_data) // Bind data directly to the circles
+                .enter().append("circle")
+                .attr("class", "data-circle") // Assign the class "data-circle" to the circles
+                .attr("cx", function (d) { return xScale(d.pc1); })
+                .attr("cy", function (d) { return yScale(d.pc2); })
+                .attr("r", 5) // Adjust the radius as needed
+                .style("fill", function (d) {
+                    // Set different colors based on groups
+                    if (d.stage === "Normal") {
+                        return "green";
+                    } else if (d.stage === "IA") {
+                        return "yellow";
+                    } else if (d.stage === "IIA") {
+                        return "orange";
+                    } else if (d.stage === "IIIA") {
+                        return "red";
+                    } else if (d.stage === "IB") {
+                        return "yellow";
+                    } else if (d.stage === "IIB") {
+                        return "orange";
+                    } else if (d.stage === "IIIB") {
+                        return "red";
+                    } else if (d.stage === "IV") {
+                        return "darkred";
+                    }
+                })
+                .attr("stroke", function (d) {
+                    // Set stroke color based on presence in gsmList
+                    return gsmList.includes(d.GSM) ? "black" : null;
+                })
+                .attr("stroke-width", function (d) {
+                    // Set stroke width based on presence in gsmList
+                    return gsmList.includes(d.GSM) ? 4 : null;
+                })
+                .on("click", function (d) {
+                    // On click, select the circle and add the GSM value to the list
+                    d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
+                    var selectedGSM = d.GSM; // Assuming GSM is a property in the object
+                    console.log("Selected GSM:", selectedGSM);
+                    gsmList.push(selectedGSM);
+                    console.log("GSM List:", gsmList);
+
+                    // Check if the selected GSM is in the transposedData list
+                    var selectedData = transposedData.find(function (data) {
+                        return data.GSM === selectedGSM;
+                    });
+
+                });
+
+            // Add x-axis
+            var xAxis = svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(xScale));
+
+            xAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            xAxis.selectAll("text")
+                .style("fill", "white");
+
+            // Add y-axis
+            var yAxis = svg.append("g")
+                .call(d3.axisLeft(yScale));
+
+            yAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            yAxis.selectAll("text")
+                .style("fill", "white");
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 15)
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("Principal Component Analysis")
+                .style("fill", "white");
+
+
+            // Add X axis label
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill", "white")
+                .text("PC1");
+
+            // Add Y axis label
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -margin.left + 20)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill", "white")
+                .text("PC2");
+
+            // Define brush function
+            var brush = d3.brush()
+                .extent([[0, 0], [width, height]])
+                .on("end", brushended);
+
+            // Append brush to SVG
+            svg.append("g")
+                .attr("class", "brush")
+                .call(brush);
+
+            // Function to handle brushend event
+            function brushended() {
+                var selection = d3.event.selection; // Get the brush selection
+                var selectedCircles; // Initialize variable to store selected circles
+
+                if (!selection) {
+                    // If there's no selection (brush is removed)
+                    // Deselect all circles and clear the GSM list
+                    selectedCircles = d3.selectAll(".data-circle").each(function () {
+                        d3.select(this)
+                            .attr("stroke", null) // Remove stroke
+                            .attr("stroke-width", null); // Remove stroke width
+                    });
+                    gsmList = []; // Clear GSM list
+                } else {
+                    // If there's a selection, proceed as before to handle selected circles
+                    selectedCircles = d3.selectAll(".data-circle").filter(function () {
+                        var cx = d3.select(this).attr("cx"); // Get the x-coordinate of the circle
+                        var cy = d3.select(this).attr("cy"); // Get the y-coordinate of the circle
+                        return cx >= selection[0][0] && cx <= selection[1][0] && cy >= selection[0][1] && cy <= selection[1][1];
+                    });
+
+                    // Handle selected circles
+                    selectedCircles.each(function () {
+                        var circle = d3.select(this); // Select the circle
+                        var circleGSM = circle.datum().GSM; // Get the GSM value associated with the circle
+
+                        // Add circle's GSM to the list
+                        gsmList.push(circleGSM);
+                        console.log("Selected GSM:", circleGSM);
+
+                        // Select the circle visually
+                        circle.attr("stroke", "black")
+                            .attr("stroke-width", 4);
+
+                    });
+                }
+                // Define legend items
+
+                // Update parallel plot or any other function with the updated GSM list
+                updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
+
+
+                updateBoxPlot(last_box, parsedLogFC, dataN_copy, dataC_copy)
+
+
+
+
+            }
+            var legendItems = [
+                { label: "Normal", color: "green" },
+                { label: "Stage I", color: "yellow" },
+                { label: "Stage II", color: "orange" },
+                { label: "Stage III", color: "red" },
+                { label: "Stage IV", color: "darkred" }
+            ];
+
+            // Create legend group
+            var legend = svg.append("g")
+                .attr("class", "legend")
+                .attr("transform", "translate(" + (width - 580) + "," + 20 + ")")
+                .call(d3.drag()
+                    .on("drag", function (event) {
+                        d3.select(this).attr("transform", function () {
+                            return "translate(" + (d3.event.x) + "," + (d3.event.y) + ")";
+                        });
+                    })
+                );
+
+            // Calculate total height of legend
+            var legendHeight = legendItems.length * 17.3; // Assuming each legend item has a height of 20 units
+
+            // Calculate width based on the longest label
+            var longestLabelWidth = d3.max(legendItems, function (d) { return d.label.length; }) * 5.4; // Assuming each character width is 8 units
+
+            // Append white transparent rectangle around the legend
+            legend.append("rect")
+                .attr("x", -5)
+                .attr("y", -5)
+                .attr("width", longestLabelWidth + 20) // Add padding to the longest label width
+                .attr("height", legendHeight + 20) // Add padding to the legend height
+                .style("fill", "none")
+                .style("stroke", "white")  // Add stroke attribute
+                .style("stroke-width", 1);  // Set stroke width
+
+            // Change cursor to pointer when mouse enters the legend rectangle
+            legend.on("mouseover", function (event) {
+                d3.select(this).style("cursor", "move");
+            });
+
+            // Append legend circles and text
+            legend.selectAll("circle.legend-item")
+                .data(legendItems)
+                .enter().append("circle")
+                .attr("class", "legend-item")
+                .attr("cx", 5) // Adjust the x-coordinate as needed
+                .attr("cy", function (d, i) { return i * 20 + 5; }) // Adjust the y-coordinate as needed
+                .attr("r", 4) // Adjust the radius as needed
+                .style("fill", function (d) { return d.color; });
+
+            legend.selectAll("text.legend-item")
+                .data(legendItems)
+                .enter().append("text")
+                .attr("class", "legend-item")
+                .attr("x", 15)
+                .attr("y", function (d, i) { return i * 20 + 10; })
+                .text(function (d) { return d.label; })
+                .style("font-size", "12px")
+                .style("fill", "white");
+
+        }
+
 
         function updateBoxPlot(genename, parsedLogFC, dataN, dataC) {
 
@@ -5625,6 +5647,7 @@ selectDot.on("change", function() {
 
             document.getElementById("loadingOverlay").style.display = "none";
         }
+*/
 
         function calculateAverageExpressions(dataArray) {
             // Create an object to store the sum and count for each gene
@@ -5675,7 +5698,7 @@ selectDot.on("change", function() {
                         }
 
                         // Apply Math.log10 to the expression value before summing
-                        var log10Expression = Math.log2(parseFloat(geneData[sample]));
+                        var log10Expression = parseFloat(geneData[sample])
 
                         // Add the log10 expression value to the sum and increment the count
                         geneSumCount[gene].sum += log10Expression;
@@ -5688,6 +5711,10 @@ selectDot.on("change", function() {
             var averageLog10Expressions = {};
             for (var gene in geneSumCount) {
                 averageLog10Expressions[gene] = geneSumCount[gene].sum / geneSumCount[gene].count;
+                if(averageLog10Expressions[gene] != 0){
+                    averageLog10Expressions[gene] = Math.log10(averageLog10Expressions[gene])
+                }
+               
             }
 
             return averageLog10Expressions;
