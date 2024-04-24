@@ -387,8 +387,8 @@
                     <div id="boxPlot"></div>
                     <!-- Initialize a select button -->
                     <select id="selectButton" class="btn btn-secondary dropdown-toggle">
-                        <option value="SPP1" selected>MostUp</option>
-                        <option value="AGER">MostdDown</option>
+                        <option value="SPP1|ENSG00000118785" selected>MostUp</option>
+                        <option value="SFTPC|ENSG00000168484">MostdDown</option>
                     </select>
 
                 </div><!--div(6)-->
@@ -3616,14 +3616,14 @@ selectDot.on("change", function() {
                         //.attr("data-initial-fill","green")    
                         // Find the corresponding scatterplot circle and toggle its selection
 
-
-                        var correspondingSquare = square
-                            .filter(function (squaredata) {
-                                return squaredata.gene === d.gene;
-                            });
-                        console.log(correspondingSquare)
-                        correspondingSquare.style("stroke", "none")
-
+                        
+                        // var correspondingSquare = square
+                        //     .filter(function (squaredata) {
+                        //         return squaredata.gene === d.gene;
+                        //     });
+                        // console.log(correspondingSquare)
+                        // correspondingSquare.style("stroke", "none") 
+                        
                         // On click, filter data for the selected gene
                         selectedGeneData.push(d.gene);
 
@@ -3735,7 +3735,7 @@ selectDot.on("change", function() {
                 return pval.toFixed(2);
             }
         }
-        function updateBoxPlot(){}
+       // function updateBoxPlot(){}
         function updateParallel(){}
         function heatmap(){}
         function pca(){}
@@ -4014,7 +4014,7 @@ selectDot.on("change", function() {
                 .style("fill", "white");
 
         }
-
+*/
 
         function updateBoxPlot(genename, parsedLogFC, dataN, dataC) {
 
@@ -4026,11 +4026,11 @@ selectDot.on("change", function() {
                 var geneDataN = dataN.filter(d => d.gene === geneNameUP)
                 var geneDataC = dataC.filter(d => d.gene === geneNameUP)
 
-
+                console.log(geneDataC)
 
                 // Extract GSM values for each gene
-                var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
-                var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
+                var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('TCGA'));
+                var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('TCGA'));
 
 
                 function computeBoxPlotStatistics(data1) {
@@ -4285,16 +4285,17 @@ selectDot.on("change", function() {
                     last_box = genename
                     combinedData = []
                     geneNameUP = genename;
+                    console.log(geneNameUP)
 
 
                     var geneDataN = dataN.filter(d => d.gene === geneNameUP)
                     var geneDataC = dataC.filter(d => d.gene === geneNameUP)
 
-
+                    
 
                     // Extract GSM values for each gene
-                    var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
-                    var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
+                    var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('TCGA'));
+                    var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('TCGA'));
 
 
                     function computeBoxPlotStatistics(data1) {
@@ -4618,6 +4619,7 @@ selectDot.on("change", function() {
                 //     first_box = false
                 // }
                 // // run the updateChart function with this selected option
+                console.log(dataN)
                 updateBoxPlot(selectedOption, parsedLogFC, dataN, dataC)
             })
 
@@ -4666,6 +4668,7 @@ selectDot.on("change", function() {
             }
 
         }
+        /*
 
         function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
             let structureCombinedData = [];
