@@ -859,29 +859,29 @@ window.onclick = function(event) {
                 metadata = meta
 
                 fetch('clinical_luad.txt')
-                                                    .then(response => response.text())
-                                                    .then(text => {
-                                                        // Split the text into lines
-                                                        const lines = text.split('\n');
+                    .then(response => response.text())
+                    .then(text => {
+                        // Split the text into lines
+                        const lines = text.split('\n');
 
-                                                        // Extract metadata for each patient
-                                                         metadata1 = lines.map(line => {
-                                                            // Split each line into an array of values
-                                                            const values = line.trim().split('\t'); // Assuming tab-delimited file, adjust delimiter as needed
+                        // Extract metadata for each patient
+                            metadata1 = lines.map(line => {
+                            // Split each line into an array of values
+                            const values = line.trim().split('\t'); // Assuming tab-delimited file, adjust delimiter as needed
 
-                                                            // Extract TCGA barcode (first column) and metadata (remaining columns)
-                                                            const tcgaBarcode = values[0];
-                                                            const patientMetadata = values.slice(1); // Slice to get all columns after the first one
+                            // Extract TCGA barcode (first column) and metadata (remaining columns)
+                            const tcgaBarcode = values[0];
+                            const patientMetadata = values.slice(1); // Slice to get all columns after the first one
 
-                                                            return { tcgaBarcode, metadata: patientMetadata };
-                                                        });
+                            return { tcgaBarcode, metadata: patientMetadata };
+                        });
 
-                                                        // Now you have an array of objects containing TCGA barcode and metadata for each patient
-                                                        //console.log(metadata);
-                                                    })
-                                                    .catch(error => {
-                                                        console.error('Error:', error);
-                                                    });
+                        // Now you have an array of objects containing TCGA barcode and metadata for each patient
+                        //console.log(metadata);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
 
 
 
@@ -1177,34 +1177,34 @@ window.onclick = function(event) {
 
 
                                                         });
-                                                //         heatmap_data = []
-                                                //         json.scores_var.forEach(function (obj) {
-                                                //             // Push PC1, PC2, and Group values to the arrays
-                                                //             var gene = obj._row
-                                                //             var pc1 = obj.PC1
-                                                //             var pc2 = obj.PC2
-                                                //             var pc3 = obj.PC3
-                                                //             var pc4 = obj.PC4
-                                                //             var pc5 = obj.PC5
-                                                //             var pc6 = obj.PC6
+                                                         heatmap_data = []
+                                                         json.scores_var.forEach(function (obj) {
+                                                             // Push PC1, PC2, and Group values to the arrays
+                                                             var gene = obj._row
+                                                             var pc1 = obj.PC1
+                                                             var pc2 = obj.PC2
+                                                            var pc3 = obj.PC3
+                                                           var pc4 = obj.PC4
+                                                             var pc5 = obj.PC5
+                                                             var pc6 = obj.PC6
 
-                                                //             var newObj = {
-                                                //                 gene: gene,
-                                                //                 pc1: pc1,
-                                                //                 pc2: pc2,
-                                                //                 pc3: pc3,
-                                                //                 pc4: pc4,
-                                                //                 pc5: pc5,
-                                                //                 pc6: pc6
-                                                //             };
-                                                //             heatmap_data.push(newObj);
-                                                //         })
-                                                //         // Display the newData array
-                                                //         //console.log(pca_data);
+                                                             var newObj = {
+                                                                gene: gene,
+                                                                 pc1: pc1,
+                                                                pc2: pc2,
+                                                                 pc3: pc3,
+                                                                 pc4: pc4,
+                                                                 pc5: pc5,
+                                                                 pc6: pc6
+                                                             };
+                                                             heatmap_data.push(newObj);
+                                                        })
+                                                         // Display the newData array
+                                                         //console.log(pca_data);
 
 
                                                          pca(pca_data);
-                                                //         //heatmap(heatmap_data);
+                                                        heatmap(heatmap_data);
 
                                                      })
 
@@ -2359,34 +2359,34 @@ selectDot.on("change", function() {
 
 
                                                         });
-                                                //         heatmap_data = []
-                                                //         json.scores_var.forEach(function (obj) {
-                                                //             // Push PC1, PC2, and Group values to the arrays
-                                                //             var gene = obj._row
-                                                //             var pc1 = obj.PC1
-                                                //             var pc2 = obj.PC2
-                                                //             var pc3 = obj.PC3
-                                                //             var pc4 = obj.PC4
-                                                //             var pc5 = obj.PC5
-                                                //             var pc6 = obj.PC6
+                                                        heatmap_data = []
+                                                        json.scores_var.forEach(function (obj) {
+                                                            // Push PC1, PC2, and Group values to the arrays
+                                                            var gene = obj._row
+                                                            var pc1 = obj.PC1
+                                                            var pc2 = obj.PC2
+                                                            var pc3 = obj.PC3
+                                                            var pc4 = obj.PC4
+                                                            var pc5 = obj.PC5
+                                                            var pc6 = obj.PC6
 
-                                                //             var newObj = {
-                                                //                 gene: gene,
-                                                //                 pc1: pc1,
-                                                //                 pc2: pc2,
-                                                //                 pc3: pc3,
-                                                //                 pc4: pc4,
-                                                //                 pc5: pc5,
-                                                //                 pc6: pc6
-                                                //             };
-                                                //             heatmap_data.push(newObj);
-                                                //         })
-                                                //         // Display the newData array
-                                                //         //console.log(pca_data);
+                                                            var newObj = {
+                                                                gene: gene,
+                                                                pc1: pc1,
+                                                                pc2: pc2,
+                                                                pc3: pc3,
+                                                                pc4: pc4,
+                                                                pc5: pc5,
+                                                                pc6: pc6
+                                                            };
+                                                            heatmap_data.push(newObj);
+                                                        })
+                                                        // Display the newData array
+                                                        //console.log(pca_data);
 
 
                                                          pca(pca_data);
-                                                //         //heatmap(heatmap_data);
+                                                        //heatmap(heatmap_data);
 
                                                      })
 
@@ -2618,34 +2618,34 @@ selectDot.on("change", function() {
 
 
                                                         });
-                                                //         heatmap_data = []
-                                                //         json.scores_var.forEach(function (obj) {
-                                                //             // Push PC1, PC2, and Group values to the arrays
-                                                //             var gene = obj._row
-                                                //             var pc1 = obj.PC1
-                                                //             var pc2 = obj.PC2
-                                                //             var pc3 = obj.PC3
-                                                //             var pc4 = obj.PC4
-                                                //             var pc5 = obj.PC5
-                                                //             var pc6 = obj.PC6
+                                                        heatmap_data = []
+                                                        json.scores_var.forEach(function (obj) {
+                                                            // Push PC1, PC2, and Group values to the arrays
+                                                            var gene = obj._row
+                                                            var pc1 = obj.PC1
+                                                            var pc2 = obj.PC2
+                                                            var pc3 = obj.PC3
+                                                            var pc4 = obj.PC4
+                                                            var pc5 = obj.PC5
+                                                            var pc6 = obj.PC6
 
-                                                //             var newObj = {
-                                                //                 gene: gene,
-                                                //                 pc1: pc1,
-                                                //                 pc2: pc2,
-                                                //                 pc3: pc3,
-                                                //                 pc4: pc4,
-                                                //                 pc5: pc5,
-                                                //                 pc6: pc6
-                                                //             };
-                                                //             heatmap_data.push(newObj);
-                                                //         })
-                                                //         // Display the newData array
-                                                //         //console.log(pca_data);
+                                                            var newObj = {
+                                                                gene: gene,
+                                                                pc1: pc1,
+                                                                pc2: pc2,
+                                                                pc3: pc3,
+                                                                pc4: pc4,
+                                                                pc5: pc5,
+                                                                pc6: pc6
+                                                            };
+                                                            heatmap_data.push(newObj);
+                                                        })
+                                                        // Display the newData array
+                                                        //console.log(pca_data);
 
 
                                                          pca(pca_data);
-                                                //         //heatmap(heatmap_data);
+                                                        heatmap(heatmap_data);
 
                                                      })
 
@@ -2809,34 +2809,34 @@ selectDot.on("change", function() {
 
 
                                                         });
-                                                //         heatmap_data = []
-                                                //         json.scores_var.forEach(function (obj) {
-                                                //             // Push PC1, PC2, and Group values to the arrays
-                                                //             var gene = obj._row
-                                                //             var pc1 = obj.PC1
-                                                //             var pc2 = obj.PC2
-                                                //             var pc3 = obj.PC3
-                                                //             var pc4 = obj.PC4
-                                                //             var pc5 = obj.PC5
-                                                //             var pc6 = obj.PC6
+                                                        heatmap_data = []
+                                                        json.scores_var.forEach(function (obj) {
+                                                            // Push PC1, PC2, and Group values to the arrays
+                                                            var gene = obj._row
+                                                            var pc1 = obj.PC1
+                                                            var pc2 = obj.PC2
+                                                            var pc3 = obj.PC3
+                                                            var pc4 = obj.PC4
+                                                            var pc5 = obj.PC5
+                                                            var pc6 = obj.PC6
 
-                                                //             var newObj = {
-                                                //                 gene: gene,
-                                                //                 pc1: pc1,
-                                                //                 pc2: pc2,
-                                                //                 pc3: pc3,
-                                                //                 pc4: pc4,
-                                                //                 pc5: pc5,
-                                                //                 pc6: pc6
-                                                //             };
-                                                //             heatmap_data.push(newObj);
-                                                //         })
-                                                //         // Display the newData array
-                                                //         //console.log(pca_data);
+                                                            var newObj = {
+                                                                gene: gene,
+                                                                pc1: pc1,
+                                                                pc2: pc2,
+                                                                pc3: pc3,
+                                                                pc4: pc4,
+                                                                pc5: pc5,
+                                                                pc6: pc6
+                                                            };
+                                                            heatmap_data.push(newObj);
+                                                        })
+                                                        // Display the newData array
+                                                        //console.log(pca_data);
 
 
                                                          pca(pca_data);
-                                                //         //heatmap(heatmap_data);
+                                                        heatmap(heatmap_data);
 
                                                      })
 
@@ -3868,7 +3868,7 @@ selectDot.on("change", function() {
         }
        // function updateBoxPlot(){}
         function updateParallel(){}
-        function heatmap(){}
+        //function heatmap(){}
        // function pca(){}
 
 
@@ -5462,7 +5462,7 @@ selectDot.on("change", function() {
 
 
         }
-
+*/
         function heatmap(heatmap_data) {
             document.getElementById("loadingOverlay").style.display = "none";
 
@@ -5769,7 +5769,7 @@ selectDot.on("change", function() {
 
             document.getElementById("loadingOverlay").style.display = "none";
         }
-*/
+
 
         function calculateAverageExpressions(dataArray) {
             // Create an object to store the sum and count for each gene
