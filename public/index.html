@@ -582,7 +582,7 @@
         let combinedData = []
         let combinedData1 = []
         let gsmList = []
-
+        let metadata1;
         var json = []
         //info box plot
         let sumstat1
@@ -858,6 +858,32 @@ window.onclick = function(event) {
                 data_original = data
                 metadata = meta
 
+                fetch('clinical_luad.txt')
+                                                    .then(response => response.text())
+                                                    .then(text => {
+                                                        // Split the text into lines
+                                                        const lines = text.split('\n');
+
+                                                        // Extract metadata for each patient
+                                                         metadata1 = lines.map(line => {
+                                                            // Split each line into an array of values
+                                                            const values = line.trim().split('\t'); // Assuming tab-delimited file, adjust delimiter as needed
+
+                                                            // Extract TCGA barcode (first column) and metadata (remaining columns)
+                                                            const tcgaBarcode = values[0];
+                                                            const patientMetadata = values.slice(1); // Slice to get all columns after the first one
+
+                                                            return { tcgaBarcode, metadata: patientMetadata };
+                                                        });
+
+                                                        // Now you have an array of objects containing TCGA barcode and metadata for each patient
+                                                        //console.log(metadata);
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error:', error);
+                                                    });
+
+
 
 
                 fetch('variation_lung1.txt')
@@ -1067,103 +1093,127 @@ window.onclick = function(event) {
                                             var pc1Values = [];
                                             var pc2Values = [];
                                             var groupValues = [];
-                                            // var req = ocpu.call("pca", {
-                                            //     data: data_copy_pval,
-                                            //     dataN: dataN_copy_pval,
-                                            //     dataC: dataC_copy_pval
-                                            // }, function (session) {
-                                            //     var filteredDataURL = session.loc + "/R/.val/json";
-                                            //     //console.log(session);
-                                            //     // Fetch the filtered data from the URL
-                                            //     fetch(filteredDataURL)
-                                            //         .then(response => response.json())
-                                            //         .then(data => {
-                                            //             json = data
-                                            //             console.log(filteredDataURL)
-                                            //             console.log(json)
+                                             var req = ocpu.call("pca", {
+                                                 data: data_copy_pval,
+                                                 dataN: dataN_copy_pval,
+                                                 dataC: dataC_copy_pval
+                                            }, function (session) {
+                                                var filteredDataURL = session.loc + "/R/.val/json";
+                                                //console.log(session);
+                                                // Fetch the filtered data from the URL
+                                                 fetch(filteredDataURL)
+                                                     .then(response => response.json())
+                                                    .then(data => {
+                                                    json = data
+                                                        //console.log(filteredDataURL)
+                                                      //console.log(json)
 
-                                            //             var pc1Key = "PC1";
-                                            //             var pc2Key = "PC2";
-                                            //             var groupKey = "Group";
-
-                                            //             // Arrays to store PC1 and PC2 values
+                                                      
 
 
-                                            //             // Iterate over each object in the JSON array
-                                            //             json.scores_df.forEach(function (obj) {
-                                            //                 // Push PC1, PC2, and Group values to the arrays
-                                            //                 pc1Values.push(obj[pc1Key]);
-                                            //                 pc2Values.push(obj[pc2Key]);
-                                            //                 groupValues.push(obj[groupKey]);
-                                            //             });
-                                            //             // console.log(pc1Values)
+                                                        var pc1Key = "PC1";
+                                                        var pc2Key = "PC2";
+                                                        var groupKey = "Group";
 
-                                            //             pca_data = [];
-
-                                            //             // Iterate over each object in the JSON array
-                                            //             json.scores_df.forEach(function (obj) {
-                                            //                 // Retrieve additional data from metadata based on _row
-                                            //                 var gsm = obj._row;
-                                            //                 var group = obj.Group;
-
-                                            //                 // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                                            //                 var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                            //                 var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                                            //                 var pc1 = obj.PC1;
-                                            //                 var pc2 = obj.PC2;
-
-                                            //                 // Create an object with the required fields
-                                            //                 var newObj = {
-                                            //                     GSM: gsm,
-                                            //                     group: group,
-                                            //                     smokerclass: smokerclass,
-                                            //                     stage: stage,
-                                            //                     pc1: pc1,
-                                            //                     pc2: pc2
-                                            //                 };
-
-                                            //                 // Push the new object to the newData array
-                                            //                 pca_data.push(newObj);
+                                                        // Arrays to store PC1 and PC2 values
 
 
-                                            //             });
-                                            //             heatmap_data = []
-                                            //             json.scores_var.forEach(function (obj) {
-                                            //                 // Push PC1, PC2, and Group values to the arrays
-                                            //                 var gene = obj._row
-                                            //                 var pc1 = obj.PC1
-                                            //                 var pc2 = obj.PC2
-                                            //                 var pc3 = obj.PC3
-                                            //                 var pc4 = obj.PC4
-                                            //                 var pc5 = obj.PC5
-                                            //                 var pc6 = obj.PC6
+                                                        // Iterate over each object in the JSON array
+                                                        json.scores_df.forEach(function (obj) {
+                                                            // Push PC1, PC2, and Group values to the arrays
+                                                            pc1Values.push(obj[pc1Key]);
+                                                            pc2Values.push(obj[pc2Key]);
+                                                            groupValues.push(obj[groupKey]);
+                                                        });
+                                                        // console.log(pc1Values)
 
-                                            //                 var newObj = {
-                                            //                     gene: gene,
-                                            //                     pc1: pc1,
-                                            //                     pc2: pc2,
-                                            //                     pc3: pc3,
-                                            //                     pc4: pc4,
-                                            //                     pc5: pc5,
-                                            //                     pc6: pc6
-                                            //                 };
-                                            //                 heatmap_data.push(newObj);
-                                            //             })
-                                            //             // Display the newData array
-                                            //             //console.log(pca_data);
+                                                        pca_data = [];
+                                                        let patientMetadata;
+                                                        
+                                                        // Iterate over each object in the JSON array
+                                                        json.scores_df.forEach(function (obj) {
+                                                            // Retrieve additional data from metadata based on _row
+                                                            var gsm = obj._row;
+                                                            var group = obj.Group;
+                                                            gsm = gsm.split('-').slice(0, 3).join('-');
+                                                            //console.log(gsm)
+                                                            console.log(metadata1.length)
+                                                            for (let i = 0; i < metadata1.length; i++) {
+                                                                    let patient = metadata1[i];
+                                                                    //console.log(metadata1[1])
+
+                                                                    if (patient.tcgaBarcode === gsm) { // Assuming TCGA barcode is in the first column
+                                                                        patientMetadata = patient;
+                                                                        break;
+                                                                    }
+                                                                }
+
+                                                                if (patientMetadata) {
+                                                                    var stage = patientMetadata.metadata[1];
+                                                                    var smokerclass = patientMetadata.metadata[5]
+                                                                    console.log(stage)
+                                                                } 
+
+                                                            
+
+                                                //             // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                                                //             var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                                //             var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                                            var pc1 = obj.PC1;
+                                                            var pc2 = obj.PC2;
+
+                                                            // Create an object with the required fields
+                                                            var newObj = {
+                                                                GSM: gsm,
+                                                                group: group,
+                                                                smokerclass: smokerclass,
+                                                                stage: stage,
+                                                                pc1: pc1,
+                                                                pc2: pc2
+                                                            };
+
+                                                            // Push the new object to the newData array
+                                                            pca_data.push(newObj);
 
 
-                                            //             pca(pca_data);
-                                            //             heatmap(heatmap_data);
+                                                        });
+                                                //         heatmap_data = []
+                                                //         json.scores_var.forEach(function (obj) {
+                                                //             // Push PC1, PC2, and Group values to the arrays
+                                                //             var gene = obj._row
+                                                //             var pc1 = obj.PC1
+                                                //             var pc2 = obj.PC2
+                                                //             var pc3 = obj.PC3
+                                                //             var pc4 = obj.PC4
+                                                //             var pc5 = obj.PC5
+                                                //             var pc6 = obj.PC6
 
-                                            //         })
+                                                //             var newObj = {
+                                                //                 gene: gene,
+                                                //                 pc1: pc1,
+                                                //                 pc2: pc2,
+                                                //                 pc3: pc3,
+                                                //                 pc4: pc4,
+                                                //                 pc5: pc5,
+                                                //                 pc6: pc6
+                                                //             };
+                                                //             heatmap_data.push(newObj);
+                                                //         })
+                                                //         // Display the newData array
+                                                //         //console.log(pca_data);
+
+
+                                                         pca(pca_data);
+                                                //         //heatmap(heatmap_data);
+
+                                                     })
 
 
 
 
 
-                                            // })
-                                          // DEG(data_copy_pval,parsedLogFC,old_p_adj)
+                                            })
+                                          //DEG(data_copy_pval,parsedLogFC,old_p_adj)
                                             // var req = ocpu.call("enrichment", {
                                             //     data: data_copy
                                             //     }, function (session) {
@@ -2223,107 +2273,128 @@ selectDot.on("change", function() {
                         updateParallel(selectedGeneData, data_copy_pval, dataC_copy_pval, dataN_copy_pval, first_dims)
                         updateCounter()
                         var pc1Values = [];
-                        var pc2Values = [];
-                        var groupValues = [];
-                        // var req = ocpu.call("pca", {
-                        //     data: data_copy_pval,
-                        //     dataN: dataN_copy_pval,
-                        //     dataC: dataC_copy_pval
-                        // }, function (session) {
-                        //     var filteredDataURL = session.loc + "/R/.val/json";
-                        //     //console.log(session);
-                        //     // Fetch the filtered data from the URL
-                        //     fetch(filteredDataURL)
-                        //         .then(response => response.json())
-                        //         .then(data => {
-                        //             json = data
-                        //             console.log(filteredDataURL)
-                        //             console.log(json)
+                                            var pc2Values = [];
+                                            var groupValues = [];
+                                             var req = ocpu.call("pca", {
+                                                 data: data_copy_pval,
+                                                 dataN: dataN_copy_pval,
+                                                 dataC: dataC_copy_pval
+                                            }, function (session) {
+                                                var filteredDataURL = session.loc + "/R/.val/json";
+                                                //console.log(session);
+                                                // Fetch the filtered data from the URL
+                                                 fetch(filteredDataURL)
+                                                     .then(response => response.json())
+                                                    .then(data => {
+                                                    json = data
+                                                        //console.log(filteredDataURL)
+                                                      //console.log(json)
 
-                        //             var pc1Key = "PC1";
-                        //             var pc2Key = "PC2";
-                        //             var groupKey = "Group";
-
-                        //             // Arrays to store PC1 and PC2 values
+                                                      
 
 
-                        //             // Iterate over each object in the JSON array
-                        //             json.scores_df.forEach(function (obj) {
-                        //                 // Push PC1, PC2, and Group values to the arrays
-                        //                 pc1Values.push(obj[pc1Key]);
-                        //                 pc2Values.push(obj[pc2Key]);
-                        //                 groupValues.push(obj[groupKey]);
-                        //             });
-                        //             // console.log(pc1Values)
+                                                        var pc1Key = "PC1";
+                                                        var pc2Key = "PC2";
+                                                        var groupKey = "Group";
 
-                        //             pca_data = [];
-
-                        //             // Iterate over each object in the JSON array
-                        //             json.scores_df.forEach(function (obj) {
-                        //                 // Retrieve additional data from metadata based on _row
-                        //                 var gsm = obj._row;
-                        //                 var group = obj.Group;
-
-                        //                 // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                        //                 var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                        //                 var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                        //                 var pc1 = obj.PC1;
-                        //                 var pc2 = obj.PC2;
-
-                        //                 // Create an object with the required fields
-                        //                 var newObj = {
-                        //                     GSM: gsm,
-                        //                     group: group,
-                        //                     smokerclass: smokerclass,
-                        //                     stage: stage,
-                        //                     pc1: pc1,
-                        //                     pc2: pc2
-                        //                 };
-
-                        //                 // Push the new object to the newData array
-                        //                 pca_data.push(newObj);
-
-                        //             });
+                                                        // Arrays to store PC1 and PC2 values
 
 
-                        //             heatmap_data = []
-                        //             json.scores_var.forEach(function (obj) {
-                        //                 // Push PC1, PC2, and Group values to the arrays
-                        //                 var gene = obj._row
-                        //                 var pc1 = obj.PC1
-                        //                 var pc2 = obj.PC2
-                        //                 var pc3 = obj.PC3
-                        //                 var pc4 = obj.PC4
-                        //                 var pc5 = obj.PC5
-                        //                 var pc6 = obj.PC6
+                                                        // Iterate over each object in the JSON array
+                                                        json.scores_df.forEach(function (obj) {
+                                                            // Push PC1, PC2, and Group values to the arrays
+                                                            pc1Values.push(obj[pc1Key]);
+                                                            pc2Values.push(obj[pc2Key]);
+                                                            groupValues.push(obj[groupKey]);
+                                                        });
+                                                        // console.log(pc1Values)
 
-                        //                 var newObj = {
-                        //                     gene: gene,
-                        //                     pc1: pc1,
-                        //                     pc2: pc2,
-                        //                     pc3: pc3,
-                        //                     pc4: pc4,
-                        //                     pc5: pc5,
-                        //                     pc6: pc6
-                        //                 };
-                        //                 heatmap_data.push(newObj);
-                        //             })
+                                                        pca_data = [];
+                                                        let patientMetadata;
+                                                        
+                                                        // Iterate over each object in the JSON array
+                                                        json.scores_df.forEach(function (obj) {
+                                                            // Retrieve additional data from metadata based on _row
+                                                            var gsm = obj._row;
+                                                            var group = obj.Group;
+                                                            gsm = gsm.split('-').slice(0, 3).join('-');
+                                                            //console.log(gsm)
+                                                            console.log(metadata1.length)
+                                                            for (let i = 0; i < metadata1.length; i++) {
+                                                                    let patient = metadata1[i];
+                                                                    //console.log(metadata1[1])
 
-                        //             // Display the newData array
-                        //             console.log(pca_data);
+                                                                    if (patient.tcgaBarcode === gsm) { // Assuming TCGA barcode is in the first column
+                                                                        patientMetadata = patient;
+                                                                        break;
+                                                                    }
+                                                                }
+
+                                                                if (patientMetadata) {
+                                                                    var stage = patientMetadata.metadata[1];
+                                                                    var smokerclass = patientMetadata.metadata[5]
+                                                                    console.log(stage)
+                                                                } 
+
+                                                            
+
+                                                //             // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                                                //             var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                                //             var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                                            var pc1 = obj.PC1;
+                                                            var pc2 = obj.PC2;
+
+                                                            // Create an object with the required fields
+                                                            var newObj = {
+                                                                GSM: gsm,
+                                                                group: group,
+                                                                smokerclass: smokerclass,
+                                                                stage: stage,
+                                                                pc1: pc1,
+                                                                pc2: pc2
+                                                            };
+
+                                                            // Push the new object to the newData array
+                                                            pca_data.push(newObj);
 
 
-                        //             pca(pca_data);
-                        //             heatmap(heatmap_data)
+                                                        });
+                                                //         heatmap_data = []
+                                                //         json.scores_var.forEach(function (obj) {
+                                                //             // Push PC1, PC2, and Group values to the arrays
+                                                //             var gene = obj._row
+                                                //             var pc1 = obj.PC1
+                                                //             var pc2 = obj.PC2
+                                                //             var pc3 = obj.PC3
+                                                //             var pc4 = obj.PC4
+                                                //             var pc5 = obj.PC5
+                                                //             var pc6 = obj.PC6
 
-                        //         })
+                                                //             var newObj = {
+                                                //                 gene: gene,
+                                                //                 pc1: pc1,
+                                                //                 pc2: pc2,
+                                                //                 pc3: pc3,
+                                                //                 pc4: pc4,
+                                                //                 pc5: pc5,
+                                                //                 pc6: pc6
+                                                //             };
+                                                //             heatmap_data.push(newObj);
+                                                //         })
+                                                //         // Display the newData array
+                                                //         //console.log(pca_data);
+
+
+                                                         pca(pca_data);
+                                                //         //heatmap(heatmap_data);
+
+                                                     })
 
 
 
-                        //        // DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
 
 
-                        // })
+                                            })
                         scatter.selectAll("circle")
                             .filter(circleData => circleData.gene === mostUpregulatedGeneName || circleData.gene === mostDownregulatedGeneName)
                             .style("fill", d => {
@@ -2460,100 +2531,129 @@ selectDot.on("change", function() {
                         }
                         updateCounter()
 
-                        //   var pc1Values = [];
-                        // var pc2Values = [];
-                        // var groupValues = [];
-                        // var req = ocpu.call("pca", {
-                        //     data: data_copy_pval,
-                        //     dataN: dataN_copy_pval,
-                        //     dataC: dataC_copy_pval
-                        // }, function (session) {
-                        //     var filteredDataURL = session.loc + "R/.val/json";
-                        //     //console.log(session);
-                        //     // Fetch the filtered data from the URL
-                        //     fetch(filteredDataURL)
-                        //         .then(response => response.json())
-                        //         .then(data => {
-                        //             json = data
-                        //             console.log(filteredDataURL)
-                        //             console.log(json)
+                        var pc1Values = [];
+                                            var pc2Values = [];
+                                            var groupValues = [];
+                                             var req = ocpu.call("pca", {
+                                                 data: data_copy_pval,
+                                                 dataN: dataN_copy_pval,
+                                                 dataC: dataC_copy_pval
+                                            }, function (session) {
+                                                var filteredDataURL = session.loc + "/R/.val/json";
+                                                //console.log(session);
+                                                // Fetch the filtered data from the URL
+                                                 fetch(filteredDataURL)
+                                                     .then(response => response.json())
+                                                    .then(data => {
+                                                    json = data
+                                                        //console.log(filteredDataURL)
+                                                      //console.log(json)
 
-                        //             var pc1Key = "PC1";
-                        //             var pc2Key = "PC2";
-                        //             var groupKey = "Group";
-
-                        //             // Arrays to store PC1 and PC2 values
+                                                      
 
 
-                        //             // Iterate over each object in the JSON array
-                        //             json.scores_df.forEach(function (obj) {
-                        //                 // Push PC1, PC2, and Group values to the arrays
-                        //                 pc1Values.push(obj[pc1Key]);
-                        //                 pc2Values.push(obj[pc2Key]);
-                        //                 groupValues.push(obj[groupKey]);
-                        //             });
-                        //             // console.log(pc1Values)
+                                                        var pc1Key = "PC1";
+                                                        var pc2Key = "PC2";
+                                                        var groupKey = "Group";
 
-                        //             pca_data = [];
+                                                        // Arrays to store PC1 and PC2 values
 
-                        //             // Iterate over each object in the JSON array
-                        //             json.scores_df.forEach(function (obj) {
-                        //                 // Retrieve additional data from metadata based on _row
-                        //                 var gsm = obj._row;
-                        //                 var group = obj.Group;
 
-                        //                 // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                        //                 var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                        //                 var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                        //                 var pc1 = obj.PC1;
-                        //                 var pc2 = obj.PC2;
+                                                        // Iterate over each object in the JSON array
+                                                        json.scores_df.forEach(function (obj) {
+                                                            // Push PC1, PC2, and Group values to the arrays
+                                                            pc1Values.push(obj[pc1Key]);
+                                                            pc2Values.push(obj[pc2Key]);
+                                                            groupValues.push(obj[groupKey]);
+                                                        });
+                                                        // console.log(pc1Values)
 
-                        //                 // Create an object with the required fields
-                        //                 var newObj = {
-                        //                     GSM: gsm,
-                        //                     group: group,
-                        //                     smokerclass: smokerclass,
-                        //                     stage: stage,
-                        //                     pc1: pc1,
-                        //                     pc2: pc2
-                        //                 };
+                                                        pca_data = [];
+                                                        let patientMetadata;
+                                                        
+                                                        // Iterate over each object in the JSON array
+                                                        json.scores_df.forEach(function (obj) {
+                                                            // Retrieve additional data from metadata based on _row
+                                                            var gsm = obj._row;
+                                                            var group = obj.Group;
+                                                            gsm = gsm.split('-').slice(0, 3).join('-');
+                                                            //console.log(gsm)
+                                                            console.log(metadata1.length)
+                                                            for (let i = 0; i < metadata1.length; i++) {
+                                                                    let patient = metadata1[i];
+                                                                    //console.log(metadata1[1])
 
-                        //                 // Push the new object to the newData array
-                        //                 pca_data.push(newObj);
-                        //             });
+                                                                    if (patient.tcgaBarcode === gsm) { // Assuming TCGA barcode is in the first column
+                                                                        patientMetadata = patient;
+                                                                        break;
+                                                                    }
+                                                                }
 
-                        //             // Display the newData array
-                        //             console.log(pca_data);
-                        //             heatmap_data = []
-                        //             json.scores_var.forEach(function (obj) {
-                        //                 // Push PC1, PC2, and Group values to the arrays
-                        //                 var gene = obj._row
-                        //                 var pc1 = obj.PC1
-                        //                 var pc2 = obj.PC2
-                        //                 var pc3 = obj.PC3
-                        //                 var pc4 = obj.PC4
-                        //                 var pc5 = obj.PC5
-                        //                 var pc6 = obj.PC6
+                                                                if (patientMetadata) {
+                                                                    var stage = patientMetadata.metadata[1];
+                                                                    var smokerclass = patientMetadata.metadata[5]
+                                                                    console.log(stage)
+                                                                } 
 
-                        //                 var newObj = {
-                        //                     gene: gene,
-                        //                     pc1: pc1,
-                        //                     pc2: pc2,
-                        //                     pc3: pc3,
-                        //                     pc4: pc4,
-                        //                     pc5: pc5,
-                        //                     pc6: pc6
-                        //                 };
-                        //                 heatmap_data.push(newObj);
-                        //             })
+                                                            
 
-                        //             pca(pca_data);
-                        //             heatmap(heatmap_data)
-                        //         })
+                                                //             // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                                                //             var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                                //             var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                                            var pc1 = obj.PC1;
+                                                            var pc2 = obj.PC2;
 
-                        //         //DEG(data_copy_pval,parsedLogFC_pval,old_p_adj)
+                                                            // Create an object with the required fields
+                                                            var newObj = {
+                                                                GSM: gsm,
+                                                                group: group,
+                                                                smokerclass: smokerclass,
+                                                                stage: stage,
+                                                                pc1: pc1,
+                                                                pc2: pc2
+                                                            };
 
-                        // })
+                                                            // Push the new object to the newData array
+                                                            pca_data.push(newObj);
+
+
+                                                        });
+                                                //         heatmap_data = []
+                                                //         json.scores_var.forEach(function (obj) {
+                                                //             // Push PC1, PC2, and Group values to the arrays
+                                                //             var gene = obj._row
+                                                //             var pc1 = obj.PC1
+                                                //             var pc2 = obj.PC2
+                                                //             var pc3 = obj.PC3
+                                                //             var pc4 = obj.PC4
+                                                //             var pc5 = obj.PC5
+                                                //             var pc6 = obj.PC6
+
+                                                //             var newObj = {
+                                                //                 gene: gene,
+                                                //                 pc1: pc1,
+                                                //                 pc2: pc2,
+                                                //                 pc3: pc3,
+                                                //                 pc4: pc4,
+                                                //                 pc5: pc5,
+                                                //                 pc6: pc6
+                                                //             };
+                                                //             heatmap_data.push(newObj);
+                                                //         })
+                                                //         // Display the newData array
+                                                //         //console.log(pca_data);
+
+
+                                                         pca(pca_data);
+                                                //         //heatmap(heatmap_data);
+
+                                                     })
+
+
+
+
+
+                                            })
 
 
 
@@ -2623,97 +2723,128 @@ selectDot.on("change", function() {
                 updateBoxPlot(last_box, parsedLogFC_pval, dataN_copy, dataC_copy)
 
                 var pc1Values = [];
-                var pc2Values = [];
-                var groupValues = [];
-                // var req = ocpu.call("pca", {
-                //     data: data_copy_pval,
-                //     dataN: dataN_copy_pval,
-                //     dataC: dataC_copy_pval
-                // }, function (session) {
-                //     var filteredDataURL = session.loc + "/R/.val/json";
-                //     //console.log(session);
-                //     // Fetch the filtered data from the URL
-                //     fetch(filteredDataURL)
-                //         .then(response => response.json())
-                //         .then(data => {
-                //             json = data
-                //             console.log(filteredDataURL)
-                //             console.log(json)
+                                            var pc2Values = [];
+                                            var groupValues = [];
+                                             var req = ocpu.call("pca", {
+                                                 data: data_copy_pval,
+                                                 dataN: dataN_copy_pval,
+                                                 dataC: dataC_copy_pval
+                                            }, function (session) {
+                                                var filteredDataURL = session.loc + "/R/.val/json";
+                                                //console.log(session);
+                                                // Fetch the filtered data from the URL
+                                                 fetch(filteredDataURL)
+                                                     .then(response => response.json())
+                                                    .then(data => {
+                                                    json = data
+                                                        //console.log(filteredDataURL)
+                                                      //console.log(json)
 
-                //             var pc1Key = "PC1";
-                //             var pc2Key = "PC2";
-                //             var groupKey = "Group";
-
-                //             // Iterate over each object in the JSON array
-                //             json.scores_df.forEach(function (obj) {
-                //                 // Push PC1, PC2, and Group values to the arrays
-                //                 pc1Values.push(obj[pc1Key]);
-                //                 pc2Values.push(obj[pc2Key]);
-                //                 groupValues.push(obj[groupKey]);
-                //             });
-                //             // console.log(pc1Values)
-
-                //             pca_data = [];
-
-                //             // Iterate over each object in the JSON array
-                //             json.scores_df.forEach(function (obj) {
-                //                 // Retrieve additional data from metadata based on _row
-                //                 var gsm = obj._row;
-                //                 var group = obj.Group;
-
-                //                 // Retrieve smokerclass, stage, pc1, and pc2 from metadata
-                //                 var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
-                //                 var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
-                //                 var pc1 = obj.PC1;
-                //                 var pc2 = obj.PC2;
-
-                //                 // Create an object with the required fields
-                //                 var newObj = {
-                //                     GSM: gsm,
-                //                     group: group,
-                //                     smokerclass: smokerclass,
-                //                     stage: stage,
-                //                     pc1: pc1,
-                //                     pc2: pc2
-                //                 };
-
-                //                 // Push the new object to the newData array
-                //                 pca_data.push(newObj);
-
-                //             });
+                                                      
 
 
-                //             heatmap_data = []
-                //             json.scores_var.forEach(function (obj) {
-                //                 // Push PC1, PC2, and Group values to the arrays
-                //                 var gene = obj._row
-                //                 var pc1 = obj.PC1
-                //                 var pc2 = obj.PC2
-                //                 var pc3 = obj.PC3
-                //                 var pc4 = obj.PC4
-                //                 var pc5 = obj.PC5
-                //                 var pc6 = obj.PC6
+                                                        var pc1Key = "PC1";
+                                                        var pc2Key = "PC2";
+                                                        var groupKey = "Group";
 
-                //                 var newObj = {
-                //                     gene: gene,
-                //                     pc1: pc1,
-                //                     pc2: pc2,
-                //                     pc3: pc3,
-                //                     pc4: pc4,
-                //                     pc5: pc5,
-                //                     pc6: pc6
-                //                 };
-                //                 heatmap_data.push(newObj);
-                //             })
-
-                //             // Display the newData array
-                //             console.log(pca_data);
+                                                        // Arrays to store PC1 and PC2 values
 
 
-                //             pca(pca_data);
-                //             heatmap(heatmap_data)
+                                                        // Iterate over each object in the JSON array
+                                                        json.scores_df.forEach(function (obj) {
+                                                            // Push PC1, PC2, and Group values to the arrays
+                                                            pc1Values.push(obj[pc1Key]);
+                                                            pc2Values.push(obj[pc2Key]);
+                                                            groupValues.push(obj[groupKey]);
+                                                        });
+                                                        // console.log(pc1Values)
 
-                //         })
+                                                        pca_data = [];
+                                                        let patientMetadata;
+                                                        
+                                                        // Iterate over each object in the JSON array
+                                                        json.scores_df.forEach(function (obj) {
+                                                            // Retrieve additional data from metadata based on _row
+                                                            var gsm = obj._row;
+                                                            var group = obj.Group;
+                                                            gsm = gsm.split('-').slice(0, 3).join('-');
+                                                            //console.log(gsm)
+                                                            console.log(metadata1.length)
+                                                            for (let i = 0; i < metadata1.length; i++) {
+                                                                    let patient = metadata1[i];
+                                                                    //console.log(metadata1[1])
+
+                                                                    if (patient.tcgaBarcode === gsm) { // Assuming TCGA barcode is in the first column
+                                                                        patientMetadata = patient;
+                                                                        break;
+                                                                    }
+                                                                }
+
+                                                                if (patientMetadata) {
+                                                                    var stage = patientMetadata.metadata[1];
+                                                                    var smokerclass = patientMetadata.metadata[5]
+                                                                    console.log(stage)
+                                                                } 
+
+                                                            
+
+                                                //             // Retrieve smokerclass, stage, pc1, and pc2 from metadata
+                                                //             var smokerclass = metadata['Cigarette Smoking Status:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                                //             var stage = metadata['Stage:ch1'][metadata.geo_accession.indexOf(gsm)];
+                                                            var pc1 = obj.PC1;
+                                                            var pc2 = obj.PC2;
+
+                                                            // Create an object with the required fields
+                                                            var newObj = {
+                                                                GSM: gsm,
+                                                                group: group,
+                                                                smokerclass: smokerclass,
+                                                                stage: stage,
+                                                                pc1: pc1,
+                                                                pc2: pc2
+                                                            };
+
+                                                            // Push the new object to the newData array
+                                                            pca_data.push(newObj);
+
+
+                                                        });
+                                                //         heatmap_data = []
+                                                //         json.scores_var.forEach(function (obj) {
+                                                //             // Push PC1, PC2, and Group values to the arrays
+                                                //             var gene = obj._row
+                                                //             var pc1 = obj.PC1
+                                                //             var pc2 = obj.PC2
+                                                //             var pc3 = obj.PC3
+                                                //             var pc4 = obj.PC4
+                                                //             var pc5 = obj.PC5
+                                                //             var pc6 = obj.PC6
+
+                                                //             var newObj = {
+                                                //                 gene: gene,
+                                                //                 pc1: pc1,
+                                                //                 pc2: pc2,
+                                                //                 pc3: pc3,
+                                                //                 pc4: pc4,
+                                                //                 pc5: pc5,
+                                                //                 pc6: pc6
+                                                //             };
+                                                //             heatmap_data.push(newObj);
+                                                //         })
+                                                //         // Display the newData array
+                                                //         //console.log(pca_data);
+
+
+                                                         pca(pca_data);
+                                                //         //heatmap(heatmap_data);
+
+                                                     })
+
+
+
+
+
+                                            })
                     
                     
 
@@ -3738,11 +3869,11 @@ selectDot.on("change", function() {
        // function updateBoxPlot(){}
         function updateParallel(){}
         function heatmap(){}
-        function pca(){}
+       // function pca(){}
 
 
         let last_box = ""
-/*
+
         function pca(pca_data) {
             console.log("update pca")
             pc1Values = []
@@ -3803,23 +3934,11 @@ selectDot.on("change", function() {
                 .attr("r", 5) // Adjust the radius as needed
                 .style("fill", function (d) {
                     // Set different colors based on groups
-                    if (d.stage === "Normal") {
+                    if (d.group === "normal") {
                         return "green";
-                    } else if (d.stage === "IA") {
-                        return "yellow";
-                    } else if (d.stage === "IIA") {
-                        return "orange";
-                    } else if (d.stage === "IIIA") {
+                    } else if (d.group === "case") {
                         return "red";
-                    } else if (d.stage === "IB") {
-                        return "yellow";
-                    } else if (d.stage === "IIB") {
-                        return "orange";
-                    } else if (d.stage === "IIIB") {
-                        return "red";
-                    } else if (d.stage === "IV") {
-                        return "darkred";
-                    }
+                    } 
                 })
                 .attr("stroke", function (d) {
                     // Set stroke color based on presence in gsmList
@@ -4014,7 +4133,7 @@ selectDot.on("change", function() {
                 .style("fill", "white");
 
         }
-*/
+
 
         function updateBoxPlot(genename, parsedLogFC, dataN, dataC) {
 
