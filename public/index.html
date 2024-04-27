@@ -612,6 +612,7 @@
         let square;
 
         let selectedVariable = "case"
+        let domains
 
 
 // Get the modal element
@@ -858,7 +859,6 @@ window.onclick = function(event) {
                 data_original = data
                 metadata = meta
                 
-
                 fetch('clinical_luad.txt')
                     .then(response => response.text())
                     .then(text => {
@@ -877,13 +877,54 @@ window.onclick = function(event) {
                             return { tcgaBarcode, metadata: patientMetadata };
                         });
 
+                        // Define domains for each dimension
+                         domains = {
+                            "Age at Diagnosis": [],
+                            "Gender": [],
+                            "Smoking Status": [],
+                            "Stage": [],
+                            "Type": []
+                        };
+
+                        const columnNames = metadata1[0].metadata;
+                        const ageIndex = columnNames.indexOf('age_at_index');
+                        const genderIndex = columnNames.indexOf('gender');
+                        const smokingStatusIndex = columnNames.indexOf('years_smoked');
+                        const stageIndex = columnNames.indexOf('ajcc_pathologic_stage');
+                        const typeIndex = columnNames.indexOf('vital_status');
+
+                        metadata1.slice(1).forEach(patientMetadata => {
+                            
+                        // Age at Diagnosis
+                        //console.log(ageIndex)
+                        const ageValue = parseFloat(patientMetadata.metadata[ageIndex]);
+                        //console.log(patientMetadata.metadata[38])
+
+
+                        domains["Age at Diagnosis"].push(ageValue);
+
+                        // Gender
+                        domains["Gender"].push(patientMetadata.metadata[genderIndex]);
+
+                        // Smoking Status
+                        domains["Smoking Status"].push(patientMetadata.metadata[smokingStatusIndex]);
+
+                        // Stage
+                        domains["Stage"].push(patientMetadata.metadata[stageIndex]);
+
+                        // Type
+                        domains["Type"].push(patientMetadata.metadata[typeIndex]);
+
+                       
+
+                    });
+                    //console.log(domains["Gender"])
                         // Now you have an array of objects containing TCGA barcode and metadata for each patient
                         //console.log(metadata);
                     })
                     .catch(error => {
                         console.error('Error:', error);
                     });
-
 
 
 
@@ -1070,7 +1111,7 @@ window.onclick = function(event) {
                                                 selectedGeneData.push(mostDownregulatedGeneName)
 
 
-                                                console.log(data_copy_pval)
+                                            //console.log(data_copy_pval)
                                                 updateParallel(selectedGeneData, data_copy_pval, dataC_copy_pval, dataN_copy, first_dims)
 
                                                 updateBoxPlot(mostUpregulatedGeneName, parsedLogFC, dataN_copy_pval, dataC_copy_pval)
@@ -1145,8 +1186,8 @@ window.onclick = function(event) {
                                                                     // Find the indices of the fields named "ajcc_pathologic_stage" and "tissue_or_organ_of_origin"
                                                                      ajccPathologicStageIndex = metadata1[i].metadata.indexOf('ajcc_pathologic_stage')
                                                                      tissueOrOrganOfOriginIndex = metadata1[i].metadata.indexOf('tissue_or_organ_of_origin');
-                                                                    console.log(ajccPathologicStageIndex)
-                                                                    console.log(tissueOrOrganOfOriginIndex)
+                                                                    //console.log(ajccPathologicStageIndex)
+                                                                    //console.log(tissueOrOrganOfOriginIndex)
                                                                 }
                                                                     let patient = metadata1[i];
                                                                     //console.log(metadata1[1])
@@ -1161,14 +1202,14 @@ window.onclick = function(event) {
                                                                     if (ajccPathologicStageIndex !== -1) {
                                                                         // Field "ajcc_pathologic_stage" found
                                                                         var stage = patientMetadata.metadata[ajccPathologicStageIndex];
-                                                                        console.log('ajcc_pathologic_stage:', stage);
+                                                                        //console.log('ajcc_pathologic_stage:', stage);
                                                                     } else {
-                                                                        console.log('Field "ajcc_pathologic_stage" not found.');
+                                                                        //console.log('Field "ajcc_pathologic_stage" not found.');
                                                                     }
 
                                                                     //var stage = patientMetadata.metadata[1];
                                                                     var smokerclass = patientMetadata.metadata[5]
-                                                                    console.log(stage)
+                                                                   // Console.log(stage)
                                                                 } 
 
                                                             
@@ -4407,7 +4448,7 @@ selectDot.on("change", function() {
                         var selectedGSM = d.GSM;
                         selectedGSM = selectedGSM.split('-').slice(0, 3).join('-');
 
-                        console.log("class red pulse: ", selectedGSM)
+                        //console.log("class red pulse: ", selectedGSM)
 
                         // Add the pulse-red class if the GSM is in the gsmList
                         return gsmList.includes(selectedGSM) ? "indPoints pulse-red" : "indPoints";
@@ -4419,7 +4460,7 @@ selectDot.on("change", function() {
                     .attr("stroke", function (d) {
                         var selectedGSM = d.GSM;
                         selectedGSM = selectedGSM.split('-').slice(0, 3).join('-');
-                        console.log("inside box ", selectedGSM)
+                        //console.log("inside box ", selectedGSM)
                         var isSelected = gsmList.includes(selectedGSM);
                         return gsmList.includes(d.GSM) ? "black" : "black";
 
@@ -4857,7 +4898,9 @@ selectDot.on("change", function() {
             }
 
         }
-        /*
+        
+
+//////////////////////////////////////////////////////////////////////////////////////
 
         function updateParallel(geneselected, data, dataC, dataN, first_dims, totalOrder) {
             let structureCombinedData = [];
@@ -4867,8 +4910,8 @@ selectDot.on("change", function() {
                 var geneDataC = dataC.filter(d => d.gene === geneName);
 
                 // Extract GSM values for each gene
-                var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('GSM'));
-                var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('GSM'));
+                var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('TCGA'));
+                var gsmValuesN = Object.keys(geneDataN[0]).filter(key => key.startsWith('TCGA'));
 
                 let expressionValuesC = [];
                 geneDataC.forEach(entry => {
@@ -4948,45 +4991,46 @@ selectDot.on("change", function() {
                     .domain([0, 20])
                     .range([height, 0]);
             }
+
+            
+
             // Extract age data from metadata
-            var ageData = metadata["Age at Diagnosis:ch1"];
-            var genderData = metadata["Gender:ch1"];
-            var smokerData = metadata["Cigarette Smoking Status:ch1"];
-            var stageData = metadata["Stage:ch1"];
+            // var ageData = metadata["Age at Diagnosis:ch1"];
+            // var genderData = metadata["Gender:ch1"];
+            // var smokerData = metadata["Cigarette Smoking Status:ch1"];
+            // var stageData = metadata["Stage:ch1"];
 
             // Convert age data to numbers
-            ageData = ageData.map(function (age) {
-                return parseFloat(age);
-            });
+            // ageData = ageData.map(function (age) {
+            //     return parseFloat(age);
+            // });
 
-            // Determine the age domain
-            var ageDomain = d3.extent(ageData);
+            // // Determine the age domain
+            // var ageDomain = d3.extent(ageData);
 
-            // Update the y-scale for the age dimension
-            y["Age at Diagnosis"] = d3.scaleLinear()
-                .domain([30, 90]) // Set the domain based on the age data
-                .range([height, 0]);
 
-            // Update the y-scale for the age dimension
-            y["Gender"] = d3.scaleOrdinal()
-                .domain(["Male", "Female"]) // Set the domain based on the age data
-                .range([height, 0]);
+        //     var y = {
+        //     "Age at Diagnosis": d3.scaleLinear().domain(d3.extent(domains["Age at Diagnosis"])).range([height, 0]),
+        //     "Gender": d3.scaleOrdinal().domain([...new Set(domains["Gender"])]).range([height, 0]),
+        //     "Smoking Status": d3.scaleOrdinal().domain([...new Set(domains["Smoking Status"])]).range([height, height / 2, 0]),
+        //     "Stage": d3.scaleOrdinal().domain([...new Set(domains["Stage"])]).range([...Array(8)].map((_, i) => height - i * (height / 7))),
+        //     "Type": d3.scaleOrdinal().domain([...new Set(domains["Type"])]).range([height, 0])
+        // };
 
-            // Update the y-scale for Cigarette Smoking Status
-            y["Smoking Status"] = d3.scaleOrdinal()
-                .domain(["Never Smoked", "Former Smoker", "Current Smoker"])
-                .range([height, height / 2, 0])
+        y["Age at Diagnosis"]= 
+         d3.scaleLinear().domain(d3.extent(domains["Age at Diagnosis"])).range([height, 0])
 
-            var interval = height / 7;
+         y["Gender"]= 
+         d3.scaleOrdinal().domain([...new Set(domains["Gender"])]).range([height, 0])
 
-            y["Stage"] = d3.scaleOrdinal()
-                .domain(["Normal", "IA", "IB", "IIA", "IIB", "IIIA", "IIIB", "IV"])
-                .range([height, height - interval, height - 2 * interval, height - 3 * interval, height - 4 * interval, height - 5 * interval, height - 6 * interval, 0]);
+         y["Smoking Status"] =
+         d3.scaleLinear().domain([...new Set(domains["Smoking Status"])]).range([height, height / 2, 0])
 
-            // Update the y-scale for type
-            y["type"] = d3.scaleOrdinal()
-                .domain(["Normal", "Case"])
-                .range([height, 0])
+         y["Stage"] =
+         d3.scaleOrdinal().domain([...new Set(domains["Stage"])]).range([...Array(8)].map((_, i) => height - i * (height / 7)))
+
+         y["Type"] =
+          d3.scaleOrdinal().domain([...new Set(domains["Type"])]).range([height, 0])
 
 
             // Build the X scale -> it finds the best position for each Y axis
@@ -5036,22 +5080,29 @@ selectDot.on("change", function() {
 
             // Transpose the structureCombinedData
             transposedData = [];
+            //console.log(" geni del parallel ",geneselected)
             if (geneselected.length > 0) {
                 // Use geneselected when it's not empty
                 geneselected.forEach(function (geneName) {
+                    
                     var geneData = structureCombinedData.find(d => d.gene === geneName);
+                    //console.log(geneData)
                     geneData.expressions.forEach(function (expression, i) {
                         if (!transposedData[i]) transposedData[i] = { GSM: expression.GSM }; // Use GSM value from expression
                         transposedData[i][geneName] = expression.expression;
                         transposedData[i].type = expression.type; // Add the type property to each observation
                         // Find the index of the GSM in the metadata's geo_accession array
-                        var gsmIndex = metadata.geo_accession.findIndex(item => item === expression.GSM);
+
+                        const patientTcga = expression.GSM.split('-').slice(0, 3).join('-'); 
+
+                        var gsmIndex = metadata1.findIndex(item => item.tcgaBarcode === patientTcga);
                         if (gsmIndex !== -1) {
+                            console.log(domains)
                             // If the GSM is found in metadata, insert the corresponding Age at Diagnosis
-                            transposedData[i]['Age at Diagnosis'] = metadata['Age at Diagnosis:ch1'][gsmIndex];
-                            transposedData[i]['Gender'] = metadata['Gender:ch1'][gsmIndex];
-                            transposedData[i]['Smoking Status'] = metadata['Cigarette Smoking Status:ch1'][gsmIndex];
-                            transposedData[i]['Stage'] = metadata['Stage:ch1'][gsmIndex];
+                            transposedData[i]['Age at Diagnosis'] = domains["Age at Diagnosis"][gsmIndex]
+                            transposedData[i]['Gender'] = domains["Gender"][gsmIndex]
+                            transposedData[i]['Smoking Status'] = domains["Smoking Status"][gsmIndex]
+                            transposedData[i]['Stage'] = domains["Stage"][gsmIndex]
                         }
                     });
                 });
@@ -5066,8 +5117,10 @@ selectDot.on("change", function() {
                     type: metadata['Stage:ch1'][i] === "Normal" ? "Normal" : "Case"
                 }));
             }
-            //console.log(transposedData);
+
+            console.log(transposedData);
             // Select all paths with the class "gsm-path"
+        
             var gsmPaths = svg.selectAll(".gsm-path")
                 .data(transposedData)
                 .enter()
@@ -5120,10 +5173,19 @@ selectDot.on("change", function() {
 
                 console.log("GSM List:", gsmList);
             });
-
+            
             function path(d) {
-                return d3.line()(dimensions.map(function (geneName) { return [x(geneName), y[geneName](d[geneName])]; }));
-            }
+            return d3.line()(dimensions.map(function(geneName) {
+        // For each dimension (geneName), calculate the x and y coordinates
+        // x-coordinate is based on the dimension position on the x-axis (x(geneName))
+        // y-coordinate is based on the value of the data point (d[geneName]) scaled by the respective y scale (y[geneName])
+            return [x(geneName), y[geneName](d[geneName])];
+    }));
+}
+
+
+
+
 
             svg.selectAll(".gsm-path").each(function (data, i) {
                 // Reorder the SVG elements to bring paths with selected GSM to the front
@@ -5532,7 +5594,10 @@ selectDot.on("change", function() {
 
 
         }
-*/
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+
         function heatmap(heatmap_data) {
             document.getElementById("loadingOverlay").style.display = "none";
 
