@@ -1,4 +1,6 @@
 hello <- function(data) {
+  library(stringr)
+
   # Save the column of genes before removing the last column
   genes <- data[, ncol(data)]
 
@@ -6,13 +8,13 @@ hello <- function(data) {
   data <- data[, -ncol(data)]
 
 
-  N <- 49
-  M <- 58
+  N <- 57
+  M <- 57
   # Now, the last column has been removed from each matrix
 
   # x is the first gene of the data matrix
   pval <- apply(data, 1, function(x) {
-    t.test(x[1:N], x[(N+1):(M+N)], paired=FALSE)$p.value
+    t.test(x[1:N], x[(N+1):(M+N)], paired=TRUE)$p.value
   })
 
   # Adjustment p-value
@@ -21,7 +23,9 @@ hello <- function(data) {
   # Add the column of genes back to the result
   result <- data.frame(Gene = genes, pval_adj = pval_adj)
 
-  return(result)
+print(result)
+return(result)
+
 }
 
 
@@ -30,9 +34,11 @@ pca <- function(data, dataC, dataN) {
   library(factoextra)
   library(dplyr)
 
-  data1 <- as.data.frame.list(data)
+  #data1 <- as.data.frame.list(data)
+  data1 =data
 
-  # Move the last column to the first position
+
+
   data1 <- data1[, c(ncol(data1), 1:(ncol(data1)-1))]
 
   # Set the first column as row names
@@ -50,6 +56,7 @@ pca <- function(data, dataC, dataN) {
 
   # Combine data from case and normal samples
   data1 <- t(data1[, c(gsmC_vector, gsmN_vector)])
+
   # Create groups vector
   groups <- c(rep("case", length(gsmC_vector)), rep("normal", length(gsmN_vector)))
 
@@ -77,6 +84,8 @@ pca <- function(data, dataC, dataN) {
 
   # Return a list containing scores_df and scores_var
   return(list(scores_df = scores_df, scores_var = scores_var))
+
+
 }
 
 enrichment <- function (data,direction){
