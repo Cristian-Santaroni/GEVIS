@@ -426,7 +426,7 @@
                             <label for="vehicle2" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
                                 <input type="checkbox" id="vehicle2" name="vehicle2" value="Smoker"
                                     onchange="handleCheckboxChangeCigarettes()">
-                                Smoker class</label>
+                                Packet/Year</label>
 
                             <label for="vehicle3" class="btn btn-secondary" style="color: #ddd; margin-right: 5px;">
                                 <input type="checkbox" id="vehicle3" name="vehicle3" value="Gender"
@@ -450,13 +450,13 @@
                                 style="color: #ddd;  margin-right: 5px; border-radius: 50px;">
                                 <input type="radio" id="variable1" name="variable" autocomplete="off" value="case"
                                     checked>
-                                Case/Normal</label>
+                                Dead/Alive</label>
 
 
-                            <label for="variable2" class="btn btn-secondary"
+                            <!-- <label for="variable2" class="btn btn-secondary"
                                 style="color: #ddd; margin-right: 5px; border-radius: 50px;">
                                 <input type="radio" id="variable2" name="variable" autocomplete="off" value="Smoker">
-                                Smoker class</label>
+                                Smoker class</label> -->
 
 
                             <label for="variable3" class="btn btn-secondary"
@@ -907,8 +907,9 @@ window.onclick = function(event) {
                         // Gender
                         domains["Gender"].push(patientMetadata.metadata[genderIndex]);
 
-                        // Smoking Status
-                        domains["Smoking Status"].push(patientMetadata.metadata[smokingStatusIndex]);
+                        let smokingStatus = patientMetadata.metadata[smokingStatusIndex];
+                        smokingStatus = smokingStatus === "NA" ? -1 : parseFloat(smokingStatus); // Replace "NA" with -1
+                        domains["Smoking Status"].push(smokingStatus);
 
                         // Stage
                         domains["Stage"].push(patientMetadata.metadata[stageIndex]);
@@ -3999,29 +4000,29 @@ selectDot.on("change", function() {
                 //console.log("PC1:", pc1Value, ", PC2:", pc2Value, ", Group:", groupValue);
             });
             console.log(pca_data)
-            function findDuplicates(data) {
-            const seen = {};
-            const duplicates = [];
+            // function findDuplicates(data) {
+            // const seen = {};
+            // const duplicates = [];
             
-            data.forEach(item => {
-                const { GSM } = item;
-                if (seen[GSM]) {
-                    duplicates.push(GSM);
-                } else {
-                    seen[GSM] = true;
-                }
-            });
+            // data.forEach(item => {
+            //     const { GSM } = item;
+            //     if (seen[GSM]) {
+            //         duplicates.push(GSM);
+            //     } else {
+            //         seen[GSM] = true;
+            //     }
+            // });
             
-            return duplicates;
-            }
+            // return duplicates;
+            // }
 
-            const duplicates = findDuplicates(pca_data);
+            // const duplicates = findDuplicates(pca_data);
 
-            if (duplicates.length > 0) {
-                console.log('Duplicates found:', duplicates);
-            } else {
-                console.log('No duplicates found.');
-            }
+            // if (duplicates.length > 0) {
+            //     console.log('Duplicates found:', duplicates);
+            // } else {
+            //     console.log('No duplicates found.');
+            // }
 
 
             //console.log(pca_data)
@@ -4195,7 +4196,7 @@ selectDot.on("change", function() {
 
                         // Add circle's GSM and group information to the list
                         gsmList.push({ GSM: circleGSM, group: circleGroup });
-                        console.log(" TCGA LIST INSIDE OF:", gsmList);
+                        //console.log(" TCGA LIST INSIDE OF:", gsmList);
                        
 
                         // Select the circle visually
@@ -4495,52 +4496,63 @@ selectDot.on("change", function() {
                     .enter()
                     .append("circle")
                     .attr("class", function (d) {
+
                         var selectedGSM = d.GSM;
                         selectedGSM = selectedGSM.split('-').slice(0, 3).join('-');
 
-                        //console.log("class red pulse: ", selectedGSM)
+                        var selectedType = d.type.toLowerCase()
+
+
+                        console.log("check inside ", gsmList.some(entry => entry.GSM === selectedGSM && selectedType === entry.group))
 
                         // Add the pulse-red class if the GSM is in the gsmList
-                        return gsmList.includes(selectedGSM) ? "indPoints pulse-red" : "indPoints";
+                        return gsmList.some(entry => entry.GSM === selectedGSM && entry.group ===selectedType ) ? "indPoints pulse-red" : "indPoints";
                     })
                     .attr("cx", function (d) { return (x(d.type) - jitterWidth / 2 + Math.random() * jitterWidth) })
                     .attr("cy", function (d) { return (y(d.expression)) })
                     .attr("r", 2)
                     .style("fill", "white")
                     .attr("stroke", function (d) {
-    var selectedGSM = d.GSM.split('-').slice(0, 3).join('-');
-    var isSelected = gsmList.some(entry => entry.GSM === selectedGSM);
-    return isSelected ? "black" : null;
-})
-.attr("stroke-width", function (d) {
-    var selectedGSM = d.GSM.split('-').slice(0, 3).join('-');
-    var isSelected = gsmList.some(entry => entry.GSM === selectedGSM);
-    return isSelected ? 3 : 1;
-})
+
+                         var selectedGSM = d.GSM.split('-').slice(0, 3).join('-');
+
+                            var selectedType = d.type.toLowerCase()
+
+                            var isSelected = gsmList.some(entry => entry.GSM === selectedGSM && entry.group == selectedType);
+
+                        return isSelected ? "black" : null;
+                    })
+                    .attr("stroke-width", function (d) {
+                        var selectedGSM = d.GSM.split('-').slice(0, 3).join('-');
+
+                        var selectedType = d.type.toLowerCase()
+
+                        var isSelected = gsmList.some(entry => entry.GSM === selectedGSM && entry.group == selectedType);
+
+                        return isSelected ? 3 : 1;
+                    })
 
                     .on("click", function (d) {
                         // On click, select the circle and add the GSM value to the list
                         var selectedGSM = d.GSM.split('-').slice(0, 3).join('-');
+
+                        var selectedType = d.type.toLowerCase()
                         
-                        var isSelected = gsmList.some(entry => entry.GSM === selectedGSM);
+                        var isSelected = gsmList.some(entry => entry.GSM === selectedGSM && entry.group == selectedType);
 
-                        console.log(selectedGSM);
-                        console.log(" TCGA LIST INSIDE OF BOXPLOT", gsmList);
+                        console.log(isSelected)
 
-                        // Toggle selection state
-                        if (!isSelected) {
-                            gsmList.push({ GSM: selectedGSM, group: d.group }); // Assuming 'group' contains the type information
-                        } else {
-                            gsmList = gsmList.filter(entry => entry.GSM !== selectedGSM);
-                        }
+                       
 
                         // Toggle selection state
                         if (!isSelected) {
-                            gsmList.push(selectedGSM);
-
+                            gsmList.push({ GSM: selectedGSM, group: d.type.toLowerCase() });
+                             // Assuming 'group' contains the type information
                         } else {
-                            gsmList = gsmList.filter(gsm => gsm !== selectedGSM);
+                            gsmList = gsmList.filter(entry => entry.GSM !== selectedGSM && entry.group !== selectedType);
                         }
+
+                        console.log("geni inseriti dal box plot", gsmList)
 
                         // Update class, stroke, and stroke-width
                         d3.select(this)
@@ -4847,38 +4859,56 @@ selectDot.on("change", function() {
                     jitterUpdate.attr("class", function (d) {
                         var selectedGSM = d.GSM;
                         selectedGSM = selectedGSM.split('-').slice(0, 3).join('-');
+                        selectedType = d.type.toLowerCase()
+                        //console.log(selectedType)
+                        var isSelected = gsmList.some(entry => entry.GSM === selectedGSM && entry.group === selectedType );
 
-                        var isSelected = gsmList.includes(selectedGSM);
+                        console.log(isSelected)
                         // console.log(gsmList.includes(d.GSM));
                         if (gsmList.includes(d.GSM)) {
                             // this.parentNode.appendChild(this); // Append to the parent node to bring it to the front
                         }
-                        return gsmList.includes(selectedGSM) ? "indPoints pulse-red" : "indPoints";
+                        return isSelected ? "indPoints pulse-red" : "indPoints";
                     })
                         .attr("stroke", function (d) {
-                            return gsmList.includes(d.GSM) ? "black" : "black";
+                            var selectedGSM = d.GSM.split('-').slice(0, 3).join('-');
+
+                            var selectedType = d.type.toLowerCase()
+
+                            var isSelected = gsmList.some(entry => entry.GSM === selectedGSM && entry.group == selectedType);
+
+                            return isSelected ? "black" : "black";
                         })
                         .attr("stroke-width", function (d) {
-                            return gsmList.includes(d.GSM) ? 3 : 1;
+                            var selectedGSM = d.GSM.split('-').slice(0, 3).join('-');
+
+                            var selectedType = d.type.toLowerCase()
+
+                            var isSelected = gsmList.some(entry => entry.GSM === selectedGSM && entry.group == selectedType);
+
+                            return isSelected ? 3 : 1;
                         })
                         .on("click", function (d) {
-                            var selectedGSM = d.GSM;
-                            selectedGSM = selectedGSM.split('-').slice(0, 3).join('-');
-                            var isSelected = gsmList.includes(selectedGSM);
+                            var selectedGSM = d.GSM.split('-').slice(0, 3).join('-');
+
+                            var selectedType = d.type.toLowerCase()
+
+                            var isSelected = gsmList.some(entry => entry.GSM === selectedGSM && entry.group == selectedType);
                             // console.log(isSelected);
 
                             // Toggle selection state
                             if (!isSelected) {
-                                gsmList.push(selectedGSM);
+                                gsmList.push({ GSM: selectedGSM, group: d.type.toLowerCase() });
+                               
                             } else {
-                                gsmList = gsmList.filter(gsm => gsm !== selectedGSM);
+                                gsmList = gsmList.filter(gsm => gsm.GSM !== selectedGSM && gsm.group !== selectedType);
                             }
-
+                            
                             // Update class, stroke, and stroke-width
                             d3.select(this)
-                                .classed("pulse-red", !isSelected)
-                                .attr("stroke", isSelected ? "black" : "black")
-                                .attr("stroke-width", isSelected ? 1 : 2);
+                            .classed("pulse-red", !isSelected)
+                            .attr("stroke", isSelected ? "black" : "black")
+                            .attr("stroke-width", isSelected ? 1 : 2);
                             synchronizeAnimations()
                             // Call necessary update functions
                             updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims, ordering);
@@ -5025,11 +5055,12 @@ selectDot.on("change", function() {
                     .range(["#0d0887", "#fddb6d"]);
             } else if (selectedVariable === "Stage") {
                 color = d3.scaleOrdinal()
-                    .domain(["NA", "Stage IA", "Stage IB", "Stage IIA", "Stage IIB", "Stage IIIA", "Stage IIIB", "Stage IV"])
-                    .range(["#0d0887", "#46039f", "#7201a8", "#9c179e", "#bd3786", "#d8576b", "#ed7953", "#fddb6d"]);
+                    .domain(["NA", "Stage I","Stage IA", "Stage IB", "Stage IIA", "Stage IIB", "Stage IIIA", "Stage IIIB", "Stage IV"])
+                    .range(["#0d0887", "#46039f", "#7201a8", "#9c179e", "#bd3786", "#d8576b", "#ed7953", "#fddb6d", "#ffef9e"]);
+
             }
 
-            var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
+            //var ageAtDiagnosisValues = metadata['Age at Diagnosis:ch1'];
 
             if (totalOrder !== undefined) {
                 dimensions = totalOrder
@@ -5048,28 +5079,7 @@ selectDot.on("change", function() {
 
             
 
-            // Extract age data from metadata
-            // var ageData = metadata["Age at Diagnosis:ch1"];
-            // var genderData = metadata["Gender:ch1"];
-            // var smokerData = metadata["Cigarette Smoking Status:ch1"];
-            // var stageData = metadata["Stage:ch1"];
-
-            // Convert age data to numbers
-            // ageData = ageData.map(function (age) {
-            //     return parseFloat(age);
-            // });
-
-            // // Determine the age domain
-            // var ageDomain = d3.extent(ageData);
-
-
-        //     var y = {
-        //     "Age at Diagnosis": d3.scaleLinear().domain(d3.extent(domains["Age at Diagnosis"])).range([height, 0]),
-        //     "Gender": d3.scaleOrdinal().domain([...new Set(domains["Gender"])]).range([height, 0]),
-        //     "Smoking Status": d3.scaleOrdinal().domain([...new Set(domains["Smoking Status"])]).range([height, height / 2, 0]),
-        //     "Stage": d3.scaleOrdinal().domain([...new Set(domains["Stage"])]).range([...Array(8)].map((_, i) => height - i * (height / 7))),
-        //     "Type": d3.scaleOrdinal().domain([...new Set(domains["Type"])]).range([height, 0])
-        // };
+            
 
         y["Age at Diagnosis"]= 
          d3.scaleLinear().domain(d3.extent(domains["Age at Diagnosis"])).range([height, 0])
@@ -5077,14 +5087,21 @@ selectDot.on("change", function() {
          y["Gender"]= 
          d3.scaleOrdinal().domain([...new Set(domains["Gender"])]).range([height, 0])
 
-         y["Smoking Status"] =
-         d3.scaleLinear().domain([...new Set(domains["Smoking Status"])]).range([height, height / 2, 0])
+        // Define the scale for "Smoking Status"
+        y["Packet/Year"] = d3.scaleLinear()
+            .domain(d3.extent(domains["Smoking Status"])) // Use the extent of the domain as the scale domain
+            .range([height, 0]);
 
-         y["Stage"] =
-         d3.scaleOrdinal().domain([...new Set(domains["Stage"])]).range([...Array(8)].map((_, i) => height - i * (height / 7)))
+
+         var interval = height / 8;
+         
+         y["Stage"] = d3.scaleOrdinal()
+            .domain(["NA", "Stage I","Stage IA", "Stage IB", "Stage IIA", "Stage IIB", "Stage IIIA", "Stage IIIB", "Stage IV"])
+            .range([height, height - interval, height - 2 * interval, height - 3 * interval, height - 4 * interval, height - 5 * interval, height - 6 * interval, height - 7 * interval, 0]);
+
 
          y["Type"] =
-          d3.scaleOrdinal().domain([...new Set(domains["Type"])]).range([height, 0])
+          d3.scaleOrdinal().domain(["Dead","Alive"]).range([height, 0])
 
 
             // Build the X scale -> it finds the best position for each Y axis
@@ -5155,8 +5172,9 @@ selectDot.on("change", function() {
                             // If the GSM is found in metadata, insert the corresponding Age at Diagnosis
                             transposedData[i]['Age at Diagnosis'] = domains["Age at Diagnosis"][gsmIndex-1]
                             transposedData[i]['Gender'] = domains["Gender"][gsmIndex-1]
-                            transposedData[i]['Smoking Status'] = domains["Smoking Status"][gsmIndex-1]
+                            transposedData[i]['Packet/Year'] = domains["Smoking Status"][gsmIndex-1]
                             transposedData[i]['Stage'] = domains["Stage"][gsmIndex-1]
+                            transposedData[i]['Type'] = domains["Type"][gsmIndex-1]
                         }
                     });
                 });
@@ -5183,23 +5201,21 @@ selectDot.on("change", function() {
             .enter()
             .append("path")
             .attr("class", function(d) {
-            const patientTcga = d.GSM.split('-').slice(0, 3).join('-');
+                const patientTcga = d.GSM.split('-').slice(0, 3).join('-');
+                const type = d.type.toLowerCase();
 
-            const matchingEntry = gsmList.find(entry => entry.GSM === patientTcga);
+                const matchingEntry = gsmList.some(entry => entry.GSM === patientTcga && entry.group === type);
 
-            if (matchingEntry) {
-                const groupLowerCase = d.type.toLowerCase();
-
-                if (matchingEntry.group.toLowerCase() === groupLowerCase) {
-                    console.log("TCGA case found in parallel coordinates:", groupLowerCase);
+                console.log(matchingEntry)
+                if (matchingEntry) {
+                    // If a matching entry is found and the group matches, add the "pulse-red" class
                     return "gsm-path pulse-red";
                 } else {
-                    return "gsm-path";
-                }
-                } else {
+                    // Otherwise, just add the "gsm-path" class
                     return "gsm-path";
                 }
             })
+
 
             .attr("d", function(d) {
             // Log the patient's data to inspect it
@@ -5213,42 +5229,42 @@ selectDot.on("change", function() {
             }
         })
 
-    .style("fill", "none")
-    .style("stroke", function(d) {
-        if (selectedVariable === "case") {
-            return color(d.type);
-        } else if (selectedVariable === "Smoker") {
-            return color(d['Smoking Status']);
-        } else if (selectedVariable === "Gender") {
-            return color(d['Gender']);
-        } else if (selectedVariable === "Stage") {
-            return color(d['Stage']);
-        }
-    });
+            .style("fill", "none")
+            .style("stroke", function(d) {
+                if (selectedVariable === "case") {
+                    return color(d.type);
+                } else if (selectedVariable === "Gender") {
+                    return color(d['Gender']);
+                } else if (selectedVariable === "Stage") {
+                    return color(d['Stage']);
+                }
+            });
 
 
             gsmPaths.on("click", function (d) {
-                var clickedGSM = d.GSM; // Get the GSM value of the clicked path
-    console.log("clicked ", clickedGSM)
+                var clickedGSM = d.GSM.split('-').slice(0, 3).join('-'); // Get the GSM value of the clicked path
+                console.log("clicked ", clickedGSM)
+                const type = d.type.toLowerCase();
+            // Check if the clicked GSM is already in gsmList
+            var index = gsmList.findIndex(entry => entry.GSM === clickedGSM && entry.group === type);
+            if (index === -1) {
+                // If not in the list, add it with type information
+                const patientTcga = clickedGSM
+                 // Assuming 'type' contains the group information
+                
+                gsmList.push({ GSM: patientTcga, group: type });
 
-    // Check if the clicked GSM is already in gsmList
-    var index = gsmList.findIndex(entry => entry.GSM === clickedGSM);
-    if (index === -1) {
-        // If not in the list, add it with type information
-        const patientTcga = clickedGSM.split('-').slice(0, 3).join('-');
-        const type = d.type.toLowerCase(); // Assuming 'type' contains the group information
-        
-        gsmList.push({ GSM: patientTcga, group: type });
+                synchronizeAnimations(this);
+            } else {
+                // If already in the list, remove it
+                gsmList.splice(index, 1);
+            }
 
-        synchronizeAnimations(this);
-    } else {
-        // If already in the list, remove it
-        gsmList.splice(index, 1);
-    }
+            // Update the class of the clicked path based on its presence in gsmList
+                d3.select(this)
+                .classed("pulse-red", gsmList.some(entry => entry.GSM === clickedGSM && entry.group ===type ));
 
-    // Update the class of the clicked path based on its presence in gsmList
-        d3.select(this)
-        .classed("pulse-red", gsmList.some(entry => entry.GSM === d.GSM));
+                console.log("al box plot gli passo questo ",gsmList)
 
 
                 pca(pca_data)
@@ -5261,12 +5277,8 @@ selectDot.on("change", function() {
             });
             
             function path(d) {
-            return d3.line()(dimensions.map(function(geneName) {
-        // For each dimension (geneName), calculate the x and y coordinates
-        // x-coordinate is based on the dimension position on the x-axis (x(geneName))
-        // y-coordinate is based on the value of the data point (d[geneName]) scaled by the respective y scale (y[geneName])
-            return [x(geneName), y[geneName](d[geneName])];
-    }));
+                return d3.line()(dimensions.map(function (geneName) { return [x(geneName), y[geneName](d[geneName])]; }));
+   
 }
 
 
@@ -5277,9 +5289,10 @@ selectDot.on("change", function() {
                 // Reorder the SVG elements to bring paths with selected GSM to the front
                 gsmPaths.each(function () {
                     var selectedGSM = d3.select(this).datum().GSM;
-                    const patientTcga = selectedGSM.split('-').slice(0, 3).join('-'); 
+                    const patientTcga = selectedGSM.split('-').slice(0, 3).join('-');
+                    const type =  d3.select(this).datum().type.toLowerCase();
                     //console.log(patientTcga)
-                    if (gsmList.some(entry => entry.GSM === patientTcga)) {
+                    if (gsmList.some(entry => entry.GSM === patientTcga && entry.group === type)) {
                         this.parentNode.appendChild(this); // Append to the parent node to bring it to the front
                     }
                 });
@@ -5341,12 +5354,10 @@ selectDot.on("change", function() {
                 .append("g")
                 .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
                 .each(function (d) {
-                    if (d === "Smoking Status") {
-                        // For "Smoking Status" dimension, customize the tick format
-                        d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function (d) {
-                            // Customize the tick format here
-                            return d === "Never Smoked" ? "Never" : d === "Former Smoker" ? "Former" : "Current";
-                        }));
+                    if(d === "Stage") {
+                         d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function (d) {
+                    // Customize the tick format here
+                    return d.replace("Stage ", ""); }));
                     } else {
                         d3.select(this).call(d3.axisLeft().scale(y[d]));
                     }
@@ -5384,12 +5395,10 @@ selectDot.on("change", function() {
                 .attr("class", "axis-group")
                 .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
                 .each(function (d) {
-                    if (d === "Smoking Status") {
-                        // For "Smoking Status" dimension, customize the tick format
-                        d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function (d) {
-                            // Customize the tick format here
-                            return d === "Never Smoked" ? "Never" : d === "Former Smoker" ? "Former" : "Current";
-                        }));
+                    if(d === "Stage") {
+                         d3.select(this).call(d3.axisLeft().scale(y[d]).tickFormat(function (d) {
+                    // Customize the tick format here
+                    return d.replace("Stage ", ""); }));
                     } else {
                         d3.select(this).call(d3.axisLeft().scale(y[d]));
                     }
@@ -5432,7 +5441,7 @@ selectDot.on("change", function() {
             }
 
             function dragend(d) {
-                // Get the new positions of the axis groups
+                
                 var newPositions = [];
                 svg.selectAll(".axis-group").each(function (d) {
                     var transform = d3.select(this).attr("transform");
@@ -5494,10 +5503,10 @@ selectDot.on("change", function() {
                     return !removedDimensions.includes(d);
                 });
 
-                console.log("Geneselected order:", geneselectedOrder);
-                console.log("Metadata order:", metadataOrder);
-                console.log("Total order:", totalOrder);
-                console.log("Removed dimensions:", removedDimensions);
+                // console.log("Geneselected order:", geneselectedOrder);
+                // console.log("Metadata order:", metadataOrder);
+                // console.log("Total order:", totalOrder);
+                // console.log("Removed dimensions:", removedDimensions);
 
                 selectedGeneData = geneselectedOrder
 
@@ -5605,8 +5614,6 @@ selectDot.on("change", function() {
                 var selected_reg;
                 if (selectedVariable === "case") {
                     selected_reg = d.type;
-                } else if (selectedVariable === "Smoker") {
-                    selected_reg = d['Smoking Status'];
                 } else if (selectedVariable === "Gender") {
                     selected_reg = d['Gender'];
                 } else if (selectedVariable === "Stage") {
@@ -5621,8 +5628,6 @@ selectDot.on("change", function() {
                         // Highlight only the selected category, reduce opacity for others
                         if (selectedVariable === "case") {
                             return data.type === selected_reg ? color(selected_reg) : "lightgrey";
-                        } else if (selectedVariable === "Smoker") {
-                            return data['Smoking Status'] === selected_reg ? color(selected_reg) : "lightgrey";
                         } else if (selectedVariable === "Gender") {
                             return data['Gender'] === selected_reg ? color(selected_reg) : "lightgrey";
                         } else if (selectedVariable === "Stage") {
@@ -5633,8 +5638,6 @@ selectDot.on("change", function() {
                         // Set opacity based on whether it's the selected category or not
                         if (selectedVariable === "case") {
                             return data.type === selected_reg ? "1" : "0.2";
-                        } else if (selectedVariable === "Smoker") {
-                            return data['Smoking Status'] === selected_reg ? "1" : "0.2";
                         } else if (selectedVariable === "Gender") {
                             return data['Gender'] === selected_reg ? "1" : "0.2";
                         } else if (selectedVariable === "Stage") {
@@ -5658,8 +5661,6 @@ selectDot.on("change", function() {
                         // Set stroke color based on the selected variable
                         if (selectedVariable === "case") {
                             return color(data.type);
-                        } else if (selectedVariable === "Smoker") {
-                            return color(data['Smoking Status']);
                         } else if (selectedVariable === "Gender") {
                             return color(data['Gender']);
                         } else if (selectedVariable === "Stage") {
@@ -5673,10 +5674,11 @@ selectDot.on("change", function() {
                     .filter(function (data) {
                         //console.log(data.GSM)
                         const patientTcga = data.GSM.split('-').slice(0, 3).join('-'); 
-
-                        return !gsmList.some(entry => entry.GSM === patientTcga);
+                        const selectedType = data.type;
+                        return !gsmList.some(entry => entry.GSM === patientTcga && entry.group === selectedType);
                     })
                     .classed("pulse-red", false);
+                    this.parentNode.appendChild(this);
             }
 
             // Bind mouseover and mouseleave events to all lines
@@ -6077,6 +6079,8 @@ selectDot.on("change", function() {
                 averageLog10Expressions[gene] = geneSumCount[gene].sum / geneSumCount[gene].count;
                 if(averageLog10Expressions[gene] != 0){
                     averageLog10Expressions[gene] = Math.log10(averageLog10Expressions[gene])
+                }else{
+                    console.log(gene)
                 }
                
             }
@@ -6137,10 +6141,10 @@ selectDot.on("change", function() {
 
             if (isChecked) {
                 // Add 'Age at Diagnosis' dimension to dimensions array
-                first_dims.unshift('Smoking Status');
+                first_dims.unshift('Packet/Year');
             } else {
                 // Remove 'Age at Diagnosis' dimension from dimensions array
-                var index = first_dims.indexOf('Smoking Status');
+                var index = first_dims.indexOf('Packet/Year');
                 if (index !== -1) {
                     first_dims.splice(index, 1);
                     if (first_dims === undefined) {
@@ -6183,10 +6187,10 @@ selectDot.on("change", function() {
 
             if (isChecked) {
                 // Add 'Age at Diagnosis' dimension to dimensions array
-                first_dims.unshift('type');
+                first_dims.unshift('Type');
             } else {
                 // Remove 'Age at Diagnosis' dimension from dimensions array
-                var index = first_dims.indexOf('type');
+                var index = first_dims.indexOf('Type');
                 if (index !== -1) {
                     first_dims.splice(index, 1);
                     if (first_dims === undefined) {
