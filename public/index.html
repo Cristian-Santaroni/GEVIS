@@ -647,7 +647,7 @@ function createDotPlotInsideModal() {
     showLoadingMessage();
 
     // Call your function to create the dot plot here
-    DEG(data_copy_pval, parsedLogFC, old_p_adj);
+    DEG(data_copy_pval, parsedLogFC_pval, old_p_adj);
 }
 
 // When the user clicks the button, open the modal and create the dot plot inside it
@@ -1344,12 +1344,14 @@ window.onclick = function(event) {
                 // Log the final structure
                 console.log(result);
 
+                console.log("I DEG ", result)
+
            enrichment(result)
 
         }
 
     function enrichment(list) {
-        var req = ocpu.call("enrichment", {
+    var req = ocpu.call("enrichment", {
     data: list,
     direction: 'UP'
 }, function(session) {
@@ -1411,10 +1413,14 @@ function showError(message) {
 
 
     function createDotPlot(data) {
-    data_disgen = data.annotation_top
+
+    console.log("disgen data ",data)
+    var data_disgen = data.annotation_top
     var minValue = d3.min(data_disgen, function(d) { return d['Adjusted.P.value']; });
     var maxValue = d3.max(data_disgen, function(d) { return d['Adjusted.P.value']; });
     data_disgen.sort((a, b) => b.Gene_count - a.Gene_count);
+
+    console.log("disgen dopo",data_disgen)
 
     // Define a linear color scale from red to blue based on the calculated domain
     var colorScale = d3.scaleLinear()
@@ -1424,15 +1430,15 @@ function showError(message) {
     var options = ["DisGenNet","Bio. Process","Molecular function","KEGG"]
     
      // Create the select element
-var selectDot = d3.select("#select_dot").append('select');
+    var selectDot = d3.select("#select_dot").append('select');
 
-// Bind the data to options and enter the new options
-selectDot.selectAll('myOptions') // Next 4 lines add 6 options = 6 colors
- 	.data(options)
-  .enter()
-	.append('option')
-  .text(function (d) { return d; }) // text showed in the menu
-  .attr("value", function (d) { return d; }) // corresponding value returned by the button
+    // Bind the data to options and enter the new options
+    selectDot.selectAll('myOptions') // Next 4 lines add 6 options = 6 colors
+     .data(options)
+     .enter()
+     .append('option')
+    .text(function (d) { return d; }) // text showed in the menu
+    .attr("value", function (d) { return d; }) // corresponding value returned by the button
 
     // Define dimensions and margins
     var margin = { top: 20, right: 120, bottom: 50, left: 220 },
@@ -1519,17 +1525,17 @@ console.log(data)
 var scalingFactor = 20; // Default scaling factor
 
 // Add an input element for the user to adjust the scaling factor
-var scalingFactorInput = d3.select("#slider_dot_polot")
-    .html("")
-    .append("input")
-    .attr("type", "range")
-    .attr("min", 0) // Minimum scaling factor
-    .attr("max", 100) // Maximum scaling factor
-    .attr("value", scalingFactor) // Default scaling factor
-    .on("input", function() {
-        scalingFactor = +this.value;
-        updateDots(); // Update the dots with the new scaling factor
-    });
+    var scalingFactorInput = d3.select("#slider_dot_polot")
+        .html("")
+        .append("input")
+        .attr("type", "range")
+        .attr("min", 0) // Minimum scaling factor
+        .attr("max", 100) // Maximum scaling factor
+        .attr("value", scalingFactor) // Default scaling factor
+        .on("input", function() {
+            scalingFactor = +this.value;
+            updateDots(); // Update the dots with the new scaling factor
+        });
 
 // Function to update the dots with the new scaling factor
 function updateDots() {
@@ -1684,6 +1690,24 @@ function update(selectedGroup, data) {
     }
     title.text("UP Genes " + selectedGroup);
 
+
+
+     // Define a scaling factor that the user can adjust
+     var scalingFactor = 20; // Default scaling factor
+
+// Add an input element for the user to adjust the scaling factor
+var scalingFactorInput = d3.select("#slider_dot_polot")
+    .html("")
+    .append("input")
+    .attr("type", "range")
+    .attr("min", 0) // Minimum scaling factor
+    .attr("max", 100) // Maximum scaling factor
+    .attr("value", scalingFactor) // Default scaling factor
+    .on("input", function() {
+        scalingFactor = +this.value;
+        updateDots(); // Update the dots with the new scaling factor
+    });
+
     var colorScale = d3.scaleLinear()
     .domain([minValue, maxValue])
     .range(["red", "blue"]);
@@ -1734,8 +1758,15 @@ function update(selectedGroup, data) {
 
 
             // Update dots
-            dot.data(data)
-                .transition()
+            var dots = svg.selectAll("circle")
+                .data(data);
+
+            // Remove existing circles
+            dots.exit().remove();
+
+            // Append new circles for any new data points
+            dots.enter().append("circle")
+            .transition()
                 .duration(1000)
                 .attr("cx", function(d) { return x(d.Gene_count); })
                 .attr("cy", function(d) { return y(d.Term) + y.bandwidth() / 2; })
@@ -1748,11 +1779,26 @@ function update(selectedGroup, data) {
                     return colorScale(adjustedPValue);
                 });
 
+            // Transition existing circles to new positions
+            dots.transition()
+                .duration(1000)
+                .attr("cx", function(d) { return x(d.Gene_count); })
+                .attr("cy", function(d) { return y(d.Term) + y.bandwidth() / 2; })
+                .attr("r", function(d) { return d.Gene_ratio * scalingFactor; }) // Adjust radius as per Gene_ratio and updated scaling factor
+                .style("fill", function(d) {
+                    // Access the Adjusted.P.value property using bracket notation
+                    adjustedPValue = d['Adjusted.P.value'];
+
+                    // Interpolate color using the color scale
+                    return colorScale(adjustedPValue);
+                });
+
+
                  // Update legend
-    legendScale.domain([d3.min(data, function(d) { return d['Adjusted.P.value']; }), d3.max(data, function(d) { return d['Adjusted.P.value']; })]);
-    var tickValues = [d3.min(data, function(d) { return d['Adjusted.P.value']; }), d3.max(data, function(d) { return d['Adjusted.P.value']; })];
-    legendAxis.tickValues(tickValues);
-    axis.call(legendAxis);
+            legendScale.domain([d3.min(data, function(d) { return d['Adjusted.P.value']; }), d3.max(data, function(d) { return d['Adjusted.P.value']; })]);
+            var tickValues = [d3.min(data, function(d) { return d['Adjusted.P.value']; }), d3.max(data, function(d) { return d['Adjusted.P.value']; })];
+            legendAxis.tickValues(tickValues);
+            axis.call(legendAxis);
 
     // Apply style to axis ticks to make them white
     axis.selectAll("text").style("fill", "white").style("font-size", "13px");
@@ -1760,6 +1806,11 @@ function update(selectedGroup, data) {
 
     // Remove the domain path
     axis.select(".domain").remove();
+    // Function to update the dots with the new scaling factor
+    function updateDots() {
+        svg.selectAll("circle")
+            .attr("r", function(d) { return d.Gene_ratio * scalingFactor; }); // Adjust radius based on scaling factor
+    }
         }
 
 // Define the event handler for the change event
@@ -1770,6 +1821,7 @@ selectDot.on("change", function() {
     }
 
     function createDotPlot1(data) {
+        console.log("dati degli down reg",data)
     data_disgen = data.annotation_top
     var minValue = d3.min(data_disgen, function(d) { return d['Adjusted.P.value']; });
     var maxValue = d3.max(data_disgen, function(d) { return d['Adjusted.P.value']; });
@@ -2018,6 +2070,7 @@ axis.select(".domain").remove();
 function update(selectedGroup, data) {
     var minValue;
     var maxValue;
+    
     // Adjust data based on selected group
     if (selectedGroup == 'DisGenNet') {
         data = data.annotation_top;
@@ -2031,6 +2084,7 @@ function update(selectedGroup, data) {
          maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
     } else if (selectedGroup == 'Molecular function') {
         data = data.annotation_top2;
+        console.log("MOLECULAR FUNCTION", data)
         data.sort((a, b) => b.Gene_count - a.Gene_count);
          minValue = d3.min(data, function(d) { return d['Adjusted.P.value']; });
          maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
@@ -2042,6 +2096,22 @@ function update(selectedGroup, data) {
          maxValue = d3.max(data, function(d) { return d['Adjusted.P.value']; });
     }
     title.text("DOWN Genes " + selectedGroup);
+
+    // Define a scaling factor that the user can adjust
+var scalingFactor = 20; // Default scaling factor
+
+// Add an input element for the user to adjust the scaling factor
+var scalingFactorInput = d3.select("#slider_dot_polot1")
+    .html("")
+    .append("input")
+    .attr("type", "range")
+    .attr("min", 0) // Minimum scaling factor
+    .attr("max", 100) // Maximum scaling factor
+    .attr("value", scalingFactor) // Default scaling factor
+    .on("input", function() {
+        scalingFactor = +this.value;
+        updateDots(); // Update the dots with the new scaling factor
+    });
 
     var colorScale = d3.scaleLinear()
     .domain([minValue, maxValue])
@@ -2093,12 +2163,33 @@ function update(selectedGroup, data) {
 
 
             // Update dots
-            dot.data(data)
-                .transition()
+            var dots = svg.selectAll("circle")
+                .data(data);
+
+            // Remove existing circles
+            dots.exit().remove();
+
+            // Append new circles for any new data points
+            dots.enter().append("circle")
+            .transition()
                 .duration(1000)
                 .attr("cx", function(d) { return x(d.Gene_count); })
                 .attr("cy", function(d) { return y(d.Term) + y.bandwidth() / 2; })
                 .attr("r", function(d) { return d.Gene_ratio * scalingFactor; }) // Adjust radius as per Gene_ratio and scaling factor
+                .style("fill", function(d) {
+                    // Access the Adjusted.P.value property using bracket notation
+                    adjustedPValue = d['Adjusted.P.value'];
+
+                    // Interpolate color using the color scale
+                    return colorScale(adjustedPValue);
+                });
+
+            // Transition existing circles to new positions
+            dots.transition()
+                .duration(1000)
+                .attr("cx", function(d) { return x(d.Gene_count); })
+                .attr("cy", function(d) { return y(d.Term) + y.bandwidth() / 2; })
+                .attr("r", function(d) { return d.Gene_ratio * scalingFactor; }) // Adjust radius as per Gene_ratio and updated scaling factor
                 .style("fill", function(d) {
                     // Access the Adjusted.P.value property using bracket notation
                     adjustedPValue = d['Adjusted.P.value'];
@@ -2119,6 +2210,11 @@ function update(selectedGroup, data) {
 
     // Remove the domain path
     axis.select(".domain").remove();
+
+    function updateDots() {
+        svg.selectAll("circle")
+            .attr("r", function(d) { return d.Gene_ratio * scalingFactor; }); // Adjust radius based on scaling factor
+    }
         }
 
 // Define the event handler for the change event
