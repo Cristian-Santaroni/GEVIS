@@ -1117,6 +1117,7 @@ window.onclick = function(event) {
                                                 updateParallel(selectedGeneData, data_copy_pval, dataC_copy_pval, dataN_copy, first_dims)
 
                                                 updateBoxPlot(mostUpregulatedGeneName, parsedLogFC, dataN_copy_pval, dataC_copy_pval)
+                                                survival(metadata1,dataC_copy_pval);
 
                                                 updateCounter()
 
@@ -1261,8 +1262,10 @@ window.onclick = function(event) {
                                                          //console.log(pca_data);
 
 
-                                                         pca(pca_data);
+                                                        pca(pca_data);
                                                         heatmap(heatmap_data);
+                                                        
+
 
                                                      })
 
@@ -2224,7 +2227,75 @@ selectDot.on("change", function() {
 });
     }
 
+    function survival(clinical,cases) {
 
+        console.log("tutto il dataset",clinical)
+        console.log("i casi",cases)
+                
+                var geneDataC = cases.filter(d => d.gene === geneNameUP)
+
+                console.log(geneDataC)
+
+               // Extract GSM values for each gene
+                var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('TCGA')).map(tcga => tcga.split('-').slice(0, 3).join('-'));
+
+
+                console.log(gsmValuesC)
+
+
+    
+        var matchedMetadata = clinical.filter(entry => {
+            //console.log(entry)
+                const tcgaBarcode = entry.tcgaBarcode
+                return gsmValuesC.includes(tcgaBarcode);
+            });
+
+            var matchedTCGABarcodes = matchedMetadata.map(entry => entry.tcgaBarcode);
+
+            // Initialize an object to store expression levels
+            var expressionLevels = {};
+
+
+            var req = ocpu.call("survival", {
+                                    metadata: clinical,
+                                    dataC: geneDataC
+                                }, function (session) {
+                                    var filteredDataURL = session.loc + "/R/.val/json";
+                                    // Fetch the filtered data from the URL
+                                    fetch(filteredDataURL)
+                                        .then(response => response.json())
+                                        .then(data => {
+                                           console.log(filteredDataURL)
+                                        })
+                                    
+                                    
+                                    
+                                    })
+
+
+
+            // Iterate over each key in geneDataC
+            // Object.keys(geneDataC[0]).forEach(key => {
+            //     // Check if the key starts with 'TCGA'
+            //     if (key.startsWith('TCGA')) {
+            //         console.log("trovato un tcga")
+            //         // Extract the TCGA barcode
+            //         var tcgaBarcode = key.split('-').slice(0, 3).join('-');
+            //         // Check if the TCGA barcode is in the list of matched TCGA barcodes
+            //         if (matchedTCGABarcodes.includes(tcgaBarcode)) {
+            //             // If yes, add the expression level to the object
+            //             expressionLevels[tcgaBarcode] = geneDataC[key].gene;
+            //         }
+            //     }
+            // });
+
+// Now you ha
+console.log(expressionLevels);
+
+
+
+
+    }
     
 
         document.getElementById("thresholdSlider").addEventListener("input", function () {
@@ -5341,6 +5412,7 @@ selectDot.on("change", function() {
                 var clickedGSM = d.GSM.split('-').slice(0, 3).join('-'); // Get the GSM value of the clicked path
                 console.log("clicked ", clickedGSM)
                 const type = d.type.toLowerCase();
+
             // Check if the clicked GSM is already in gsmList
             var index = gsmList.findIndex(entry => entry.GSM === clickedGSM && entry.group === type);
             if (index === -1) {
@@ -5349,16 +5421,19 @@ selectDot.on("change", function() {
                  // Assuming 'type' contains the group information
                 
                 gsmList.push({ GSM: patientTcga, group: type });
+                d3.select(this).classed("pulse-red", gsmList.some(entry => entry.GSM === clickedGSM && entry.group === type ));
 
                 synchronizeAnimations(this);
             } else {
                 // If already in the list, remove it
                 gsmList.splice(index, 1);
+                
             }
 
             // Update the class of the clicked path based on its presence in gsmList
-                d3.select(this)
-                .classed("pulse-red", gsmList.some(entry => entry.GSM === clickedGSM && entry.group ===type ));
+                
+                //console.log("faccio pulsare", gsmList.some(entry => entry.GSM === clickedGSM && entry.group === type ))
+
 
                 console.log("al box plot gli passo questo ",gsmList)
 
@@ -5733,11 +5808,11 @@ selectDot.on("change", function() {
                     .style("opacity", function (data) {
                         // Set opacity based on whether it's the selected category or not
                         if (selectedVariable === "case") {
-                            return data.type === selected_reg ? "1" : "0.2";
+                            return data.type === selected_reg ? "1" : "0.1";
                         } else if (selectedVariable === "Gender") {
-                            return data['Gender'] === selected_reg ? "1" : "0.2";
+                            return data['Gender'] === selected_reg ? "1" : "0.1";
                         } else if (selectedVariable === "Stage") {
-                            return data['Stage'] === selected_reg ? "1" : "0.2";
+                            return data['Stage'] === selected_reg ? "1" : "0.1";
                         }
                     });
 
@@ -5770,8 +5845,8 @@ selectDot.on("change", function() {
                     .filter(function (data) {
                         //console.log(data.GSM)
                         const patientTcga = data.GSM.split('-').slice(0, 3).join('-'); 
-                        const selectedType = data.type;
-                        return !gsmList.some(entry => entry.GSM === patientTcga && entry.group === selectedType);
+                        const selectedType = data.type.toLowerCase();
+                        return !(gsmList.some(entry => entry.GSM === patientTcga && entry.group === selectedType));
                     })
                     .classed("pulse-red", false);
                     this.parentNode.appendChild(this);
