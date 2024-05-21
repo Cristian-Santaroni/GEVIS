@@ -23,8 +23,8 @@ hello <- function(data) {
   # Add the column of genes back to the result
   result <- data.frame(Gene = genes, pval_adj = pval_adj)
 
-print(result)
-return(result)
+  print(result)
+  return(result)
 
 }
 
@@ -209,3 +209,86 @@ enrichment <- function (data,direction){
   return(list(annotation_top = annotation_top, annotation_top1 = annotation_top1, annotation_top2= annotation_top2,annotation_top3= annotation_top3))
 
 }
+
+
+
+  survival <- function(metadata, dataC) {
+    library(survival)
+    library(survminer)
+    # Extract TCGA barcodes and gene expression values
+    tcga_barcodes <- names(dataC)
+
+    gene_expression <- unlist(dataC, use.names = FALSE)
+
+    #print(gene_expression)
+
+    # Create data frame
+    df <- data.frame(case_id = tcga_barcodes, counts = gene_expression)
+
+    if (nrow(df) > 1) {
+      df <- df[-nrow(df), ]
+    }
+
+    medianValue = median(df$counts)
+
+    df$strata = ifelse (df$counts >= medianValue,"HIGH","LOW")
+
+    df$case_id = gsub('-01.*','',df$case_id)
+##############################################################
+
+    # Extract TCGA barcodes and gene expression values
+    tcga_clinical <- metadata$tcgaBarcode[-c(1, length(metadata$tcgaBarcode))]
+    info = unlist (metadata$metadata, use.names= FALSE)
+
+
+    # Assuming the first 70 positions of info are the column names
+    column_names <- info[1:70]
+
+    # Extract the remaining values
+    clinical_values <- info[-(1:70)]
+
+
+    num_rows <- length(clinical_values) / 70
+
+    df1 <- data.frame(matrix(clinical_values, nrow = num_rows, byrow = TRUE))
+    colnames(df1) <- column_names
+
+
+    df1 <- cbind(submitter_id = tcga_clinical, df1)
+
+
+    df1$deceased = ifelse(df1$vital_status == "Alive", FALSE,TRUE)
+
+
+    # Convert days_to_last_follow_up and days_to_death to numeric safely
+
+
+
+    df1$overall_survival <- ifelse(df1$vital_status == "Alive",
+                                    df1$days_to_last_follow_up,
+                                   df1$days_to_death)
+
+
+    df = merge(df,df1, by.x = "case_id",by.y= "submitter_id")
+    df$counts <-(as.numeric(df$counts))
+    df$overall_survival = as.numeric(df$overall_survival)
+
+
+
+    fit=survfit(Surv(overall_survival,deceased) ~ strata, data = df)
+
+    members <- c("time", "n.risk", "n.event","n.censor","surv","strata","pstate")
+
+
+
+    last = list(unclass(fit)[members])
+
+    pval = surv_pvalue(fit,df)
+    print(pval)
+
+
+    return(last)
+  }
+
+
+

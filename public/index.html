@@ -72,6 +72,25 @@
   cursor: pointer;
 }
 
+.close1 {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  width: 28px;
+  
+}
+
+.close1:hover,
+.close1:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+.radio-wrapper label {
+            color: white;
+        }
+
         .axis-label {
             cursor: pointer;
             /* Cursor style when hovering over the axis label */
@@ -323,6 +342,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="#" style="color:white">GEVis</a>
         <button class="btn btn-secondary" id="openModalBtn">Get Enrichment</button>
+        <button class="btn btn-secondary" id="openModalBtn1" style="margin-left: 10px;">Survival Plot</button>
     </nav>
     <div id="loadingOverlay" style="display: flex; justify-content: center; align-items: center;">
         <div style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
@@ -385,12 +405,13 @@
                         value="1.1" style="width: 200px;">
                     <span id="log_thresholdSliderValue" style="color: white;">1.1</span>
                     <div id="boxPlot"></div>
+                    
                     <!-- Initialize a select button -->
                     <select id="selectButton" class="btn btn-secondary dropdown-toggle">
                         <option value="SPP1|ENSG00000118785" selected>MostUp</option>
                         <option value="SFTPC|ENSG00000168484">MostdDown</option>
                     </select>
-
+                    
                 </div><!--div(6)-->
                 
                 
@@ -481,10 +502,12 @@
         <div class="flex-container" style="margin-top : 6px;">
 
             <div id="style_scatter">
+                
                 <div>
                     <div id="pca"></div>
                 </div>
                 <div id="heatmap"></div>
+                
 
             </div>
 
@@ -530,6 +553,33 @@
                     
                     </div>
                 </div>
+
+
+
+                <!-- Modal1 -->
+                <div id="myModal1" class="modal">
+                    <div class="modal-content">
+                    <span class="close1">&times;</span>
+                    <div class="flex1">
+
+                        <div>
+                                <form id="gene-form">
+                                <h4 style="color: white;">Gene list</h4>
+                                <div id="radio-container" style="background-color: #292727;"></div>
+                                <button id="submission" type="submit" class="btn btn-secondary" disabled>Submit</button>
+                            </form>
+                        </div>
+                        
+                        <div>   
+                            <div id="survival"></div>
+                            
+                        </div>
+                        
+                    </div>
+                    
+                    
+                    </div>
+                </div>
     <script>
        
        try {
@@ -540,7 +590,8 @@
         }
         
         
-
+        var mostDOWN
+        var mostUP
         let variation_data;
         let variation_data_copy;
         let initial_num_genes;
@@ -660,7 +711,7 @@ btn.onclick = function() {
 }
 
 // When the user clicks on <span> (x), close the modal
-    span.onclick = function() {
+span.onclick = function() {
     modal.style.display = "none";
     // Clear the content of the modal when it is closed
     var dotplotContainer = document.getElementById("dotplot");
@@ -680,6 +731,119 @@ window.onclick = function(event) {
         dotplotContainer1.innerHTML = "";
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Get the modal element
+var modal1 = document.getElementById("myModal1");
+
+// Get the button that opens the modal
+var btn1 = document.getElementById("openModalBtn1");
+
+// Get the button that opens the modal
+var btn2 = document.getElementById("submission");
+
+// Get the <span> element that closes the modal
+var span1 = document.getElementsByClassName("close1")[0];
+
+// Function to display loading message inside the modal
+function showLoadingMessageSurv() {
+    var survivalContainer = document.getElementById("survival");
+    console.log(selectedGeneData)
+    // Create initial radio buttons
+    createRadioButtons(selectedGeneData);
+
+   
+    survivalContainer.innerHTML = "<h3 style='color: white; margin-left: 50px; width:100%'>Select a gene </h3>";
+    // Form submission handler
+    document.getElementById('gene-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Get selected radio input value
+        const selectedGene = document.querySelector('input[name="gene"]:checked');
+
+        if (selectedGene) {
+            survivalContainer.innerHTML = "<h3 style='color: white; margin-left: 50px'>Computing the plot... </h3>";
+            // Call your function to create the dot plot here
+            btn2.disabled = true;
+            survival(metadata1,dataC_copy_pval,selectedGene.value)
+
+            // You can handle the selected gene value as needed
+        } else {
+            alert('No gene selected!');
+        }
+
+    });
+
+}
+
+// Function to create the dot plot inside the modal
+function createSurvivalPlotInsideModal() {
+    // Display loading message inside the modal
+    showLoadingMessageSurv();
+
+}
+
+// When the user clicks the button, open the modal and create the dot plot inside it
+btn1.onclick = function() {
+    modal1.style.display = "block";
+    // Display loading message inside the modal
+    showLoadingMessageSurv();
+    // Call function to create dot plot inside modal
+    createSurvivalPlotInsideModal();
+    btn2.disabled = false
+}
+
+// When the user clicks on <span> (x), close the modal
+    span1.onclick = function() {
+    modal1.style.display = "none";
+    // Clear the content of the modal when it is closed
+    var survivalContainer = document.getElementById("survival");
+    survivalContainer.innerHTML = "";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal1) {
+        modal1.style.display = "none";
+        // Clear the content of the modal when it is closed
+        var survivalContainer = document.getElementById("survival");
+        survivalContainer.innerHTML = "";
+    }
+}
+
+
+// Function to create radio buttons
+function createRadioButtons(data) {
+        const container = document.getElementById('radio-container');
+        container.innerHTML = ''; // Clear previous content
+
+        Object.keys(data).forEach(key => {
+            const value = data[key];
+            const geneName = value.split('|')[0]; // Extract part before '|'
+            console.log(geneName)
+
+            const radioWrapper = document.createElement('div');
+            radioWrapper.className = 'radio-wrapper';
+
+            const radioInput = document.createElement('input');
+            radioInput.type = 'radio';
+            radioInput.name = 'gene';
+            radioInput.id = `radio-${geneName}`;
+            radioInput.value = value;
+
+            const radioLabel = document.createElement('label');
+            radioLabel.htmlFor = `radio-${geneName}`;
+            radioLabel.innerText = geneName;
+
+            radioWrapper.appendChild(radioInput);
+            radioWrapper.appendChild(radioLabel);
+            container.appendChild(radioWrapper);
+        });
+    }
+
+
+
 
 
 
@@ -859,9 +1023,11 @@ window.onclick = function(event) {
                 data_original = data
                 metadata = meta
                 
+                
                 fetch('clinical_luad.txt')
                     .then(response => response.text())
                     .then(text => {
+                        clinical_surv = text
                         // Split the text into lines
                         const lines = text.split('\n');
 
@@ -1105,7 +1271,9 @@ window.onclick = function(event) {
                                                 //var secondMostUpregulatedGeneName = secondMostUpregulatedGene.Gene
                                                 var mostDownregulatedGeneName = mostDownregulatedGene.Gene
                                                 //var secondMostDownregulatedGeneName = secondMostDownregulatedGene.Gene
-
+                                                
+                                                mostDOWN = mostDownregulatedGeneName
+                                                mostUP = mostUpregulatedGeneName
 
                                                 genes = [mostUpregulatedGeneName, mostDownregulatedGeneName]
 
@@ -1117,7 +1285,7 @@ window.onclick = function(event) {
                                                 updateParallel(selectedGeneData, data_copy_pval, dataC_copy_pval, dataN_copy, first_dims)
 
                                                 updateBoxPlot(mostUpregulatedGeneName, parsedLogFC, dataN_copy_pval, dataC_copy_pval)
-                                                survival(metadata1,dataC_copy_pval);
+                                                //survival(metadata1,dataC_copy_pval);
 
                                                 updateCounter()
 
@@ -2227,37 +2395,42 @@ selectDot.on("change", function() {
 });
     }
 
-    function survival(clinical,cases) {
+    function survival(clinical,cases,genename) {
 
         console.log("tutto il dataset",clinical)
         console.log("i casi",cases)
+        console.log(genename)
                 
-                var geneDataC = cases.filter(d => d.gene === geneNameUP)
+                var geneDataC = cases.filter(d => d.gene === genename)
 
                 console.log(geneDataC)
 
                // Extract GSM values for each gene
-                var gsmValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('TCGA')).map(tcga => tcga.split('-').slice(0, 3).join('-'));
+                var TCGAValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('TCGA')).map(tcga => tcga.split('-').slice(0, 3).join('-'));
 
 
-                console.log(gsmValuesC)
+                console.log(TCGAValuesC)
 
 
     
         var matchedMetadata = clinical.filter(entry => {
             //console.log(entry)
                 const tcgaBarcode = entry.tcgaBarcode
-                return gsmValuesC.includes(tcgaBarcode);
+                return TCGAValuesC.includes(tcgaBarcode);
             });
 
             var matchedTCGABarcodes = matchedMetadata.map(entry => entry.tcgaBarcode);
+
+
+            console.log(matchedMetadata)
+            
 
             // Initialize an object to store expression levels
             var expressionLevels = {};
 
 
             var req = ocpu.call("survival", {
-                                    metadata: clinical,
+                                    metadata: metadata1,
                                     dataC: geneDataC
                                 }, function (session) {
                                     var filteredDataURL = session.loc + "/R/.val/json";
@@ -2266,33 +2439,189 @@ selectDot.on("change", function() {
                                         .then(response => response.json())
                                         .then(data => {
                                            console.log(filteredDataURL)
+                                           survivalplot(data,genename);
+                                           btn2.disabled = false;
                                         })
                                     
-                                    
+                                        
                                     
                                     })
 
+    }
+
+    function survivalplot(data,name){
+
+        console.log(data)
+
+        
+            
+            // Calculate survival probability
+            const survivalProb = [];
+            let survival = 1; // Initial survival probability
+
+            // Compute survival probability for each group
+            function computeSurvivalProbability(data) {
+                const survivalProb = [];
+                let survival = 1; // Initial survival probability
+
+                for (let i = 0; i < data.time.length; i++) {
+                    const nRisk = data['n.risk'][i];
+                    const nEvent = data['n.event'][i];
+
+                    if (nRisk === 0) break; // Avoid division by zero
+
+                    const hazard = nEvent / nRisk;
+                    survival *= Math.pow((1 - hazard), 1);
+                    survivalProb.push(survival);
+                }
+                return survivalProb;
+            }
+
+            // Filter data by high and low expression
+            const highExprData = {
+                time: data[0].time.slice(0, data[0].strata[0]),
+                "n.risk": data[0]['n.risk'].slice(0, data[0].strata[0]),
+                "n.event": data[0]['n.event'].slice(0, data[0].strata[0]),
+                "n.censor": data[0]['n.censor'].slice(0, data[0].strata[0]),
+                surv: data[0].surv.slice(0, data[0].strata[0])
+            };
+
+            const lowExprData = {
+                time: data[0].time.slice(data[0].strata[0]),
+                "n.risk": data[0]['n.risk'].slice(data[0].strata[0]),
+                "n.event": data[0]['n.event'].slice(data[0].strata[0]),
+                "n.censor": data[0]['n.censor'].slice(data[0].strata[0]),
+                surv: data[0].surv.slice(data[0].strata[0])
+            };
+
+            const highExprSurvivalProb = computeSurvivalProbability(highExprData);
+            const lowExprSurvivalProb = computeSurvivalProbability(lowExprData);
+
+            // Prepare data for D3.js
+            const highExprPlotData = highExprData.time.map((time, index) => ({
+                time: time,
+                survivalProb: highExprSurvivalProb[index]
+            }));
+
+            const lowExprPlotData = lowExprData.time.map((time, index) => ({
+                time: time,
+                survivalProb: lowExprSurvivalProb[index]
+            }));
+
+            console.log("High Expression Data:", highExprPlotData);
+            console.log("Low Expression Data:", lowExprPlotData);
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            // Append the svg object to the body of the page
+
+            const margin = { top: 20, right: 30, bottom: 30, left: 50 },
+                        width = 800 - margin.left - margin.right,
+                        height = 600 - margin.top - margin.bottom;
 
 
-            // Iterate over each key in geneDataC
-            // Object.keys(geneDataC[0]).forEach(key => {
-            //     // Check if the key starts with 'TCGA'
-            //     if (key.startsWith('TCGA')) {
-            //         console.log("trovato un tcga")
-            //         // Extract the TCGA barcode
-            //         var tcgaBarcode = key.split('-').slice(0, 3).join('-');
-            //         // Check if the TCGA barcode is in the list of matched TCGA barcodes
-            //         if (matchedTCGABarcodes.includes(tcgaBarcode)) {
-            //             // If yes, add the expression level to the object
-            //             expressionLevels[tcgaBarcode] = geneDataC[key].gene;
-            //         }
-            //     }
-            // });
+            // Append the svg object to the body of the page
+            const svg = d3.select("#survival")
+                .html("")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right) // Adjusted width and height to include margins
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
 
-// Now you ha
-console.log(expressionLevels);
+            // Add X axis
+            const x = d3.scaleLinear()
+                .domain([0, d3.max(data[0].time)])
+                .range([0, width]);
+
+            xAxis= svg.append("g") // Appending a group element for the x-axis
+                .attr("transform", `translate(0,${height})`) // Translate it to the bottom
+                .call(d3.axisBottom(x)); 
+
+                xAxis.selectAll("line, path")
+                            .style("stroke", "white");
+                        xAxis.selectAll("text")
+                            .style("fill", "white");
 
 
+            // Add Y axis
+            const y = d3.scaleLinear()
+                .domain([0, 1])
+                .range([height, 0]);
+
+                yAxis= svg.append("g") // Appending a group element for the y-axis
+                .call(d3.axisLeft(y)); 
+
+                yAxis.selectAll("line, path")
+                            .style("stroke", "white");
+                        yAxis.selectAll("text")
+                            .style("fill", "white");
+
+
+            // Add the high expression line
+            const highLine = d3.line()
+                .x(d => x(d.time))
+                .y(d => y(d.survivalProb));
+
+            svg.append("path")
+                .datum(highExprPlotData)
+                .attr("fill", "none")
+                .attr("stroke", "#F8766D")
+                .attr("stroke-width", 2)
+                .attr("d", highLine);
+
+            // Add the low expression line
+            const lowLine = d3.line()
+                .x(d => x(d.time))
+                .y(d => y(d.survivalProb));
+
+            svg.append("path")
+                .datum(lowExprPlotData)
+                .attr("fill", "none")
+                .attr("stroke", "#00BFC4")
+                .attr("stroke-width", 2)
+                .attr("d", lowLine);
+
+
+                // Add legend
+            const legend = svg.append("g")
+                .attr("class", "legend")
+                .attr("transform", `translate(${width - 100}, 20)`); // Adjust position of legend
+
+            legend.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("fill", "#F8766D");
+
+            legend.append("text")
+                .attr("x", 15)
+                .attr("y", 8)
+                .style("fill", "white")
+                .text("High Expression");
+
+            legend.append("rect")
+                .attr("x", 0)
+                .attr("y", 20)
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("fill", "#00BFC4");
+
+            legend.append("text")
+                .attr("x", 15)
+                .attr("y", 28)
+                .style("fill", "white")
+                .text("Low Expression");
+
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 15)
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("Survival plot for "+name.split('|')[0])
+                .style("fill", "white");
 
 
     }
@@ -2483,6 +2812,8 @@ console.log(expressionLevels);
                         var mostDownregulatedGeneName = mostDownregulatedGene.Gene
                         //var secondMostDownregulatedGeneName = secondMostDownregulatedGene.Gene
 
+                        mostUP = mostUpregulatedGeneName
+                        mostDOWN = mostDownregulatedGeneName
 
                         genes = [mostUpregulatedGeneName, mostDownregulatedGeneName]
                         if (selectedGeneData == []) {
