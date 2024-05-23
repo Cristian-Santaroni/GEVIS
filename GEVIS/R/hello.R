@@ -277,14 +277,40 @@ enrichment <- function (data,direction){
 
     fit=survfit(Surv(overall_survival,deceased) ~ strata, data = df)
 
-    members <- c("time", "n.risk", "n.event","n.censor","surv","strata","pstate")
+
+    members <- c("time", "n.risk", "n.event","n.censor","surv","strata")
 
 
 
     last = list(unclass(fit)[members])
 
-    pval = surv_pvalue(fit,df)
-    print(pval)
+
+    ####### UTILE PER CALCOLARE IL PVALUE DEL GENE PASSATO#######
+    #pval = surv_pvalue(fit)
+    #print(pval)
+    #############################################################
+
+
+
+
+
+    ####### UTILE PER VERIFICARE SE LE SURVIVAL PROBABILITY COINCIDONO CON QUELLE CALCOLATE IN JS #########
+    # Plot survival curve using ggsurvplot with p-value
+    ggsurv <- ggsurvplot(fit, data = df, pval = TRUE)
+
+    # Extracting the p-value from ggsurvplot
+
+
+
+    members1 <- c("table", "cumevents", "cumevents","ncensor.plot","data.survplot","ncensor.plot")
+
+    last1 = list(unclass(ggsurv)[members1])
+
+
+
+    print(last1)
+    ########################################################################################################
+
 
 
     return(last)

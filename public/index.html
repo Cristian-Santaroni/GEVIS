@@ -563,11 +563,11 @@
                     <div class="flex1">
 
                         <div>
-                                <form id="gene-form">
-                                <h4 style="color: white;">Gene list</h4>
+                                
+                                <h4 style="color: white; width: 100%;">Gene list</h4>
                                 <div id="radio-container" style="background-color: #292727;"></div>
-                                <button id="submission" type="submit" class="btn btn-secondary" disabled>Submit</button>
-                            </form>
+                                <button id="submission" type="button" class="btn btn-secondary" disabled>Submit</button>
+                            
                         </div>
                         
                         <div>   
@@ -756,7 +756,7 @@ function showLoadingMessageSurv() {
    
     survivalContainer.innerHTML = "<h3 style='color: white; margin-left: 50px; width:100%'>Select a gene </h3>";
     // Form submission handler
-    document.getElementById('gene-form').addEventListener('submit', function(event) {
+    document.getElementById('submission').onclick = function(event) {
             event.preventDefault(); // Prevent default form submission
 
             // Get selected radio input value
@@ -773,7 +773,7 @@ function showLoadingMessageSurv() {
             alert('No gene selected!');
         }
 
-    });
+    };
 
 }
 
@@ -2397,9 +2397,9 @@ selectDot.on("change", function() {
 
     function survival(clinical,cases,genename) {
 
-        console.log("tutto il dataset",clinical)
-        console.log("i casi",cases)
-        console.log(genename)
+        // console.log("tutto il dataset",clinical)
+        // console.log("i casi",cases)
+        // console.log(genename)
                 
                 var geneDataC = cases.filter(d => d.gene === genename)
 
@@ -2409,7 +2409,7 @@ selectDot.on("change", function() {
                 var TCGAValuesC = Object.keys(geneDataC[0]).filter(key => key.startsWith('TCGA')).map(tcga => tcga.split('-').slice(0, 3).join('-'));
 
 
-                console.log(TCGAValuesC)
+                //console.log(TCGAValuesC)
 
 
     
@@ -2422,7 +2422,7 @@ selectDot.on("change", function() {
             var matchedTCGABarcodes = matchedMetadata.map(entry => entry.tcgaBarcode);
 
 
-            console.log(matchedMetadata)
+            //console.log(matchedMetadata)
             
 
             // Initialize an object to store expression levels
@@ -2439,7 +2439,9 @@ selectDot.on("change", function() {
                                         .then(response => response.json())
                                         .then(data => {
                                            console.log(filteredDataURL)
-                                           survivalplot(data,genename);
+                                           console.log(data.pval[0].pval)
+                                           survivalplot(data.obj,genename,data.pval[0].pval);
+
                                            btn2.disabled = false;
                                         })
                                     
@@ -2449,7 +2451,7 @@ selectDot.on("change", function() {
 
     }
 
-    function survivalplot(data,name){
+    function survivalplot(data,name,pvalue){
 
         console.log(data)
 
@@ -2515,7 +2517,7 @@ selectDot.on("change", function() {
 
             // Append the svg object to the body of the page
 
-            const margin = { top: 20, right: 30, bottom: 30, left: 50 },
+            const margin = { top: 20, right: 30, bottom: 50, left: 50 },
                         width = 800 - margin.left - margin.right,
                         height = 600 - margin.top - margin.bottom;
 
@@ -2556,6 +2558,26 @@ selectDot.on("change", function() {
                             .style("stroke", "white");
                         yAxis.selectAll("text")
                             .style("fill", "white");
+
+            
+            // Add X axis label
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill", "white")
+                .text("Time (in days)");
+
+            // Add Y axis label
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -margin.left + 12)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill", "white")
+                .text("Survival Probability");
 
 
             // Add the high expression line
@@ -2613,6 +2635,12 @@ selectDot.on("change", function() {
                 .attr("y", 28)
                 .style("fill", "white")
                 .text("Low Expression");
+
+            legend.append("text")
+                .attr("x", 15)
+                .attr("y", 48)
+                .style("fill", "white")
+                .text("p-value: " +pvalue);
 
             // Add title
             svg.append("text")
@@ -5691,8 +5719,8 @@ selectDot.on("change", function() {
             //console.log(transposedData[0]);
             // Select all paths with the class "gsm-path"
 
-            console.log(transposedData)
-            console.log("selected gene list ", gsmList)
+            //console.log(transposedData)
+            //console.log("selected gene list ", gsmList)
         
             var gsmPaths = svg.selectAll(".gsm-path")
             .data(transposedData)
