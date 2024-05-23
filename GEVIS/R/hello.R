@@ -286,8 +286,10 @@ enrichment <- function (data,direction){
 
 
     ####### UTILE PER CALCOLARE IL PVALUE DEL GENE PASSATO#######
-    #pval = surv_pvalue(fit)
-    #print(pval)
+    obj_pval = surv_pvalue(fit,df)
+    members2 = c("pval")
+    pval=list(unclass(obj_pval)[members2])
+    print(pval)
     #############################################################
 
 
@@ -313,7 +315,7 @@ enrichment <- function (data,direction){
 
 
 
-    return(last)
+    return(list (obj = last, pval = pval))
   }
 
 
