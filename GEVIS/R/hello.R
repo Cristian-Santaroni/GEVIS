@@ -20,8 +20,10 @@ hello <- function(data) {
   # Adjustment p-value
   pval_adj <- p.adjust(pval, method="fdr")
 
+  pval_adj_str <- as.character(pval_adj)
+
   # Add the column of genes back to the result
-  result <- data.frame(Gene = genes, pval_adj = pval_adj)
+  result <- data.frame(Gene = genes, pval_adj = pval_adj_str)
 
   print(result)
   return(result)

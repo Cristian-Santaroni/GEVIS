@@ -424,6 +424,7 @@
                     <div id="scatterPlot"></div>
                     <button id="resetButton" class="btn btn-secondary">Reset
                         Zoom</button>
+                    <button id="switchButton">Switch Plot</button>
                     <label for="thresholdSelect">
                         <p style="color: #ddd;">Select
                             Threshold:</p>
@@ -589,7 +590,7 @@
             window.location.reload();
         }
         
-        
+        let currentPlot = "scatter"
         var mostDOWN
         var mostUP
         let variation_data;
@@ -609,7 +610,7 @@
         let data_copy1 = [];
         let dataC_copy1 = [];
         let dataN_copy1 = [];
-        let thr_fc = 1.1;
+        let thr_fc = 1.8;
         let logFC_data;
         let log_thr_fc = Math.log2(thr_fc);
         let parsedLogFC;
@@ -1161,11 +1162,15 @@ function createRadioButtons(data) {
 
                         averageExpressions10C = calculateAverageLog10Expressions(dataC_copy);
                         averageExpressions10N = calculateAverageLog10Expressions(dataN_copy);
+                        
 
 
                         fetch('genes_and_pval_adj.json')
                             .then(response => response.json())
                             .then(data => {
+                                
+                                        
+
                                 p_val_adj = data
 
                                 // Calculate the quantile
@@ -1221,6 +1226,13 @@ function createRadioButtons(data) {
                                         .then(response => response.json())
                                         .then(data => {
                                             console.log("cosa ricevo dalla chiamata", data.length)
+
+
+                                                    // Convert pval_adj values back to numbers if needed
+                                        data.forEach(entry => {
+                                            entry.pval_adj = parseFloat(entry.pval_adj); // Convert string to number if necessary
+                                        });
+
                                             old_p_adj = data
                                             const ind = old_p_adj.reduce((result, entry, index) => {
 
@@ -1256,6 +1268,7 @@ function createRadioButtons(data) {
                                                 
                                                 parsedLogFC_pval=parsedLogFC
                                                 updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+                                                //updateVolcanoPlot(parsedLogFC_origin1, old_p_adj, log_thr_fc)
 
                                                 console.log("Promise: al box gli passo parsedlogFC", parsedLogFC.length)
 
@@ -2778,14 +2791,21 @@ selectDot.on("change", function() {
                 fetch(filteredDataURL)
                     .then(response => response.json())
                     .then(data => {
+                                     // Convert pval_adj values back to numbers if needed
+                                     data.forEach(entry => {
+                                            entry.pval_adj = parseFloat(entry.pval_adj); // Convert string to number if necessary
+                                        });
 
                         old_p_adj = data
 
                         averageExpressions10C = calculateAverageLog10Expressions(dataC_copy1);
                         averageExpressions10N = calculateAverageLog10Expressions(dataN_copy1);
 
-                        updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin, old_p_adj)
-
+                        if (currentPlot === 'volcano') {
+                            updateVolcanoPlot(parsedLogFC_origin1, old_p_adj, log_thr_fc)
+                        } else {
+                            updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+                        }
 
 
 
@@ -3069,12 +3089,21 @@ selectDot.on("change", function() {
                 fetch(filteredDataURL)
                     .then(response => response.json())
                     .then(data => {
+
+                        // Convert pval_adj values back to numbers if needed
+                        data.forEach(entry => {
+                            entry.pval_adj = parseFloat(entry.pval_adj); // Convert string to number if necessary
+                        });
                         old_p_adj = data
 
                         averageExpressions10C = calculateAverageLog10Expressions(dataC_copy1);
                         averageExpressions10N = calculateAverageLog10Expressions(dataN_copy1);
 
-                        updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin, old_p_adj)
+                        if (currentPlot === 'volcano') {
+                            updateVolcanoPlot(parsedLogFC_origin1, old_p_adj, log_thr_fc)
+                        } else {
+                            updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+                        }
 
                         selectedGeneData = selectedGeneData.filter(function (gene) {
                             // Check if the gene is present in dataC_copy or dataN_copy
@@ -3287,6 +3316,7 @@ selectDot.on("change", function() {
 
         // Assuming newdataNJSON, newdataCJSON, and newdataJSON are your arrays of data
         document.getElementById('thresholdSelect').addEventListener('change', function () {
+            document.getElementById("loadingOverlay").style.display = "block";
             //console.log(dataC_copy)
             //console.log(data_copy)
             //console.log(dataN_copy)
@@ -3304,7 +3334,11 @@ selectDot.on("change", function() {
                 return result;
             }, []);
 
-            updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+            if (currentPlot === 'volcano') {
+                            updateVolcanoPlot(parsedLogFC_origin1, old_p_adj, log_thr_fc)
+                        } else {
+                            updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+                        }
             // dataC_copy_pval=dataC_copy
             // dataN_copy_pval=dataN_copy
             // data_copy_pval=data_copy
@@ -4025,7 +4059,7 @@ selectDot.on("change", function() {
                 .on("click", resetZoom);
 
             // Add X axis label
-            svg.append("text")
+            xlab = svg.append("text")
                 .attr("x", width / 2)
                 .attr("y", height + margin.bottom - 10)
                 .attr("text-anchor", "middle")
@@ -4034,7 +4068,7 @@ selectDot.on("change", function() {
                 .html("log<tspan dy='5'>10</tspan> <tspan dy ='-5'>(Expression (Normal))</tspan>");
 
             // Add Y axis label
-            svg.append("text")
+            ylab = svg.append("text")
                 .attr("transform", "rotate(-90)")
                 .attr("x", -height / 2)
                 .attr("y", -margin.left + 20)
@@ -4071,7 +4105,21 @@ selectDot.on("change", function() {
                 return { gene: gene, Normal: averageExpressionsN[gene], Case: averageExpressionsC[gene], logFC: logFC, pval_adj: pval_adj, type: type };
             });
 
-            //console.log(data)
+            console.log(averageExpressionsN.length)
+            //console.log(data.length)
+
+            // Merge data by Gene
+            let mergedData = old_p_adj.map(d => {
+                let log = parsed.find(p => p.Gene === d.Gene);
+                return {
+                    Gene: d.Gene,
+                    logFC: log.logFC,
+                    pval_adj: d.pval_adj ? d.pval_adj : null
+                };
+            })
+            mergedData = mergedData.filter(d => d.logFC !== null && d.pval_adj !== null);
+
+            console.log(mergedData);
 
             // Create a legend
             var legend = svg.append("g")
@@ -4477,7 +4525,831 @@ selectDot.on("change", function() {
                     .duration(750)
                     .call(zoom.transform, d3.zoomIdentity);
             }
+
+        
+            function SwitchingPlot(structure, choice){
+
+            if(choice=="volcano"){
+            // Create x and y scales
+         xScale = d3.scaleLinear()
+                .domain([
+                    d3.min(mergedData, d => d.logFC) - 0.5,
+                    d3.max(mergedData, d => d.logFC) + 0.5
+                ])
+                .range([0, width]);
+
+         yScale = d3.scaleLinear()
+                .domain([0, d3.max(mergedData, d => -Math.log10(d.pval_adj.toExponential(20)))])
+                .range([height, 0])
+                .nice();
+
+            xAxis.transition().duration(1000)
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xScale))
+
+            xAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            xAxis.selectAll("text")
+                .style("fill", "white");
+
+            yAxis.transition().duration(1000)
+            .call(d3.axisLeft(yScale))
+
+            yAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            yAxis.selectAll("text")
+                .style("fill", "white");
+                
+                // Update dots
+            var dot = svg
+                .selectAll('circle')
+                .data(structure)
+                // Remove existing circles
+                dot.exit().remove();
+
+               dot
+                .classed('pulse', d => {
+                return selectedGeneData.some(selectedGene => selectedGene === d.Gene);
+            })
+            .on("mouseover", function (d) {
+                    d3.select(this)
+                        .style("stroke", "black")
+                        .style("stroke-width", 2);
+
+                    tooltip.transition()
+                        .style("opacity", .9);
+
+                    tooltip.html(`<strong>Gene:</strong> ${d.Gene}<br><strong>LogFC:</strong> ${parseFloat(d.logFC).toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toExponential(2) : 'NA'}`)
+                        .style("left", (d3.event.pageX + 15) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function (d) {
+                    // Remove the highlight and hide tooltip on mouseout
+                    d3.select(this)
+                        .style("stroke", "none");
+
+                    tooltip.transition()
+                        .style("opacity", 0)
+                        .style("visibility", "none")
+                        .style("pointer-events", "none"); // Disable pointer events for the tooltip
+                })
+                .on("click", function (d) {
+                    var selectedElement = d3.select(this);
+                    var currentFill = selectedElement.style("fill");
+
+                    // Check if the element is already filled with grey
+                    if (currentFill === "grey") {
+                        return; // If grey, do nothing
+                    }
+
+                    // Check if the element is already highlighted
+                    var isHighlighted = selectedElement.style("fill") === "green";
+
+                    if (isHighlighted) {
+                        // If already highlighted, remove the highlighting
+                        selectedElement.style("fill", d => {
+                            if (d.logFC >= log_thr_fc && d.pval_adj <= threshold) {
+                                return "darkred";
+                            } else if (d.logFC <= -log_thr_fc && d.pval_adj <= threshold) {
+                                return "royalblue";
+                            } else {
+                                return "grey";
+                            }
+                        })
+                            .classed('pulse', false)
+                            .classed("pulse1", false);
+
+                        selectedGeneData = selectedGeneData.filter(gene => gene !== d.Gene);
+
+                        // Find and remove the corresponding option from the select element
+                        var select = document.getElementById("selectButton");
+                        var options = select.options;
+
+                        for (var i = 0; i < options.length; i++) {
+                            if (!selectedGeneData.includes(options[i].value)) {
+                                select.removeChild(options[i]);
+                                break; // Exit the loop once the option is removed
+                            }
+                        }
+
+                        updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
+                    } else {
+                        // If not highlighted, apply the highlighting
+                        selectedElement
+                            .style("fill", "green")
+                            .style("stroke-width", 2)
+                            .classed('pulse', true)
+                            .classed('pulse1', false);
+
+                        // Find the corresponding scatterplot circle and toggle its selection
+                        var correspondingSquare = square
+                            .filter(function (squaredata) {
+                                return squaredata.gene === d.Gene;
+                            });
+
+                        correspondingSquare.style("stroke", "none");
+
+                        // On click, filter data for the selected gene
+                        selectedGeneData.push(d.Gene);
+
+                        // Get the select element
+                        var select = document.getElementById("selectButton");
+
+                        // Add new options for the genes in selectedGeneData that are not already in the select element
+                        selectedGeneData.forEach(function (gene) {
+                            if (!Array.from(select.options).some(option => option.value === gene)) {
+                                var option = document.createElement("option");
+                                option.value = gene;
+                                option.text = gene;
+                                select.appendChild(option);
+                            }
+                        });
+
+                        synchronizeAnimations(this);
+
+                        // Call a function to create parallel coordinates plot using selectedGeneData
+                        updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
+                    }
+                })
+                .transition()
+                .duration(1000)          
+                .attr("cx", d => xScale(d.logFC))
+                .attr("cy", d => yScale(-Math.log10(d.pval_adj.toExponential(20))))
+                .attr("r", 2) // Start with radius 0 for initial transition effect
+                .style("fill", d => {
+                    if (d.pval_adj < threshold) {
+                        if (d.logFC >= log_thr_fc) {
+                            return "darkred"; // Upregulated
+                        } else if (d.logFC <= -log_thr_fc) {
+                            return "royalblue"; // Downregulated
+                        } else {
+                            return "grey"; // Not significant
+                        }
+                    } else {
+                        return "grey"; // Not significant
+                    }
+                })
+                .attr("data-initial-fill", d => {
+                    if (d.pval_adj < threshold) {
+                        if (d.logFC >= log_thr_fc) {
+                            return "darkred"; // Upregulated
+                        } else if (d.logFC <= -log_thr_fc) {
+                            return "royalblue"; // Downregulated
+                        } else {
+                            return "grey"; // Not significant
+                        }
+                    } else {
+                        return "grey"; // Not significant
+                    }
+                })
+
+
+                // Add X axis label
+            xlab.text("Log FC")
+            ylab.text("pval")
+                }
+
+        else{ 
+            console.log(structure)
+
+
+            xScale = d3.scaleLinear()
+                .domain(d3.extent(Object.values(averageExpressionsN)))
+                .range([0, width]);
+                console.log("Domain:", xScale.domain());
+
+                
+               //console.log(averageExpressionsN);
+                //console.log(averageExpressionsC);
+            yScale = d3.scaleLinear()
+                .domain(d3.extent(Object.values(averageExpressionsC)))
+                .range([height, 0])
+                .nice()
+                //console.log(yScale);
+
+            xAxis.html("");
+            yAxis.html("");
+
+            xAxis = svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(xScale))
+
+            xAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            xAxis.selectAll("text")
+                .style("fill", "white");
+            // Add Y axis
+            yAxis = svg.append("g")
+                .call(d3.axisLeft(yScale))
+
+            yAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            yAxis.selectAll("text")
+                .style("fill", "white");
+
+            xlab.html("").text("log(Expression (Normal))")
+            ylab.html("").text("log10(Expression (Case))")
+
+            //svg.select("#scatter").selectAll("*").remove();
+              // Update dots
+              var dot = svg
+                .selectAll('circle')
+                .data(structure)
+                dot.exit().remove()
+                
+                dot.enter().append("circle").merge(dot)
+                .classed('pulse', d => {
+                    // Check if logFC is greater than or equal to the threshold
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && selectedGeneData.some(selectedGene => selectedGene === d.gene)) {
+                        return true;
+                    }
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && selectedGeneData.some(selectedGene => selectedGene === d.gene)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+
+                })
+                .transition()
+                .duration(1000)
+                .attr("cx", d => {
+                    // Log the value of d['Normal'] to inspect its format
+                    if (isNaN(d['Normal'])) {
+                        console.log("NaN value found in 'Normal':", d['Normal']);
+                    }
+                    // Convert the value to a number, assuming it's a string
+                    return xScale(parseFloat(d['Normal']));
+                })
+                .attr("cy", d => yScale(d['Case']))
+                .attr("r", d => {
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                        return "2";
+                    }
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                        return "2";
+                    } else if (d.gene != mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                        return "2";
+                    } else if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && d.gene == mostUpregulatedGeneName && d.gene != mostDownregulatedGeneName) {
+                        return "4"
+                    }
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && d.gene != mostUpregulatedGeneName && d.gene == mostDownregulatedGeneName) {
+                        return "4"
+                    }
+                })
+                .style("fill", d => {
+
+                    // Check if logFC is greater than or equal to the threshold
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && selectedGeneData.some(selectedGene => selectedGene === d.gene)) {
+
+                        return "green";
+                    }
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && selectedGeneData.some(selectedGene => selectedGene === d.gene)) {
+
+                        return "green";
+                    }
+                    else if (d.logFC >= log_thr_fc && d.pval_adj <= threshold) {
+
+                        return "darkred";
+                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
+
+                        return "royalblue";
+                    }
+                    else {
+                        return "grey";
+                    }
+                })
+                .attr("data-initial-fill", d => {
+
+                    // Check if logFC is greater than or equal to the threshold
+                    if (d.logFC >= log_thr_fc && d.pval_adj <= threshold && selectedGeneData.some(selectedGene => selectedGene === d.gene)) {
+                        currentCircleFill = "green"
+                        return "green";
+                    }
+                    else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold && selectedGeneData.some(selectedGene => selectedGene === d.gene)) {
+                        currentCircleFill = "green"
+                        return "green";
+                    }
+                    else if (d.logFC >= log_thr_fc && d.pval_adj <= threshold) {
+                        currentCircleFill = "darkred"
+                        return "darkred";
+                    } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
+                        currentCircleFill = "royalblue"
+                        return "royalblue";
+                    }
+                })
+                .on("mouseover", function (d) {
+                    // Highlight the gene on mouseover
+                    d3.select(this)
+                        .style("stroke", "black")
+                        .style("stroke-width", 2);
+
+                    // Display tooltip on mouseover
+                    tooltip.transition()
+                        .style("opacity", .9);
+
+                        const parts = d.gene.split('|');
+                        // Use the first part as the gene name
+                        const geneName = parts[0];
+
+                    tooltip.html(`<strong>Gene:</strong> ${geneName}<br><strong>Normal:</strong> ${d.Normal.toFixed(2)}<br><strong>Case:</strong> ${d.Case.toFixed(2)}<br><strong>LogFC:</strong> ${d.logFC.toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? formatPValue(d.pval_adj) : 'NA'}`)
+                        .style("left", (d3.event.pageX + 15) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                // .on("mouseout", function (d) {
+                //     // Remove the highlight and hide tooltip on mouseout
+                //     d3.select(this)
+                //         .style("stroke", "none");
+
+                //     tooltip.transition()
+                //         .style("opacity", 0)
+                //         .style("visibility", "none")
+                //         .style("pointer-events", "none"); // Disable pointer events for the tooltip
+                // })
+                // .on("click", function (d) {
+                //     var selectedElement = d3.select(this);
+                //     var currentFill = selectedElement.style("fill");
+
+                //     // Check if the element is already filled with grey
+                //     if (currentFill === "grey") {
+                //         return; // If grey, do nothing
+                //     }
+
+                //     // Check if the element is already highlighted
+                //     var isHighlighted = selectedElement.style("fill") === "green";
+
+                //     if (isHighlighted) {
+                //         console.log("sono verde")
+                //         // If already highlighted, remove the highlighting
+                //         selectedElement.style("fill", d => {
+                //             // Check if logFC is greater than or equal to the threshold
+                //             if (d.logFC >= log_thr_fc && d.pval_adj <= threshold) {
+                //                 return "darkred";
+                //             } else if (d.logFC <= -(log_thr_fc) && d.pval_adj <= threshold) {
+                //                 return "royalblue";
+                //             } else {
+                //                 return "grey";
+                //             }
+
+                //         })
+                //             .classed('pulse', false)
+                //             .classed("pulse1", false);
+                //         selectedGeneData = selectedGeneData.filter(gene => gene !== d.gene);
+
+                //         // Find and remove the corresponding option from the select element
+                //         var select = document.getElementById("selectButton");
+                //         var options = select.options;
+
+                //         for (var i = 0; i < options.length; i++) {
+                //             if (!selectedGeneData.includes(options[i].value)) {
+                //                 select.removeChild(options[i]);
+                //                 break; // Exit the loop once the option is removed
+                //             }
+                //         }
+
+                //         updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims)
+                //     } else {
+                //         // If not highlighted, apply the highlighting
+                //         selectedElement
+                //             .style("fill", "green")
+                //             .style("stroke-width", 2)
+                //             .classed('pulse', true)
+                //             .classed('pulse1', false)
+                //         //.attr("data-initial-fill","green")    
+                //         // Find the corresponding scatterplot circle and toggle its selection
+
+                        
+                //         // var correspondingSquare = square
+                //         //     .filter(function (squaredata) {
+                //         //         return squaredata.gene === d.gene;
+                //         //     });
+                //         // console.log(correspondingSquare)
+                //         // correspondingSquare.style("stroke", "none") 
+                        
+                //         // On click, filter data for the selected gene
+                //         selectedGeneData.push(d.gene);
+
+                //         // Get the select element
+                //         var select = document.getElementById("selectButton");
+
+                //         // Add new options for the genes in selectedGeneData that are not already in the select element
+                //         selectedGeneData.forEach(function (gene) {
+                //             if (!Array.from(select.options).some(option => option.value === gene)) {
+                //                 var option = document.createElement("option");
+                //                 option.value = gene;
+                //                 option.text = gene;
+                //                 select.appendChild(option);
+                //             }
+                //         });
+
+                //         synchronizeAnimations(this);
+
+                //         // Call a function to create parallel coordinates plot using selectedGeneData
+                //         updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims)
+                //     }
+                
+                    
+                //})
+            }
         }
+
+
+
+            d3.select("#switchButton").on("click", function () {
+            if (currentPlot === 'volcano') {
+                currentPlot = 'scatter';
+                SwitchingPlot(data,currentPlot)
+            } else {
+                currentPlot = 'volcano';
+                SwitchingPlot(mergedData,currentPlot)            }
+        });
+        
+        }
+
+
+        function updateVolcanoPlot(logData, pvalData, log_thr_fc,data) {
+            
+
+            // Merge data by Gene
+            let mergedData = pvalData.map(d => {
+                let log = logData.find(p => p.Gene === d.Gene);
+                return {
+                    Gene: d.Gene,
+                    logFC: log.logFC,
+                    pval_adj: d.pval_adj ? d.pval_adj : null
+                };
+            })
+            mergedData = mergedData.filter(d => d.logFC !== null && d.pval_adj !== null);
+
+            console.log(mergedData);
+
+            // Set up margin, width, and height
+            var margin = { top: 10, right: 100, bottom: 40, left: 60 };
+            var width = 1000 - margin.left - margin.right;
+            var height = 600 - margin.top - margin.bottom;
+
+            // Create SVG container
+            var svg = d3.select("#scatterPlot")
+                .html("")  // Clear previous content
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Create x and y scales
+            var xScale = d3.scaleLinear()
+                .domain([
+                    d3.min(mergedData, d => d.logFC) - 0.5,
+                    d3.max(mergedData, d => d.logFC) + 0.5
+                ])
+                .range([0, width]);
+
+            var yScale = d3.scaleLinear()
+                .domain([0, d3.max(mergedData, d => -Math.log10(d.pval_adj.toExponential(20)))])
+                .range([height, 0])
+                .nice();
+
+
+            // Add X axis
+            var xAxis = svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(xScale));
+
+            xAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            xAxis.selectAll("text")
+                .style("fill", "white");
+
+            // Add Y axis
+            var yAxis = svg.append("g")
+                .call(d3.axisLeft(yScale));
+
+            yAxis.selectAll("line, path")
+                .style("stroke", "white");
+
+            yAxis.selectAll("text")
+                .style("fill", "white");
+
+            var clip = svg.append("defs").append("SVG:clipPath")
+                .attr("id", "clip")
+                .append("SVG:rect")
+                .attr("width", width)
+                .attr("height", height)
+                .attr("x", 0)
+                .attr("y", 0);
+
+            // Create the scatter variable: where both the circles and the brush take place
+            svg.select("#scatter").selectAll("*").remove();
+            scatter = svg.append('g')
+                .attr("id", "scatter")
+                .attr("clip-path", "url(#clip)");
+
+            // Set the zoom and Pan features
+            var zoom = d3.zoom()
+                .scaleExtent([0.05, 20])
+                .extent([[0, 0], [width, height]])
+                .on("zoom", updateChart);
+
+            // Attach zoom behavior to the SVG
+            svg.call(zoom);
+
+            // Attach click event to the reset button
+            d3.select("#resetButton")
+                .on("click", resetZoom);
+
+            // Add X axis label
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill", "white")
+                .text("log2(Fold Change)");
+
+            // Add Y axis label
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -margin.left + 20)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("fill", "white")
+                .text("-log10(p-value)");
+
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 15)
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("Volcano Plot")
+                .style("fill", "white");
+
+            // Create circles for each gene
+            var tooltip = d3.select("#tooltip");
+
+            svg.select("#scatter").selectAll("*").remove();
+
+            var circles = scatter.selectAll("circle")
+                .data(mergedData);
+
+            // Enter new circles
+            circles.enter().append("circle")
+                .attr("cx", d => xScale(d.logFC))
+                .attr("cy", d => yScale(-Math.log10(d.pval_adj.toExponential(20))))
+                .attr("r", 0) // Start with radius 0 for initial transition effect
+                .style("fill", d => {
+                    if (d.pval_adj < threshold) {
+                        if (d.logFC >= log_thr_fc) {
+                            return "darkred"; // Upregulated
+                        } else if (d.logFC <= -log_thr_fc) {
+                            return "royalblue"; // Downregulated
+                        } else {
+                            return "grey"; // Not significant
+                        }
+                    } else {
+                        return "grey"; // Not significant
+                    }
+                })
+                .attr("data-initial-fill", d => {
+                    if (d.pval_adj < threshold) {
+                        if (d.logFC >= log_thr_fc) {
+                            return "darkred"; // Upregulated
+                        } else if (d.logFC <= -log_thr_fc) {
+                            return "royalblue"; // Downregulated
+                        } else {
+                            return "grey"; // Not significant
+                        }
+                    } else {
+                        return "grey"; // Not significant
+                    }
+                })
+                .classed('pulse', d => {
+                    return selectedGeneData.some(selectedGene => selectedGene === d.Gene);
+                })
+                .on("mouseover", function (d) {
+                    d3.select(this)
+                        .style("stroke", "black")
+                        .style("stroke-width", 2);
+
+                    tooltip.transition()
+                        .style("opacity", .9);
+
+                    tooltip.html(`<strong>Gene:</strong> ${d.Gene}<br><strong>LogFC:</strong> ${parseFloat(d.logFC).toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toExponential(2) : 'NA'}`)
+                        .style("left", (d3.event.pageX + 15) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function (d) {
+                    // Remove the highlight and hide tooltip on mouseout
+                    d3.select(this)
+                        .style("stroke", "none");
+
+                    tooltip.transition()
+                        .style("opacity", 0)
+                        .style("visibility", "none")
+                        .style("pointer-events", "none"); // Disable pointer events for the tooltip
+                })
+                .on("click", function (d) {
+                    var selectedElement = d3.select(this);
+                    var currentFill = selectedElement.style("fill");
+
+                    // Check if the element is already filled with grey
+                    if (currentFill === "grey") {
+                        return; // If grey, do nothing
+                    }
+
+                    // Check if the element is already highlighted
+                    var isHighlighted = selectedElement.style("fill") === "green";
+
+                    if (isHighlighted) {
+                        // If already highlighted, remove the highlighting
+                        selectedElement.style("fill", d => {
+                            if (d.logFC >= log_thr_fc && d.pval_adj <= threshold) {
+                                return "darkred";
+                            } else if (d.logFC <= -log_thr_fc && d.pval_adj <= threshold) {
+                                return "royalblue";
+                            } else {
+                                return "grey";
+                            }
+                        })
+                            .classed('pulse', false)
+                            .classed("pulse1", false);
+
+                        selectedGeneData = selectedGeneData.filter(gene => gene !== d.Gene);
+
+                        // Find and remove the corresponding option from the select element
+                        var select = document.getElementById("selectButton");
+                        var options = select.options;
+
+                        for (var i = 0; i < options.length; i++) {
+                            if (!selectedGeneData.includes(options[i].value)) {
+                                select.removeChild(options[i]);
+                                break; // Exit the loop once the option is removed
+                            }
+                        }
+
+                        updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
+                    } else {
+                        // If not highlighted, apply the highlighting
+                        selectedElement
+                            .style("fill", "green")
+                            .style("stroke-width", 2)
+                            .classed('pulse', true)
+                            .classed('pulse1', false);
+
+                        // Find the corresponding scatterplot circle and toggle its selection
+                        var correspondingSquare = square
+                            .filter(function (squaredata) {
+                                return squaredata.gene === d.Gene;
+                            });
+
+                        correspondingSquare.style("stroke", "none");
+
+                        // On click, filter data for the selected gene
+                        selectedGeneData.push(d.Gene);
+
+                        // Get the select element
+                        var select = document.getElementById("selectButton");
+
+                        // Add new options for the genes in selectedGeneData that are not already in the select element
+                        selectedGeneData.forEach(function (gene) {
+                            if (!Array.from(select.options).some(option => option.value === gene)) {
+                                var option = document.createElement("option");
+                                option.value = gene;
+                                option.text = gene;
+                                select.appendChild(option);
+                            }
+                        });
+
+                        synchronizeAnimations(this);
+
+                        // Call a function to create parallel coordinates plot using selectedGeneData
+                        updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims);
+                    }
+                })
+                .merge(circles) // Merge enter and update selections
+                .transition()
+                .duration(750)
+                .attr("r", 3);
+
+            // Update existing circles with transition
+            circles.transition()
+                .duration(2000)
+                .attr("cx", d => xScale(d.logFC))
+                .attr("cy", d => yScale(-Math.log10(d.pval_adj.toExponential(20))))
+                .style("fill", d => {
+                    if (d.pval_adj < threshold) {
+                        if (d.logFC >= log_thr_fc) {
+                            return "darkred"; // Upregulated
+                        } else if (d.logFC <= -log_thr_fc) {
+                            return "royalblue"; // Downregulated
+                        } else {
+                            return "grey"; // Not significant
+                        }
+                    } else {
+                        return "grey"; // Not significant
+                    }
+                })
+                .attr("data-initial-fill", d => {
+                    if (d.pval_adj < threshold) {
+                        if (d.logFC >= log_thr_fc) {
+                            return "darkred"; // Upregulated
+                        } else if (d.logFC <= -log_thr_fc) {
+                            return "royalblue"; // Downregulated
+                        } else {
+                            return "grey"; // Not significant
+                        }
+                    } else {
+                        return "grey"; // Not significant
+                    }
+                })
+                .attr("r", 3);
+
+            // Exit old circles
+            circles.exit()
+                .transition()
+                .duration(750)
+                .attr("r", 0)
+                .remove();
+
+            function synchronizeAnimations(targetElement) {
+                // Retrieve all elements with the class 'pulse'
+                const elements = [
+                    ...document.querySelectorAll('.pulse'),
+                    ...document.querySelectorAll('.pulse1')
+                ];
+
+                // Retrieve the Animation object of the target element
+                const targetAnimation = findAnimByName(targetElement, 'pulseAnimation');
+
+                // Get the current time of the target animation
+                const targetTime = targetAnimation.currentTime;
+
+                // Loop through each element with the class 'pulse'
+                elements.forEach(element => {
+                    let currentAnimation = findAnimByName(element, 'pulseAnimation');
+
+                    if (!currentAnimation) {
+                        currentAnimation = findAnimByName(element, 'pulseAnimation1');
+                    }
+
+                    // Synchronize the current time of the animation with the target animation
+                    if (currentAnimation) {
+                        currentAnimation.currentTime = targetTime;
+                    }
+                });
+            }
+
+            function findAnimByName(targetElement, animationName) {
+                // Retrieve all the animations associated with the target element
+                const animations = targetElement.getAnimations();
+
+                // Find the animation object for the 'pulse' animation
+                return animations.find(animation => animation.animationName === animationName);
+            }
+            function updateChart() {
+                // recover the new scale
+                var newX = d3.event.transform.rescaleX(xScale);
+                var newY = d3.event.transform.rescaleY(yScale);
+
+                // update axes with these new boundaries
+                xAxis.call(d3.axisBottom(newX));
+                yAxis.call(d3.axisLeft(newY));
+
+                xAxis.selectAll("line, path")
+                    .style("stroke", "white");
+
+                xAxis.selectAll("text")
+                    .style("fill", "white");
+
+                yAxis.selectAll("line, path")
+                    .style("stroke", "white");
+
+                yAxis.selectAll("text")
+                    .style("fill", "white");
+
+                // update circle position
+                scatter
+                    .selectAll("circle")
+                    .attr('cx', function (d) { return newX(d.logFC); })
+                    .attr('cy', function (d) { return newY(-Math.log10(d.pval_adj)); });
+            }
+
+            // Define the resetZoom function
+            function resetZoom() {
+                // Reset the zoom transformation
+                svg.transition()
+                    .duration(750)
+                    .call(zoom.transform, d3.zoomIdentity);
+            }
+
+        }
+
 
         function formatPValue(pval) {
             // Check if the p-value is too small to be displayed without scientific notation
@@ -4491,8 +5363,6 @@ selectDot.on("change", function() {
         }
        // function updateBoxPlot(){}
         function updateParallel(){}
-        //function heatmap(){}
-       // function pca(){}
 
 
         let last_box = ""
@@ -6062,7 +6932,11 @@ selectDot.on("change", function() {
                 // Redraw the parallel coordinates plot
                 // Call updateParallel or relevant function here with updated dimensions
                 updateParallel(geneselectedOrder, data, dataC, dataN, metadataOrder, totalOrder);
-                updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin, old_p_adj)
+                if (currentPlot === 'volcano') {
+                            updateVolcanoPlot(parsedLogFC_origin1, old_p_adj, log_thr_fc)
+                        } else {
+                            updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+                        }
                 d3.selectAll(".axis-label").classed("dragging", false);
 
             }
@@ -6819,6 +7693,16 @@ selectDot.on("change", function() {
             );
         }
 
+
+        // d3.select("#switchButton").on("click", function () {
+        //     if (currentPlot === 'volcano') {
+        //         currentPlot = 'scatter';
+        //         updateScatterPlot(averageExpressions10N, averageExpressions10C, log_thr_fc, parsedLogFC_origin1, old_p_adj)
+        //     } else {
+        //         currentPlot = 'volcano';
+        //         updateVolcanoPlot(parsedLogFC_origin1, old_p_adj, log_thr_fc)
+        //     }
+        // });
     </script>
 
     <div id="tooltip"
