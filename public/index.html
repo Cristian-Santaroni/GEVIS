@@ -4448,8 +4448,7 @@ selectDot.on("change", function() {
                         updateParallel(selectedGeneData, data_copy, dataC_copy, dataN_copy, first_dims)
                     }
                 })
-                .transition()
-                .duration(3000)
+
             function synchronizeAnimations(targetElement) {
                 // Retrieve all elements with the class 'pulse'
                 const elements = [
@@ -4530,66 +4529,68 @@ selectDot.on("change", function() {
         
             function SwitchingPlot(structure, choice){
 
-            if(choice=="volcano"){
-            // Create x and y scales
-         xScale = d3.scaleLinear()
-                .domain([
-                    d3.min(mergedData, d => d.logFC) - 0.5,
-                    d3.max(mergedData, d => d.logFC) + 0.5
-                ])
-                .range([0, width]);
+                if(choice=="volcano"){
+                    // Create x and y scales
+                xScale = d3.scaleLinear()
+                        .domain([
+                            d3.min(mergedData, d => d.logFC) - 0.5,
+                            d3.max(mergedData, d => d.logFC) + 0.5
+                        ])
+                        .range([0, width]);
 
-         yScale = d3.scaleLinear()
-                .domain([0, d3.max(mergedData, d => -Math.log10(d.pval_adj.toExponential(20)))])
-                .range([height, 0])
-                .nice();
+                yScale = d3.scaleLinear()
+                        .domain([0, d3.max(mergedData, d => -Math.log10(d.pval_adj.toExponential(20)))])
+                        .range([height, 0])
+                        .nice();
 
-            xAxis.transition().duration(1000)
-            .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(xScale))
+                xAxis.transition().duration(1000)
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(xScale))
 
-            xAxis.selectAll("line, path")
-                .style("stroke", "white");
+                xAxis.selectAll("line, path")
+                    .style("stroke", "white");
 
-            xAxis.selectAll("text")
-                .style("fill", "white");
+                xAxis.selectAll("text")
+                    .style("fill", "white");
 
-            yAxis.transition().duration(1000)
-            .call(d3.axisLeft(yScale))
+                yAxis.transition().duration(1000)
+                .call(d3.axisLeft(yScale))
 
-            yAxis.selectAll("line, path")
-                .style("stroke", "white");
+                yAxis.selectAll("line, path")
+                    .style("stroke", "white");
 
-            yAxis.selectAll("text")
-                .style("fill", "white");
+                yAxis.selectAll("text")
+                    .style("fill", "white");
 
-            zoom.on("zoom", updateChart1);
+                resetZoom()
 
-            svg.call(zoom)
-                
+                zoom.on("zoom", updateChart1);
+
+                svg.call(zoom)
+                    
                 // Update dots
-            var dot = svg
-                .selectAll('circle')
-                .data(structure)
-                // Remove existing circles
-                dot.exit().remove();
+                var dot = svg
+                    .selectAll('circle')
+                    .data(structure)
+                    // Remove existing circles
+                    dot.exit().remove();
 
-               dot.enter().append("circle").merge(dot)
-                .classed('pulse', d => {
-                return selectedGeneData.some(selectedGene => selectedGene === d.Gene);
-            })
-            .on("mouseover", function (d) {
-                    d3.select(this)
-                        .style("stroke", "black")
-                        .style("stroke-width", 2);
-
-                    tooltip.transition()
-                        .style("opacity", .9);
-
-                    tooltip.html(`<strong>Gene:</strong> ${d.Gene}<br><strong>LogFC:</strong> ${parseFloat(d.logFC).toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toExponential(2) : 'NA'}`)
-                        .style("left", (d3.event.pageX + 15) + "px")
-                        .style("top", (d3.event.pageY - 28) + "px");
+                dot.enter().append("circle").merge(dot)
+                    .classed('pulse', d => {
+                    return selectedGeneData.some(selectedGene => selectedGene === d.gene);
                 })
+                .on("mouseover", function (d) {
+                        d3.select(this)
+                            .style("stroke", "black")
+                            .style("stroke-width", 2);
+
+                        tooltip.transition()
+                            .style("opacity", .9);
+
+                        tooltip.html(`<strong>Gene:</strong> ${d.Gene}<br><strong>LogFC:</strong> ${parseFloat(d.logFC).toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toExponential(2) : 'NA'}`)
+                            .style("left", (d3.event.pageX + 15) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
                 .on("mouseout", function (d) {
                     // Remove the highlight and hide tooltip on mouseout
                     d3.select(this)
@@ -4680,8 +4681,16 @@ selectDot.on("change", function() {
                 })
                 .transition()
                 .duration(1000)          
-                .attr("cx", d => xScale(d.logFC))
-                .attr("cy", d => yScale(-Math.log10(d.pval_adj.toExponential(20))))
+                .attr("cx",function( d ) { 
+                    if(d.pval_adj !== null){
+                    return xScale(d.logFC)
+                }
+                    })
+                .attr("cy", function( d ) { 
+                    if(d.pval_adj !== null){
+                    return yScale(-Math.log10(d.pval_adj.toExponential(20)))
+                 }
+                    })
                 .attr("r", 2) // Start with radius 0 for initial transition effect
                 .style("fill", d => {
                     if (d.pval_adj < threshold) {
@@ -4735,8 +4744,8 @@ selectDot.on("change", function() {
                 // update circle position
                 scatter
                     .selectAll("circle")
-                    .attr('cx', function (d) { return newX(d.logFC); })
-                    .attr('cy', function (d) { return newY(-Math.log10(d.pval_adj.toExponential(20))); });
+                    .attr('cx', function (d) { if(d.pval_adj !== null) {return newX(d.logFC); }})
+                    .attr('cy', function (d) { if(d.pval_adj !== null){return newY(-Math.log10(d.pval_adj.toExponential(20)));}});
             }
 
                 // Add X axis label
@@ -4787,16 +4796,17 @@ selectDot.on("change", function() {
             xlab.html("").text("log(Expression (Normal))")
             ylab.html("").text("log10(Expression (Case))")
 
-            svg.select("#scatter").selectAll("*").remove();
-
+            //svg.select("#scatter").selectAll("*").remove();
+            resetZoom()
             zoom.on("zoom", updateChart);
-
-            svg.call(zoom) 
+            svg.call(zoom)
+            
               // Update dots
               var dot = svg
-                .selectAll('circle')
-                .data(structure)
-                dot.exit().remove()
+                    .selectAll('circle')
+                    .data(structure)
+                    // Remove existing circles
+                   //dot.exit().remove();
 
                 dot.enter().append("circle").merge(dot)
                 .classed('pulse', d => {
@@ -4992,6 +5002,7 @@ selectDot.on("change", function() {
                 })            
                 
             }
+            
         }
 
 
@@ -5002,7 +5013,7 @@ selectDot.on("change", function() {
                 SwitchingPlot(data,currentPlot)
             } else {
                 currentPlot = 'volcano';
-                SwitchingPlot(mergedData,currentPlot)            }
+                SwitchingPlot(data,currentPlot)            }
         });
         
         }
