@@ -343,6 +343,10 @@
         <a class="navbar-brand" href="#" style="color:white">GEVis</a>
         <button class="btn btn-secondary" id="openModalBtn">Get Enrichment</button>
         <button class="btn btn-secondary" id="openModalBtn1" style="margin-left: 10px;">Survival Plot</button>
+        <button class="btn btn-secondary" id="ExtractDEG" style="margin-left: 10px;">Download the DEG's</button>
+        <span class="navbar-text ml-auto" style="color:white; margin-left: 10px;">
+            Dataset used: Lung Adenocarcinoma from TCGA
+        </span>
     </nav>
     <div id="loadingOverlay" style="display: flex; justify-content: center; align-items: center;">
         <div style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
@@ -395,7 +399,7 @@
                 <div> <!--div(3) bottoni IQR-->
                     <input type="range" id="thresholdSlider" class="range2" min="0.1" max="0.99" step="0.01" value="0.46"
                         style="width: 200px;">
-                    <span id="thresholdValue" style="color: white;">0.46</span>
+                    <span id="thresholdValue" style="color: white;">46%</span>
                 </div><!-- div(3)-->
                 <div id="logFCHistogram"></div> <!-- div(5) FC-->
 
@@ -424,7 +428,7 @@
                     <div id="scatterPlot"></div>
                     <button id="resetButton" class="btn btn-secondary">Reset
                         Zoom</button>
-                    <button id="switchButton">Switch Plot</button>
+                    <button id="switchButton" class="btn btn-secondary">Switch Plot</button>
                     <label for="thresholdSelect">
                         <p style="color: #ddd;">Select
                             Threshold:</p>
@@ -666,6 +670,7 @@
         let selectedVariable = "case"
         let domains
 
+        var DEGS=[];
 
 // Get the modal element
 var modal = document.getElementById("myModal");
@@ -700,6 +705,7 @@ function createDotPlotInsideModal() {
 
     // Call your function to create the dot plot here
     DEG(data_copy_pval, parsedLogFC_pval, old_p_adj);
+    enrichment(DEGS)
 }
 
 // When the user clicks the button, open the modal and create the dot plot inside it
@@ -1523,72 +1529,76 @@ function createRadioButtons(data) {
                     }
 
                     // Push the geneData to the result array
-                    result.push(geneData);
+                    DEGS.push(geneData);
                 }
 
                 // Log the final structure
-                console.log(result);
+                console.log(DEGS);
 
-                console.log("I DEG ", result)
+                console.log("I DEG ", DEGS)
 
-           enrichment(result)
+                
+
+                
+
+           //enrichment(DEGS)
 
         }
 
     function enrichment(list) {
-    var req = ocpu.call("enrichment", {
-    data: list,
-    direction: 'UP'
-}, function(session) {
-    // Once the OpenCPU call is successful
-    console.log(session);
-    
-    // Extract the JSON data URL from the session object
-    var filteredDataURL = session.loc + "/R/.val/json";
-    console.log(filteredDataURL);
-    
-    // Load the JSON data directly using d3.json()
-    d3.json(filteredDataURL, function(data) {
-        // Process the data and create the dot plot
-        createDotPlot(data);
-    });
-}).fail(function() {
-    // Handle errors here
-    console.log("Error: OpenCPU call failed.");
-    // Show error message to the user
-    showError("EnrichR takes too much to respond. Please try again!!");
-    modal.style.display = "none";
-    // Clear the content of the modal when it is closed
-    var dotplotContainer = document.getElementById("dotplot");
-    dotplotContainer.innerHTML = "";
-});
+            var req = ocpu.call("enrichment", {
+            data: list,
+            direction: 'UP'
+        }, function(session) {
+            // Once the OpenCPU call is successful
+            console.log(session);
+            
+            // Extract the JSON data URL from the session object
+            var filteredDataURL = session.loc + "/R/.val/json";
+            console.log(filteredDataURL);
+            
+            // Load the JSON data directly using d3.json()
+            d3.json(filteredDataURL, function(data) {
+                // Process the data and create the dot plot
+                createDotPlot(data);
+            });
+        }).fail(function() {
+            // Handle errors here
+            console.log("Error: OpenCPU call failed.");
+            // Show error message to the user
+            showError("EnrichR takes too much to respond. Please try again!!");
+            modal.style.display = "none";
+            // Clear the content of the modal when it is closed
+            var dotplotContainer = document.getElementById("dotplot");
+            dotplotContainer.innerHTML = "";
+        });
 
-var req = ocpu.call("enrichment", {
-    data: list,
-    direction: 'DOWN'
-}, function(session) {
-    // Once the OpenCPU call is successful
-    console.log(session);
-    
-    // Extract the JSON data URL from the session object
-    var filteredDataURL = session.loc + "/R/.val/json";
-    console.log(filteredDataURL);
-    
-    // Load the JSON data directly using d3.json()
-    d3.json(filteredDataURL, function(data) {
-        // Process the data and create the dot plot
-        createDotPlot1(data);
-    });
-}).fail(function() {
-    // Handle errors here
-    console.log("Error: OpenCPU call failed.");
-    // Show error message to the user
-    showError("EnrichR takes too much to respond. Please try again!!");
-    modal.style.display = "none";
-    // Clear the content of the modal when it is closed
-    var dotplotContainer = document.getElementById("dotplot");
-    dotplotContainer.innerHTML = "";
-});
+        var req = ocpu.call("enrichment", {
+            data: list,
+            direction: 'DOWN'
+        }, function(session) {
+            // Once the OpenCPU call is successful
+            console.log(session);
+            
+            // Extract the JSON data URL from the session object
+            var filteredDataURL = session.loc + "/R/.val/json";
+            console.log(filteredDataURL);
+            
+            // Load the JSON data directly using d3.json()
+            d3.json(filteredDataURL, function(data) {
+                // Process the data and create the dot plot
+                createDotPlot1(data);
+            });
+        }).fail(function() {
+            // Handle errors here
+            console.log("Error: OpenCPU call failed.");
+            // Show error message to the user
+            showError("EnrichR takes too much to respond. Please try again!!");
+            modal.style.display = "none";
+            // Clear the content of the modal when it is closed
+            var dotplotContainer = document.getElementById("dotplot");
+            dotplotContainer.innerHTML = "";
+        });
 
 function showError(message) {
     // Display error message to the user
@@ -2672,7 +2682,9 @@ selectDot.on("change", function() {
         document.getElementById("thresholdSlider").addEventListener("input", function () {
             // Update the threshold value on slider change
             prc_IQR = parseFloat(this.value);
-            document.getElementById("thresholdValue").innerText = prc_IQR;
+            prc_IQR1 = prc_IQR * 100;
+        document.getElementById("thresholdValue").innerText = prc_IQR1 + "%";
+
 
             // Calculate the quantile
             thr_prc = ss.quantile(variation_data_copy, prc_IQR);
@@ -3516,6 +3528,36 @@ selectDot.on("change", function() {
 
         })
 
+       document.getElementById("ExtractDEG").addEventListener("click", function() {
+        DEG(data_copy_pval, parsedLogFC_pval, old_p_adj)
+        
+        // Generate the text content for the file
+        var textContent = DEGS.map(gene => 
+                            `Gene: ${gene.gene}, logFC: ${gene.logFC}, pval_adj: ${gene.pval_adj}, Direction: ${gene.direction}`
+                        ).join("\n");
+
+                        // Create a blob from the text content
+                        var blob = new Blob([textContent], { type: 'text/plain' });
+
+                        // Create a link element
+                        var link = document.createElement('a');
+
+                        // Set the download attribute with a file name
+                        link.download = 'DEG_result.txt';
+
+                        // Create a URL for the blob and set it as the href attribute
+                        link.href = window.URL.createObjectURL(blob);
+
+                        // Append the link to the body (required for Firefox)
+                        document.body.appendChild(link);
+
+                        // Programmatically click the link to trigger the download
+                        link.click();
+
+                        // Remove the link from the document after the download
+                        document.body.removeChild(link);
+
+       })
        
         function updateHistogram(variation_data) {
             // Filter data based on the threshold
@@ -3524,7 +3566,7 @@ selectDot.on("change", function() {
             // Create histogram using D3.js
             const svgWidth = 600;
             const svgHeight = 300;
-            const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+            const margin = { top: 20, right: 20, bottom: 40, left: 55 };
             const width = svgWidth - margin.left - margin.right;
             const height = svgHeight - margin.top - margin.bottom;
 
@@ -4440,7 +4482,10 @@ selectDot.on("change", function() {
                             if (!Array.from(select.options).some(option => option.value === gene)) {
                                 var option = document.createElement("option");
                                 option.value = gene;
-                                option.text = gene;
+                                const parts = gene.split('|');
+                            // Use the first part as the gene name
+                            const geneName = parts[0];
+                            option.text = geneName;
                                 select.appendChild(option);
                             }
                         });
@@ -4536,18 +4581,18 @@ selectDot.on("change", function() {
 
     
  
-                    // Create x and y scales
+                            // Create x and y scales
                     xScale.domain([
-            d3.min(structure, d => d.logFC) - 0.5,
-            d3.max(structure, d => d.logFC) + 0.5
-        ]);
+                    d3.min(structure, d => d.logFC) - 0.5,
+                    d3.max(structure, d => d.logFC) + 0.5
+                ]);
 
-        yScale.domain([0, d3.max(structure, function(d) {
-            if(d.pval_adj !==null){
-            return( -Math.log10(d.pval_adj.toExponential(20)))
-            }
+                yScale.domain([0, d3.max(structure, function(d) {
+                    if(d.pval_adj !==null){
+                    return( -Math.log10(d.pval_adj.toExponential(20)))
+                    }
 
-         })])
+                })])
 
                     resetZoom()
 
@@ -4584,6 +4629,136 @@ selectDot.on("change", function() {
                     // Remove existing circles
                     dot.exit().remove();
 
+                // Create a legend
+            var legend = svg.append("g")
+                .attr("transform", "translate(" + (width - 75) + "," + (height - 250) + ")");
+
+            // Add a filter for the shadow
+            var defs = svg.append("defs");
+
+            var filter = defs.append("filter")
+                .attr("id", "legendShadow")
+                .attr("height", "150%");
+
+            filter.append("feGaussianBlur")
+                .attr("in", "SourceAlpha")
+                .attr("stdDeviation", 3)
+                .attr("result", "blur");
+
+            filter.append("feOffset")
+                .attr("in", "blur")
+                .attr("dx", 3)
+                .attr("dy", 3)
+                .attr("result", "offsetBlur");
+
+            var feMerge = filter.append("feMerge");
+
+            feMerge.append("feMergeNode")
+                .attr("in", "offsetBlur");
+            feMerge.append("feMergeNode")
+                .attr("in", "SourceGraphic");
+
+            // Add a rectangle around the legend with shadow
+            var legendRect = legend.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 160)
+                .attr("height", 210)
+                .style("stroke", "white")
+                .style("fill", "none")
+                .style("filter", "url(#legendShadow)")
+                .style("pointer-events", "none");
+
+            // Append legend for upregulated genes (LogFC > log2(thr_fc) and pval_adj < threshold)
+            var upregulatedLegend = legend.append("g")
+                .attr("transform", "translate(0,0)");
+
+            upregulatedLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 20)
+                .attr("r", 6)
+                .style("fill", "darkred");
+
+            upregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 20)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Upregulated")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("LogFC > log2(" + thr_fc + ") and");
+
+            upregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 48)
+                .style("fill", "white")
+                .text("pval_adj < " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
+
+            // Calculate the height of the first legend item
+            var legendItemHeight = upregulatedLegend.node().getBBox().height;
+
+            // Append legend for downregulated genes (LogFC < -log2(thr_fc) and pval_adj < threshold)
+            var downregulatedLegend = legend.append("g")
+                .attr("transform", "translate(0," + 2 * legendItemHeight + ")");
+
+            downregulatedLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 65)
+                .attr("r", 6)
+                .style("fill", "royalblue");
+
+            downregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 68)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Downregulated")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("LogFC < -log2(" + thr_fc + ") and");
+
+            downregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 96)
+                .style("fill", "white")
+                .text("pval_adj < " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
+
+            // Append legend for not significant genes (abs(LogFC) < log2(thr_fc) OR pval_adj > threshold)
+            var notSignificantLegend = legend.append("g")
+                .attr("transform", "translate(0," + legendItemHeight + ")");
+
+            notSignificantLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 40)
+                .attr("r", 6)
+                .style("fill", "grey");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 40)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Not Significant")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("|LogFC| < log2(" + thr_fc + ") or");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 68)
+                .style("fill", "white")
+                .text("pval_adj > " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
+
                 dot.enter().append("circle").merge(dot)
                     .classed('pulse', d => {
                     return selectedGeneData.some(selectedGene => selectedGene === d.gene);
@@ -4592,11 +4767,14 @@ selectDot.on("change", function() {
                         d3.select(this)
                             .style("stroke", "black")
                             .style("stroke-width", 2);
-
+                            
+                            const parts = d.gene.split('|');
+                        // Use the first part as the gene name
+                        const geneName = parts[0];
                         tooltip.transition()
                             .style("opacity", .9);
 
-                        tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>LogFC:</strong> ${parseFloat(d.logFC).toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toExponential(2) : 'NA'}`)
+                        tooltip.html(`<strong>Gene:</strong> ${geneName}<br><strong>LogFC:</strong> ${parseFloat(d.logFC).toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toExponential(2) : 'NA'}`)
                             .style("left", (d3.event.pageX + 15) + "px")
                             .style("top", (d3.event.pageY - 28) + "px");
                     })
@@ -4677,7 +4855,10 @@ selectDot.on("change", function() {
                             if (!Array.from(select.options).some(option => option.value === gene)) {
                                 var option = document.createElement("option");
                                 option.value = gene;
-                                option.text = gene;
+                                const parts = gene.split('|');
+                            // Use the first part as the gene name
+                            const geneName = parts[0];
+                            option.text = geneName;
                                 select.appendChild(option);
                             }
                         });
@@ -4811,7 +4992,135 @@ selectDot.on("change", function() {
             xlab.html("").text("log(Expression (Normal))")
             ylab.html("").text("log10(Expression (Case))")
 
-           
+           // Create a legend
+           var legend = svg.append("g")
+                .attr("transform", "translate(" + (width - 75) + "," + (height - 250) + ")");
+
+            // Add a filter for the shadow
+            var defs = svg.append("defs");
+
+            var filter = defs.append("filter")
+                .attr("id", "legendShadow")
+                .attr("height", "150%");
+
+            filter.append("feGaussianBlur")
+                .attr("in", "SourceAlpha")
+                .attr("stdDeviation", 3)
+                .attr("result", "blur");
+
+            filter.append("feOffset")
+                .attr("in", "blur")
+                .attr("dx", 3)
+                .attr("dy", 3)
+                .attr("result", "offsetBlur");
+
+            var feMerge = filter.append("feMerge");
+
+            feMerge.append("feMergeNode")
+                .attr("in", "offsetBlur");
+            feMerge.append("feMergeNode")
+                .attr("in", "SourceGraphic");
+
+            // Add a rectangle around the legend with shadow
+            var legendRect = legend.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 160)
+                .attr("height", 210)
+                .style("stroke", "white")
+                .style("fill", "none")
+                .style("filter", "url(#legendShadow)")
+                .style("pointer-events", "none");
+
+            // Append legend for upregulated genes (LogFC > log2(thr_fc) and pval_adj < threshold)
+            var upregulatedLegend = legend.append("g")
+                .attr("transform", "translate(0,0)");
+
+            upregulatedLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 20)
+                .attr("r", 6)
+                .style("fill", "darkred");
+
+            upregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 20)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Upregulated")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("LogFC > log2(" + thr_fc + ") and");
+
+            upregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 48)
+                .style("fill", "white")
+                .text("pval_adj < " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
+
+            // Calculate the height of the first legend item
+            var legendItemHeight = upregulatedLegend.node().getBBox().height;
+
+            // Append legend for downregulated genes (LogFC < -log2(thr_fc) and pval_adj < threshold)
+            var downregulatedLegend = legend.append("g")
+                .attr("transform", "translate(0," + 2 * legendItemHeight + ")");
+
+            downregulatedLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 65)
+                .attr("r", 6)
+                .style("fill", "royalblue");
+
+            downregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 68)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Downregulated")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("LogFC < -log2(" + thr_fc + ") and");
+
+            downregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 96)
+                .style("fill", "white")
+                .text("pval_adj < " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
+
+            // Append legend for not significant genes (abs(LogFC) < log2(thr_fc) OR pval_adj > threshold)
+            var notSignificantLegend = legend.append("g")
+                .attr("transform", "translate(0," + legendItemHeight + ")");
+
+            notSignificantLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 40)
+                .attr("r", 6)
+                .style("fill", "grey");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 40)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Not Significant")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("|LogFC| < log2(" + thr_fc + ") or");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 68)
+                .style("fill", "white")
+                .text("pval_adj > " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
             
               // Update dots
               var dot = svg
@@ -4932,7 +5241,10 @@ selectDot.on("change", function() {
                             if (!Array.from(select.options).some(option => option.value === gene)) {
                                 var option = document.createElement("option");
                                 option.value = gene;
-                                option.text = gene;
+                                const parts = gene.split('|');
+                                // Use the first part as the gene name
+                                const geneName = parts[0];
+                                option.text = geneName;
                                 select.appendChild(option);
                             }
                         });
@@ -5234,10 +5546,14 @@ selectDot.on("change", function() {
                     .style("stroke", "black")
                     .style("stroke-width", 2);
 
+                    const parts = d.gene.split('|');
+                        // Use the first part as the gene name
+                        const geneName = parts[0];
+
                 tooltip.transition()
                     .style("opacity", .9);
 
-                tooltip.html(`<strong>Gene:</strong> ${d.gene}<br><strong>LogFC:</strong> ${parseFloat(d.logFC).toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toExponential(2) : 'NA'}`)
+                tooltip.html(`<strong>Gene:</strong> ${geneName}<br><strong>LogFC:</strong> ${parseFloat(d.logFC).toFixed(2)}<br><strong>pval-adj:</strong> ${d.pval_adj !== null ? d.pval_adj.toExponential(2) : 'NA'}`)
                     .style("left", (d3.event.pageX + 15) + "px")
                     .style("top", (d3.event.pageY - 28) + "px");
             })
@@ -5319,7 +5635,12 @@ selectDot.on("change", function() {
                         if (!Array.from(select.options).some(option => option.value === gene)) {
                             var option = document.createElement("option");
                             option.value = gene;
-                            option.text = gene;
+                            const parts = gene.split('|');
+                            // Use the first part as the gene name
+                            const geneName = parts[0];
+                            option.text = geneName;
+
+                            
                             select.appendChild(option);
                         }
                     });
@@ -5383,7 +5704,7 @@ selectDot.on("change", function() {
             .transition()
             .duration(750)
             .attr("r", 0)
-            .remove();
+            .remove();      
 
         function synchronizeAnimations(targetElement) {
     // Retrieve all elements with the class 'pulse'
@@ -5421,32 +5742,34 @@ selectDot.on("change", function() {
     return animations.find(animation => animation.animationName === animationName);
 }
         function updateChart() {
-    // recover the new scale
-    var newX = d3.event.transform.rescaleX(xScale);
-    var newY = d3.event.transform.rescaleY(yScale);
+            // recover the new scale
+            var newX = d3.event.transform.rescaleX(xScale);
+            var newY = d3.event.transform.rescaleY(yScale);
 
-    // update axes with these new boundaries
-    xAxis.call(d3.axisBottom(newX));
-    yAxis.call(d3.axisLeft(newY));
+            // update axes with these new boundaries
+            xAxis.call(d3.axisBottom(newX));
+            yAxis.call(d3.axisLeft(newY));
 
-    xAxis.selectAll("line, path")
-        .style("stroke", "white");
+            xAxis.selectAll("line, path")
+                .style("stroke", "white");
 
-    xAxis.selectAll("text")
-        .style("fill", "white");
+            xAxis.selectAll("text")
+                .style("fill", "white");
 
-    yAxis.selectAll("line, path")
-        .style("stroke", "white");
+            yAxis.selectAll("line, path")
+                .style("stroke", "white");
 
-    yAxis.selectAll("text")
-        .style("fill", "white");
+            yAxis.selectAll("text")
+                .style("fill", "white");
 
-    // update circle position
-    scatter
-        .selectAll("circle")
-        .attr('cx', function (d) { if (d.pval_adj !== null) { return newX(d.logFC); } })
-        .attr('cy', function (d) { if (d.pval_adj !== null) { return newY(-Math.log10(d.pval_adj.toExponential(20))); } });
-}
+            // update circle position
+            scatter
+                .selectAll("circle")
+                .attr('cx', function (d) { if (d.pval_adj !== null) { return newX(d.logFC); } })
+                .attr('cy', function (d) { if (d.pval_adj !== null) { return newY(-Math.log10(d.pval_adj.toExponential(20))); } });
+        }
+                    xlab.html("")
+                    ylab.html("")
 
         // Define the resetZoom function
         function resetZoom() {
@@ -5778,6 +6101,136 @@ selectDot.on("change", function() {
 
                 //svg.select("#scatter").selectAll("*").remove();
 
+                // Create a legend
+            var legend = svg.append("g")
+                .attr("transform", "translate(" + (width - 75) + "," + (height - 250) + ")");
+
+            // Add a filter for the shadow
+            var defs = svg.append("defs");
+
+            var filter = defs.append("filter")
+                .attr("id", "legendShadow")
+                .attr("height", "150%");
+
+            filter.append("feGaussianBlur")
+                .attr("in", "SourceAlpha")
+                .attr("stdDeviation", 3)
+                .attr("result", "blur");
+
+            filter.append("feOffset")
+                .attr("in", "blur")
+                .attr("dx", 3)
+                .attr("dy", 3)
+                .attr("result", "offsetBlur");
+
+            var feMerge = filter.append("feMerge");
+
+            feMerge.append("feMergeNode")
+                .attr("in", "offsetBlur");
+            feMerge.append("feMergeNode")
+                .attr("in", "SourceGraphic");
+
+            // Add a rectangle around the legend with shadow
+            var legendRect = legend.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 160)
+                .attr("height", 210)
+                .style("stroke", "white")
+                .style("fill", "none")
+                .style("filter", "url(#legendShadow)")
+                .style("pointer-events", "none");
+
+            // Append legend for upregulated genes (LogFC > log2(thr_fc) and pval_adj < threshold)
+            var upregulatedLegend = legend.append("g")
+                .attr("transform", "translate(0,0)");
+
+            upregulatedLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 20)
+                .attr("r", 6)
+                .style("fill", "green");
+
+            upregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 20)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Upregulated")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("LogFC > log2(" + thr_fc + ") and");
+
+            upregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 48)
+                .style("fill", "white")
+                .text("pval_adj < " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
+
+            // Calculate the height of the first legend item
+            var legendItemHeight = upregulatedLegend.node().getBBox().height;
+
+            // Append legend for downregulated genes (LogFC < -log2(thr_fc) and pval_adj < threshold)
+            var downregulatedLegend = legend.append("g")
+                .attr("transform", "translate(0," + 2 * legendItemHeight + ")");
+
+            downregulatedLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 65)
+                .attr("r", 6)
+                .style("fill", "royalblue");
+
+            downregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 68)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Downregulated")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("LogFC < -log2(" + thr_fc + ") and");
+
+            downregulatedLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 96)
+                .style("fill", "white")
+                .text("pval_adj < " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
+
+            // Append legend for not significant genes (abs(LogFC) < log2(thr_fc) OR pval_adj > threshold)
+            var notSignificantLegend = legend.append("g")
+                .attr("transform", "translate(0," + legendItemHeight + ")");
+
+            notSignificantLegend.append("circle")
+                .attr("cx", 10)
+                .attr("cy", 40)
+                .attr("r", 6)
+                .style("fill", "grey");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 40)
+                .style("fill", "white")
+                .style("font-size", "20px")
+                .text("Not Significant")
+                .append("tspan")
+                .attr("x", 20)
+                .attr("dy", 15) // Adjusted spacing for subtitle
+                .style("font-size", "12px") // Smaller font size for subtitle
+                .text("|LogFC| < log2(" + thr_fc + ") or");
+
+            notSignificantLegend.append("text")
+                .attr("x", 20)
+                .attr("y", 68)
+                .style("fill", "white")
+                .text("pval_adj > " + threshold)
+                .style("font-size", "12px"); // Smaller font size for subtitle
+
                 // Update dots
                 var dot = svg
                     .selectAll('circle')
@@ -5889,6 +6342,7 @@ selectDot.on("change", function() {
                                     var option = document.createElement("option");
                                     option.value = gene;
                                     option.text = gene;
+                                    
                                     select.appendChild(option);
                                 }
                             });
@@ -6466,9 +6920,24 @@ selectDot.on("change", function() {
                 xAxis.selectAll("text")
                     .style("fill", "white");
 
+                // Calculate min and max from sumstat
+                const minSumStat = d3.min(sumstat, d => d.value.min);
+                const maxSumStat = d3.max(sumstat, d => d.value.max);
+
+                // Calculate min and max from expressionValuesC and expressionValuesN
+                const minExpressionC = d3.min(expressionValuesC);
+                const maxExpressionC = d3.max(expressionValuesC);
+                const minExpressionN = d3.min(expressionValuesN);
+                const maxExpressionN = d3.max(expressionValuesN);
+
+                // Determine the overall min and max for the y-axis
+                const overallMin = Math.min(minSumStat, minExpressionC, minExpressionN);
+                const overallMax = Math.max(maxSumStat, maxExpressionC, maxExpressionN);
+
+                // Set the y-axis scale
                 var y = d3.scaleLinear()
-                    .domain([boxPlotStatisticsC.min + 4, boxPlotStatisticsC.max -4])
-                    .range([height, 0])
+                    .domain([overallMin - 4, overallMax + 4]) // Adding padding of 4
+                    .range([height, 0]);
 
                 var yAxisGroup = svg.append("g")
                     .attr("class", "y-axis") // Assign a class to the group element
@@ -6743,9 +7212,24 @@ selectDot.on("change", function() {
                         .paddingInner(1)
                         .paddingOuter(.5)
 
-                    var y = d3.scaleLinear()
-                        .domain([boxPlotStatisticsC.min + 4, boxPlotStatisticsC.max - 4])
-                        .range([height, 0])
+                     // Calculate min and max from sumstat
+                const minSumStat = d3.min(sumstat, d => d.value.min);
+                const maxSumStat = d3.max(sumstat, d => d.value.max);
+
+                // Calculate min and max from expressionValuesC and expressionValuesN
+                const minExpressionC = d3.min(expressionValuesC);
+                const maxExpressionC = d3.max(expressionValuesC);
+                const minExpressionN = d3.min(expressionValuesN);
+                const maxExpressionN = d3.max(expressionValuesN);
+
+                // Determine the overall min and max for the y-axis
+                const overallMin = Math.min(minSumStat, minExpressionC, minExpressionN);
+                const overallMax = Math.max(maxSumStat, maxExpressionC, maxExpressionN);
+
+                // Set the y-axis scale
+                var y = d3.scaleLinear()
+                    .domain([overallMin - 4, overallMax + 4]) // Adding padding of 4
+                    .range([height, 0]);
 
                     // Update y-axis
                     svg.select(".y-axis")
@@ -7112,7 +7596,7 @@ selectDot.on("change", function() {
             if (selectedVariable === "case") {
                 color = d3.scaleOrdinal()
                     .domain(["Dead", "Alive"])
-                    .range(["#0d0887", "#fddb6d"]);
+                    .range(["#B76E79", "#fddb6d"]);
             } else if (selectedVariable === "Smoker") {
                 color = d3.scaleOrdinal()
                     .domain(["Never Smoked", "Former Smoker", "Current Smoker"])
@@ -7120,7 +7604,7 @@ selectDot.on("change", function() {
             } else if (selectedVariable === "Gender") {
                 color = d3.scaleOrdinal()
                     .domain(["male", "female"]) // Set the domain based on the age data
-                    .range(["#0d0887", "#fddb6d"]);
+                    .range(["#8fce00", "#c90076"]);
             } else if (selectedVariable === "Stage") {
                 color = d3.scaleOrdinal()
                     .domain(["NA", "Stage I","Stage IA", "Stage IB", "Stage IIA", "Stage IIB", "Stage IIIA", "Stage IIIB", "Stage IV"])
@@ -7297,6 +7781,7 @@ selectDot.on("change", function() {
             }
         })
 
+            .style("opacity","0.5")
             .style("fill", "none")
             .style("stroke", function(d) {
                 if (selectedVariable === "case") {
@@ -7351,7 +7836,7 @@ selectDot.on("change", function() {
             function path(d) {
                 return d3.line()(dimensions.map(function (geneName) { return [x(geneName), y[geneName](d[geneName])]; }));
    
-}
+                }
 
 
 
@@ -7724,7 +8209,7 @@ selectDot.on("change", function() {
                 // Apply pulsing effect directly to the hovered element
                 d3.select(this)
                     .classed("pulse-red", true);
-                this.parentNode.appendChild(this); // Append to the parent node to bring it to the front
+                //this.parentNode.appendChild(this); // Append to the parent node to bring it to the front
 
             }
 
@@ -7743,7 +8228,7 @@ selectDot.on("change", function() {
                             return color(data['Stage']);
                         }
                     })
-                    .style("opacity", "1"); // Reset opacity to 1
+                    .style("opacity", "0.5"); // Reset opacity to 1
 
                 // Pulsing effect for paths with GSM in gsmList
                 d3.selectAll(".gsm-path")
@@ -7754,7 +8239,7 @@ selectDot.on("change", function() {
                         return !(gsmList.some(entry => entry.GSM === patientTcga && entry.group === selectedType));
                     })
                     .classed("pulse-red", false);
-                    this.parentNode.appendChild(this);
+                    //this.parentNode.appendChild(this);
             }
 
             // Bind mouseover and mouseleave events to all lines
